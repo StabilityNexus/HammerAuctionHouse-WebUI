@@ -1,4 +1,5 @@
-import React from "react";
+import { useState, useEffect } from "react";
+import { AllPayAuctionClient } from "./api.ts";
 import {
   Wallet,
   Timer,
@@ -10,93 +11,86 @@ import {
 import { CreateAuction } from "./components/CreateAuction";
 import { AuctionDetail } from "./components/AuctionDetail";
 import { Auction } from "./types";
+import { connectWallet, formatTimeLeft, handleError } from "./utils";
+import { ethers } from "ethers";
+import { Toaster } from "react-hot-toast";
 
 function App() {
-  const [connected, setConnected] = React.useState(false);
-  const [view, setView] = React.useState<"list" | "detail" | "create">("list");
-  const [selectedAuction, setSelectedAuction] = React.useState<Auction | null>(
-    null
-  );
+  const [account, setAccount] = useState("");
+  const [connected, setConnected] = useState(false);
+  const [signer, setSigner] = useState<any>(null);
+  const [view, setView] = useState<"list" | "detail" | "create">("list");
+  const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
+  const [auctionClient, setAuctionClient] =
+    useState<AllPayAuctionClient | null>(null);
 
-  const [auctions, setAuctions] = React.useState<Auction[]>([
-    {
-      id: "1",
-      tokenAddress: "0x1234...5678",
-      name: "Cosmic Voyager #42",
-      description:
-        "A rare NFT from the Cosmic Voyager collection featuring a unique blend of cosmic elements and futuristic design. This piece represents the convergence of space exploration and digital art.",
-      imageUrl: "https://images.unsplash.com/photo-1634973357973-f2ed2657db3c",
-      currentBid: 0.5,
-      minBidAmount: 0.1,
-      endTime: new Date(Date.now() + 86400000),
-      status: "active",
-      owner: "0xabcd...efgh",
-      bids: [
-        {
-          bidder: "0x9876...5432",
-          amount: 0.5,
-          timestamp: new Date(Date.now() - 3600000),
-        },
-        {
-          bidder: "0x5432...1098",
-          amount: 0.4,
-          timestamp: new Date(Date.now() - 7200000),
-        },
-      ],
-    },
-    {
-      id: "2",
-      tokenAddress: "0x8765...4321",
-      name: "Digital Dreams #17",
-      description:
-        "Part of the Digital Dreams series, this NFT captures the essence of cyberpunk aesthetics with a modern twist.",
-      imageUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe",
-      currentBid: 1.2,
-      minBidAmount: 0.2,
-      endTime: new Date(Date.now() + 172800000),
-      status: "active",
-      owner: "0xijkl...mnop",
-      bids: [
-        {
-          bidder: "0x3456...7890",
-          amount: 1.2,
-          timestamp: new Date(Date.now() - 1800000),
-        },
-      ],
-    },
-  ]);
+  const [auctions, setAuctions] = useState<Auction[]>([]);
 
-  const connectWallet = () => {
-    setConnected(true);
+  const handleConnect = async () => {
+    try {
+      const wallet = await connectWallet();
+      if (wallet && wallet.address) {
+        setAccount(wallet.address);
+        setConnected(true);
+        setSigner(wallet.signer);
+        localStorage.setItem("walletConnected", "true");
+        localStorage.setItem("walletAddress", wallet.address);
+
+        const client = new AllPayAuctionClient(
+          "0x6c7c1E9726c5BD8414b73eeb0a54e82675847bCb",
+          wallet.signer
+        );
+        setAuctionClient(client);
+      }
+    } catch (error: any) {
+      handleError(error.message || "Failed to connect wallet");
+    }
   };
 
-  const handleCreateAuction = (newAuction: Auction) => {
-    setAuctions([newAuction, ...auctions]);
-    setView("list");
-  };
-
-  const handlePlaceBid = (amount: number) => {
-    if (!selectedAuction) return;
-
-    const newBid = {
-      bidder: "0x1234...5678",
-      amount: amount,
-      timestamp: new Date(),
+  useEffect(() => {
+    const autoConnect = async () => {
+      const isConnected = localStorage.getItem("walletConnected") === "true";
+      if (isConnected) {
+        await handleConnect();
+      }
     };
 
-    const updatedAuction = {
-      ...selectedAuction,
-      currentBid: amount,
-      bids: [newBid, ...selectedAuction.bids],
+    autoConnect();
+  }, []);
+
+  useEffect(() => {
+    const fetchAuctions = async () => {
+      if (auctionClient) {
+        try {
+          const fetchedAuctions = await auctionClient.getAllAuctions();
+          fetchedAuctions.reverse();
+          setAuctions(fetchedAuctions);
+          console.log("Fetched auctions:", fetchedAuctions);
+        } catch (error: any) {
+          handleError(error.message || "Failed to fetch auctions");
+        }
+      }
     };
 
-    setAuctions(
-      auctions.map((a) => (a.id === selectedAuction.id ? updatedAuction : a))
-    );
-  };
+    fetchAuctions();
+  }, [auctionClient]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "#333",
+            color: "#fff",
+          },
+          error: {
+            style: {
+              background: "#661111",
+            },
+          },
+        }}
+      />
       {/* Header */}
       <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm fixed w-full z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -113,7 +107,7 @@ function App() {
             <span className="text-xl font-bold">NFT Auction House</span>
           </div>
           <button
-            onClick={connectWallet}
+            onClick={handleConnect}
             className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
               connected
                 ? "bg-green-500/20 text-green-300"
@@ -121,7 +115,11 @@ function App() {
             }`}
           >
             <Wallet className="w-4 h-4" />
-            <span>{connected ? "0x1234...5678" : "Connect Wallet"}</span>
+            <span>
+              {connected
+                ? `${account.slice(0, 6)}...${account.slice(-4)}`
+                : "Connect Wallet"}
+            </span>
           </button>
         </div>
       </header>
@@ -172,7 +170,7 @@ function App() {
                           <span>Token Address</span>
                         </div>
                         <span className="font-mono">
-                          {auction.tokenAddress}
+                          {`${auction.tokenAddress.slice(0, 6)}...${auction.tokenAddress.slice(-4)}`}
                         </span>
                       </div>
 
@@ -182,7 +180,7 @@ function App() {
                           <span>Current Bid</span>
                         </div>
                         <span className="font-semibold text-purple-400">
-                          {auction.currentBid} ETH
+                          {ethers.formatEther(auction.highestBid)} ETH
                         </span>
                       </div>
 
@@ -192,7 +190,11 @@ function App() {
                           <span>Ends in</span>
                         </div>
                         <span className="text-yellow-400">
-                          {new Date(auction.endTime).toLocaleTimeString()}
+                          {Number(auction.deadline) * 1000 - Date.now() > 0
+                            ? formatTimeLeft(
+                                new Date(Number(auction.deadline) * 1000)
+                              )
+                            : "Auction Ended"}
                         </span>
                       </div>
                     </div>
@@ -204,13 +206,10 @@ function App() {
         )}
 
         {view === "detail" && selectedAuction && (
-          <AuctionDetail
-            auction={selectedAuction}
-            onPlaceBid={handlePlaceBid}
-          />
+          <AuctionDetail auction={selectedAuction} signer={signer} />
         )}
 
-        {view === "create" && <CreateAuction onSubmit={handleCreateAuction} />}
+        {view === "create" && <CreateAuction signer={signer} />}
       </main>
     </div>
   );
