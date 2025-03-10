@@ -1,9 +1,9 @@
 # **Hammer Auction House**
+
 ## **Demo**  
 
 <!-- Demo to be added -->
-[![Watch the video](https://img.youtube.com/vi/GFtSpuDTbk4/0.jpg)](https://www.youtube.com/watch?v=GFtSpuDTbk4)
-
+https://github.com/user-attachments/assets/0be6d3c4-51b3-47ca-8e5f-128a74b39007
 
 ## **About**  
 
