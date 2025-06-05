@@ -4,7 +4,11 @@ import { useState } from "react";
 import { Search, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {Popover} from 'radix-ui';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Sheet,
   SheetContent,
@@ -42,36 +46,37 @@ export function AuctionFilter({
     { value: "all-pay", label: "All-Pay" },
     { value: "vickrey", label: "Vickrey" },
   ];
-  
+
   const statusOptions = [
     { value: "upcoming", label: "Upcoming" },
     { value: "active", label: "Active" },
     { value: "ended", label: "Ended" },
   ];
-  
+
   const handleTypeToggle = (type: AuctionType) => {
     if (selectedTypes.includes(type)) {
-      setSelectedTypes(selectedTypes.filter(t => t !== type));
+      setSelectedTypes(selectedTypes.filter((t) => t !== type));
     } else {
       setSelectedTypes([...selectedTypes, type]);
     }
   };
-  
+
   const handleStatusToggle = (status: string) => {
     if (selectedStatus.includes(status)) {
-      setSelectedStatus(selectedStatus.filter(s => s !== status));
+      setSelectedStatus(selectedStatus.filter((s) => s !== status));
     } else {
       setSelectedStatus([...selectedStatus, status]);
     }
   };
-  
+
   const clearFilters = () => {
     setSelectedTypes([]);
     setSelectedStatus([]);
   };
-  
-  const hasActiveFilters = selectedTypes.length > 0 || selectedStatus.length > 0;
-  
+
+  const hasActiveFilters =
+    selectedTypes.length > 0 || selectedStatus.length > 0;
+
   // Filter content component to reuse in both popover and sheet
   const FilterContent = () => (
     <div className="grid gap-4">
@@ -95,7 +100,7 @@ export function AuctionFilter({
           ))}
         </div>
       </div>
-      
+
       <div className="space-y-4">
         <h3 className="font-medium">Status</h3>
         <div className="grid grid-cols-2 gap-3">
@@ -116,7 +121,7 @@ export function AuctionFilter({
           ))}
         </div>
       </div>
-      
+
       <Button
         variant="outline"
         size="sm"
@@ -151,10 +156,10 @@ export function AuctionFilter({
           </Button>
         )}
       </div>
-      
+
       {/* Filter popover for larger screens */}
-      <Popover.Root>
-        <Popover.Trigger asChild>
+      <Popover>
+        <PopoverTrigger asChild>
           <Button
             variant="outline"
             className={cn(
@@ -170,12 +175,12 @@ export function AuctionFilter({
               </Badge>
             )}
           </Button>
-        </Popover.Trigger>
-        <Popover.Content className="w-72" align="end">
+        </PopoverTrigger>
+        <PopoverContent className="w-72" align="end">
           <FilterContent />
-        </Popover.Content>
-      </Popover.Root>
-      
+        </PopoverContent>
+      </Popover>
+
       {/* Filter sheet for mobile */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger asChild>
@@ -204,7 +209,7 @@ export function AuctionFilter({
           </div>
         </SheetContent>
       </Sheet>
-      
+
       {/* Active filters display */}
       {hasActiveFilters && (
         <div className="flex flex-wrap gap-2 mt-4">

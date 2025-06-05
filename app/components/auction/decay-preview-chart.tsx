@@ -41,70 +41,78 @@ export function DecayPreviewChart({
     logarithmic: true,
   });
 
+  // Only show the selected decayType curve as active
+  useEffect(() => {
+    setVisibleCurves({
+      linear: decayType === "linear",
+      exponential: decayType === "exponential",
+      logarithmic: decayType === "logarithmic",
+    });
+  }, [decayType]);
+
   const generateChartData = () => {
+    // Return empty if invalid inputs
+    if (!startPrice || !duration) return [];
+    
     const data = [];
-    const steps = 50; // Number of points to plot
+    const steps = 50;
+    const safeReserve = reservedPrice || 0;
+    console.log(decayFactor)
+    decayFactor= (decayFactor * 1.0) / 1000.0
+    console.log(decayFactor)
 
     for (let i = 0; i <= steps; i++) {
       const t = (i / steps) * duration;
       const progress = t / duration;
 
-      const linearPrice = startPrice - (startPrice - reservedPrice) * t / duration;
+      // Linear decay
+      let linearPrice = startPrice - (startPrice - safeReserve) * t;
+      if (linearPrice < safeReserve) linearPrice = safeReserve;
 
-      const exponentialPrice =
-        reservedPrice +
-        (startPrice - reservedPrice) * Math.pow(2, -decayFactor * t);
+      // Exponential decay
+      let exponentialPrice = safeReserve;
+      if (decayFactor > 0) {
+        exponentialPrice = safeReserve + 
+          (startPrice - safeReserve) * Math.exp(-decayFactor * t);
+        if (exponentialPrice < safeReserve) exponentialPrice = safeReserve;
+      }
 
-      const logarithmicPrice =
-        startPrice -
-        ((startPrice - reservedPrice) *
-          Math.log2(1 + decayFactor * t)) /
-          Math.log2(1 + decayFactor * duration);
+      // Logarithmic decay
+      let logarithmicPrice = startPrice;
+      if (decayFactor > 0) {
+        const logBase = 1 + decayFactor * duration;
+        logarithmicPrice = startPrice - 
+          ((startPrice - safeReserve) * 
+            Math.log(1 + decayFactor * t)) / 
+            Math.log(logBase);
+        if (logarithmicPrice < safeReserve) logarithmicPrice = safeReserve;
+      }
 
       data.push({
         time: t,
-        linear: linearPrice,
-        exponential: exponentialPrice,
-        logarithmic: logarithmicPrice,
+        linear: decayType === "linear" ? linearPrice : null,
+        exponential: decayType === "exponential" ? exponentialPrice : null,
+        logarithmic: decayType === "logarithmic" ? logarithmicPrice : null
       });
     }
-
     return data;
   };
 
   const chartData = generateChartData();
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (!active || !payload || !payload.length) return null;
-
+  if (!chartData.length) {
     return (
-      <div className="bg-background/95 backdrop-blur-lg border rounded-lg p-3 shadow-xl">
-        <p className="text-sm font-medium mb-1">Time: {label}s</p>
-        {payload.map((entry: any) => (
-          <p
-            key={entry.dataKey}
-            className="text-sm"
-            style={{ color: entry.color }}
-          >
-            {entry.dataKey}: {entry.value.toFixed(2)} ETH
-          </p>
-        ))}
+      <div className="bg-card/30 backdrop-blur-md border rounded-xl p-6 text-center text-muted-foreground">
+        Configure auction parameters to see price decay preview
       </div>
     );
-  };
-
-  const toggleCurve = (curve: keyof typeof visibleCurves) => {
-    setVisibleCurves((prev) => ({
-      ...prev,
-      [curve]: !prev[curve],
-    }));
-  };
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-card/30 backdrop-blur-md border rounded-xl p-6 space-y-6"
+      className="bg-card/30 backdrop-blur-md border rounded-xl p-6"
     >
       <div className="flex items-center justify-between">
         <h3 className="font-semibold">Price Decay Preview</h3>
@@ -123,84 +131,74 @@ export function DecayPreviewChart({
         </UITooltip>
       </div>
 
-      <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" className="opacity-10" />
+      <div className="h-[300px] w-full mt-4">
+        <ResponsiveContainer>
+          <LineChart 
+            data={chartData}
+            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
             <XAxis
               dataKey="time"
-              tickFormatter={(value) => `${value}s`}
-              stroke="currentColor"
-              className="text-xs text-muted-foreground"
+              tickFormatter={(value) => {
+                if (duration >= 86400) return `${Math.round(value/86400)}d`;
+                if (duration >= 3600) return `${Math.round(value/3600)}h`;
+                if (duration >= 60) return `${Math.round(value/60)}m`;
+                return `${value}s`;
+              }}
             />
             <YAxis
-              stroke="currentColor"
-              className="text-xs text-muted-foreground"
-              tickFormatter={(value) => `${value} ETH`}
-              domain={[reservedPrice * 0.9, startPrice * 1.1]}
+              domain={[
+                (dataMin: number) => Math.floor(dataMin * 0.9 * 100) / 100,
+                (dataMax: number) => Math.ceil(dataMax * 1.1 * 100) / 100
+              ]}
+              tickFormatter={(value) => value.toFixed(2)}
             />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend
-              verticalAlign="bottom"
-              height={36}
-              content={({ payload }) => (
-                <div className="flex justify-center gap-4 pt-4">
-                  {payload?.map((entry: any) => (
-                    <Button
-                      key={entry.value}
-                      variant="ghost"
-                      size="sm"
-                      className={`gap-2 ${
-                        visibleCurves[entry.value.toLowerCase() as keyof typeof visibleCurves]
-                          ? "opacity-100"
-                          : "opacity-50"
-                      }`}
-                      onClick={() =>
-                        toggleCurve(entry.value.toLowerCase() as keyof typeof visibleCurves)
-                      }
-                    >
-                      <div
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: entry.color }}
-                      />
-                      {entry.value}
-                    </Button>
-                  ))}
-                </div>
-              )}
+            <Tooltip
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                return (
+                  <div className="bg-background border rounded-lg p-2 shadow-lg">
+                    <div className="text-sm font-medium">
+                      Price: {typeof payload[0].value === "number" ? payload[0].value.toFixed(3) : payload[0].value} ETH
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Time: {payload[0].payload.time}s
+                    </div>
+                  </div>
+                );
+              }}
             />
-            <AnimatePresence>
-              {visibleCurves.linear && (
-                <Line
-                  type="monotone"
-                  dataKey="linear"
-                  stroke="hsl(var(--chart-1))"
-                  strokeWidth={2}
-                  dot={false}
-                  name="Linear"
-                />
-              )}
-              {visibleCurves.exponential && (
-                <Line
-                  type="monotone"
-                  dataKey="exponential"
-                  stroke="hsl(var(--chart-2))"
-                  strokeWidth={2}
-                  dot={false}
-                  name="Exponential"
-                />
-              )}
-              {visibleCurves.logarithmic && (
-                <Line
-                  type="monotone"
-                  dataKey="logarithmic"
-                  stroke="hsl(var(--chart-3))"
-                  strokeWidth={2}
-                  dot={false}
-                  name="Logarithmic"
-                />
-              )}
-            </AnimatePresence>
+            {decayType === "linear" && (
+              <Line
+                type="monotone"
+                dataKey="linear"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+            )}
+            {decayType === "exponential" && (
+              <Line
+                type="monotone"
+                dataKey="exponential"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+            )}
+            {decayType === "logarithmic" && (
+              <Line
+                type="monotone"
+                dataKey="logarithmic"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>

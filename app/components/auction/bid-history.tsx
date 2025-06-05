@@ -21,7 +21,7 @@ export function BidHistory({ bids }: BidHistoryProps) {
   const sortedBids = [...bids].sort((a, b) => b.timestamp - a.timestamp);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-h-80 overflow-y-auto pr-1">
       {sortedBids.map((bid, index) => (
         <motion.div
           key={bid.id}

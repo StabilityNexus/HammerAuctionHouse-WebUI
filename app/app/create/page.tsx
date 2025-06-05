@@ -74,7 +74,7 @@ export default function CreateAuction() {
         <div className="max-w-md w-full bg-card border rounded-xl p-8 text-center">
           <h1 className="text-2xl font-bold mb-6">Connect Wallet</h1>
           <p className="text-muted-foreground mb-8">
-            You need to connect your wallet to create an auction on HammerChain.
+            You need to connect your wallet to create an auction on HAH.
           </p>
           <Button size="lg" onClick={connect}>
             Connect Wallet
@@ -108,7 +108,7 @@ export default function CreateAuction() {
   }
 
   return (
-    <div className="container py-8 px-4 mb-12">
+    <div className="container py-8 px-4 mb-12 w-screen">
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Create New Auction</h1>
