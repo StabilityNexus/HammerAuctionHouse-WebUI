@@ -20,8 +20,8 @@ export function Navbar() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
-      <div className="container flex h-16 items-center justify-between">
+    <header className="sticky top-0 z-50 flex items-center justify-center w-screen border-b bg-background/80 backdrop-blur-md">
+      <div className="container w-full flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
             <Hammer className="h-6 w-6 text-primary" />
@@ -42,7 +42,7 @@ export function Navbar() {
                 {item.name}
                 {pathname === item.path && (
                   <motion.div
-                    className="absolute -bottom-[1px] left-0 h-[2px] w-full bg-primary"
+                    className="absolute -bottom-px left-0 h-[2px] w-full bg-primary"
                     layoutId="navbar-underline"
                   />
                 )}

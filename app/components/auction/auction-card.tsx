@@ -57,7 +57,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
     <motion.div
       whileHover={{ y: -5 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all border"
+      className="bg-card rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-all border"
     >
       <Link href={`/auctions/${auction.id}`} className="block">
         <div className="aspect-square relative overflow-hidden bg-muted">
@@ -82,7 +82,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
               variant="ghost"
               size="icon"
               className={cn(
-                "h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm text-muted-foreground hover:text-foreground",
+                "h-8 w-8 rounded-full bg-background/80 backdrop-blur-xs text-muted-foreground hover:text-foreground",
                 isWatched && "text-red-500 hover:text-red-600"
               )}
               onClick={toggleWatchlist}

@@ -24,7 +24,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <WalletProvider>
-            <div className="flex min-h-screen flex-col">
+            <div className="flex min-h-screen flex-col items-center justify-center w-screen">
               <Navbar />
               <main className="flex-1">{children}</main>
               <Footer />
