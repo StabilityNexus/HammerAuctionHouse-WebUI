@@ -4,16 +4,15 @@ import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
 import {
-  Hammer,
-  Gavel,
   Settings,
   Search,
   Wallet,
-  Clock,
   Award,
   ShieldCheck,
   BadgeCheck,
   Info,
+  Users,
+  Gavel,
 } from "lucide-react";
 import {
   Tooltip,
@@ -111,7 +110,7 @@ export function HowItWorksSection() {
     {
       icon: <ShieldCheck className="h-6 w-6" />,
       title: "Deploy Securely",
-      description: "Deploy your auction contract to the blockchain with automated security checks and verification.",
+      description: "Deploy your auction contract on-chain with automated security checks and verification.",
     },
     {
       icon: <Award className="h-6 w-6" />,
@@ -129,13 +128,13 @@ export function HowItWorksSection() {
     {
       icon: <Wallet className="h-6 w-6" />,
       title: "Place Bids",
-      description: "Connect your wallet and place bids with real-time price updates and notifications.",
+      description: "Connect your wallet and place bids with real-time price updates.",
       tooltip: "Supports MetaMask, WalletConnect, and other popular wallets",
     },
     {
       icon: <BadgeCheck className="h-6 w-6" />,
       title: "Win & Collect",
-      description: "If you win, claim your NFT automatically with proof of ownership on the blockchain.",
+      description: "If you win, claim your NFT or ERC20 tokens automatically with proof of ownership on the blockchain.",
     },
   ];
 
@@ -155,14 +154,14 @@ export function HowItWorksSection() {
         >
           <h2 className="text-3xl font-bold mb-4">How It Works</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Whether you're selling or bidding, our platform makes it easy to participate
+            Whether you're selling or bidding, Hammer Auction House makes it easy to participate
             in secure, transparent blockchain auctions.
           </p>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center ">
           {/* Auctioneer Flow */}
-          <div className="space-y-8 flex flex-col justify-center h-full ">
+          <div className="space-y-8 flex flex-col items-center  h-full ">
             <motion.div
               variants={containerVariants}
               initial="hidden"
@@ -170,7 +169,7 @@ export function HowItWorksSection() {
               className="flex items-center gap-3 mb-8 mt-8"
             >
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                <Hammer className="h-5 w-5" />
+                <Gavel className="h-5 w-5" />
               </div>
               <h3 className="text-xl font-semibold">For Auctioneers</h3>
             </motion.div>
@@ -187,15 +186,15 @@ export function HowItWorksSection() {
           </div>
 
           {/* Bidder Flow */}
-          <div className="space-y-8 flex flex-col justify-center h-full ">
+          <div className="space-y-8 flex flex-col items-center  h-full ">
             <motion.div
               variants={containerVariants}
               initial="hidden"
               animate={isInView ? "visible" : "hidden"}
-              className="flex items-center gap-3 mb-8"
+              className="flex items-center gap-3 mb-8 mt-8"
             >
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                <Gavel className="h-5 w-5" />
+                <Users className="h-5 w-5" />
               </div>
               <h3 className="text-xl font-semibold">For Bidders</h3>
             </motion.div>

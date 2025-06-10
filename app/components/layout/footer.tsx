@@ -1,49 +1,137 @@
 import Link from "next/link";
-import { Hammer } from "lucide-react";
+import { SiGithub,SiX,SiDiscord,SiTelegram } from "@icons-pack/react-simple-icons";
 
-export function Footer() {
+interface SocialLink {
+  platform: string;
+  url: string;
+  icon: React.ReactNode;
+  ariaLabel: string;
+}
+
+interface FooterProps {
+  logoSvg?: React.ReactNode;
+  socialLinks?: SocialLink[];
+  currentYear?: number;
+}
+
+export function Footer({ 
+  logoSvg, 
+  socialLinks, 
+  currentYear = new Date().getFullYear() 
+}: FooterProps) {
+  // Default social links if none provided
+  const defaultSocialLinks: SocialLink[] = [
+    {
+      platform: "GitHub",
+      url: "https://github.com/StabilityNexus",
+      icon: <SiGithub className="h-5 w-5" />,
+      ariaLabel: "Visit HammerChain on GitHub"
+    },
+    {
+      platform: "Discord",
+      url: "https://discord.gg/BNsAtaX5",
+      icon: <SiDiscord className="h-5 w-5" />,
+      ariaLabel: "Join HammerChain Discord community"
+    },
+    {
+      platform: "Telegram",
+      url: "https://t.me/hammerchain",
+      icon: <SiTelegram className="h-5 w-5" />,
+      ariaLabel: "Follow HammerChain on Telegram"
+    },
+    {
+      platform: "Twitter",
+      url: "https://x.com/StabilityNexus",
+      icon: <SiX className="h-5 w-5" />,
+      ariaLabel: "Follow HammerChain on Twitter"
+    }
+  ];
+
+  const activeSocialLinks = socialLinks || defaultSocialLinks;
+
+  const defaultLogo = (
+    <div className="relative">
+      {/* Hexagon background */}
+      <div className="w-15 h-15">
+        <img src="stable.svg" alt="Stablitiy Nexus" />
+      </div>
+      {/* Subtle glow effect */}
+      <div className="absolute inset-0 w-10 h-10 bg-primary/20 transform rotate-12 rounded-lg blur-md -z-10"></div>
+    </div>
+  );
+
+  const activeLogo = logoSvg || defaultLogo;
+
   return (
-    <footer className="border-t bg-muted/40 w-screen flex items-center justify-center">
-      <div className="container py-8 md:py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="md:col-span-2 flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <Hammer className="h-5 w-5 text-primary" />
-              <span className="text-lg font-bold">Hammer Auction House</span>
+    <footer 
+      className="relative w-screen px-5 border-t bg-gradient-to-b from-background to-muted/35 overflow-hidden"
+      role="contentinfo"
+      aria-label="Site footer"
+    >
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_50%)]"></div>
+      </div>
+      
+      <div className="container relative py-8 md:py-12">
+        {/* Main footer content */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+          {/* Logo and branding section */}
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              {activeLogo}
             </div>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              Premium Web3 auctions platform. Transparent, secure, and user-friendly.
-            </p>
+            
+            {/* Branding text */}
+            <div className="text-center md:text-left">
+              <p className="text-lg font-bold text-foreground">
+                Made by the Stable Order
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Decentralized auction platform
+              </p>
+            </div>
           </div>
-          
-          <div>
-            <h3 className="text-sm font-semibold mb-4">Platform</h3>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/auctions" className="text-muted-foreground hover:text-foreground">Browse Auctions</Link></li>
-              <li><Link href="/create" className="text-muted-foreground hover:text-foreground">Create Auction</Link></li>
-              <li><Link href="/dashboard" className="text-muted-foreground hover:text-foreground">Dashboard</Link></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h3 className="text-sm font-semibold mb-4">Resources</h3>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="#" className="text-muted-foreground hover:text-foreground">Help Center</Link></li>
-              <li><Link href="#" className="text-muted-foreground hover:text-foreground">Terms of Service</Link></li>
-              <li><Link href="#" className="text-muted-foreground hover:text-foreground">Privacy Policy</Link></li>
-            </ul>
+
+          {/* Social media links */}
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground hidden sm:block">
+              Follow us:
+            </span>
+            <div className="flex items-center gap-3">
+              {activeSocialLinks.map((social) => (
+                <Link
+                  key={social.platform}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative p-2 rounded-lg bg-muted/50 hover:bg-muted transition-all duration-300 hover:scale-110 focus:scale-110 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  aria-label={social.ariaLabel}
+                >
+                  {/* Icon */}
+                  <div className="text-muted-foreground group-hover:text-primary transition-colors duration-300">
+                    {social.icon}
+                  </div>
+                  
+                  {/* Hover glow effect */}
+                  <div className="absolute inset-0 rounded-lg bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm -z-10"></div>
+                  
+                  {/* Tooltip */}
+                  <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-background border rounded text-xs text-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap">
+                    {social.platform}
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
         
-        <div className="mt-8 pt-6 border-t flex flex-col md:flex-row justify-between gap-4">
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Hammer Auction House. All rights reserved.
-          </p>
-          <div className="flex gap-4">
-            <Link href="#" className="text-xs text-muted-foreground hover:text-foreground">Twitter</Link>
-            <Link href="#" className="text-xs text-muted-foreground hover:text-foreground">Discord</Link>
-            <Link href="#" className="text-xs text-muted-foreground hover:text-foreground">GitHub</Link>
-          </div>
+        {/* Bottom section - Copyright */}
+        <div className="pt-6 flex justify-center border-t border-border">
+          <p className="text-xs text-muted-foreground text-center md:text-left">
+              © {currentYear} Stability Nexus. All rights reserved.
+            </p>
         </div>
       </div>
     </footer>

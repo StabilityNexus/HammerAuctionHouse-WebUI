@@ -4,12 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  Hammer,
   ArrowRight,
   Shield,
   Zap,
   Globe,
-  Users,
   TrendingUp,
   Lock,
   Search,
@@ -18,10 +16,12 @@ import {
   Award,
   ShieldCheck,
   Settings,
+  ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeroBackground } from "@/components/hero-background";
 import { HowItWorksSection } from "@/components/how-it-works";
+import BalanceScale from "@/public/balanceScale.svg";
 
 export default function Home() {
   const containerVariants = {
@@ -47,39 +47,39 @@ export default function Home() {
   const features = [
     {
       icon: Shield,
-      title: "Secure & Transparent",
+      title: "Decentralized & Immutable",
       description:
-        "All auctions are secured by smart contracts with complete transparency on the blockchain.",
+        "Built entirely on blockchain technology, ensuring decentralization and immutability. No centralized backends, ever.",
     },
     {
       icon: Zap,
       title: "Multiple Auction Types",
       description:
-        "English, Dutch, Vickrey, and All-Pay auctions to suit every need and strategy.",
+        "English, Dutch, Vickrey, and All-Pay auctions to suit every need and strategy, all governed by immutable smart contracts.",
     },
     {
       icon: Globe,
       title: "Global Access",
       description:
-        "Participate in auctions from anywhere in the world with just a Web3 wallet.",
+        "Participate in auctions from anywhere in the world with just a Web3 wallet. No intermediaries, no restrictions.",
     },
     {
-      icon: Users,
-      title: "Community Driven",
+      icon: ScrollText, // Replace with the correct imported React component for the SVG
+      title: "Code is Law",
       description:
-        "Built by the community, for the community with governance and feedback loops.",
+        "Smart contracts enforce rules autonomously, eliminating the need for governance or manual intervention.",
     },
     {
       icon: TrendingUp,
       title: "Real-time Bidding",
       description:
-        "Live updates and instant bid confirmations for the best auction experience.",
+        "Live updates and instant bid confirmations powered by decentralized networks for a seamless experience.",
     },
     {
       icon: Lock,
-      title: "Self-Custody",
+      title: "Auction ERC-20 & ERC-721 Tokens",
       description:
-        "You maintain full control of your assets throughout the entire auction process.",
+        "Create auctions for both fungible (ERC-20) and non-fungible (ERC-721) tokens with complete transparency and trust.",
     },
   ];
 

@@ -66,7 +66,7 @@ export function DecayPreviewChart({
       const progress = t / duration;
 
       // Linear decay
-      let linearPrice = startPrice - (startPrice - safeReserve) * t;
+      let linearPrice = startPrice - (startPrice - safeReserve) * t / duration;
       if (linearPrice < safeReserve) linearPrice = safeReserve;
 
       // Exponential decay

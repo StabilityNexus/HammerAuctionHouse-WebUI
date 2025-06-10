@@ -47,7 +47,7 @@ export default function Dashboard() {
   const demoWatchlist = hasNoData ? [mockAuctions[3]] : watchlist;
 
   return (
-    <div className="container py-8 px-4">
+    <div className="container py-8 px-4 w-screen">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">Your Dashboard</h1>
@@ -57,12 +57,12 @@ export default function Dashboard() {
           </div>
         </div>
         
-        <Button asChild>
+        {/* <Button asChild>
           <Link href="/create">
             <PlusCircle className="h-4 w-4 mr-2" />
             Create Auction
           </Link>
-        </Button>
+        </Button> */}
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>

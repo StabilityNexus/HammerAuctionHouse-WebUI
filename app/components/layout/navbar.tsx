@@ -21,12 +21,16 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-center w-screen border-b bg-background/80 backdrop-blur-md">
-      <div className="container w-full flex h-16 items-center justify-between">
+      <div className="container w-full flex h-17 items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2">
-            <Hammer className="h-6 w-6 text-primary" />
-            <span className="text-lg font-bold">Hammer Auction House</span>
-          </Link>
+            <Link href="/" className="flex items-center gap-2">
+              <img
+              src="/logo.svg"
+              alt="Hammer Auction House Logo"
+              className="h-15 w-15 object-contain dark:invert"
+              />
+              {/* <span className="text-lg font-bold text-foreground">Hammer Auction House</span> */}
+            </Link>
           <nav className="hidden md:flex items-center space-x-4">
             {navItems.map((item) => (
               <Link
