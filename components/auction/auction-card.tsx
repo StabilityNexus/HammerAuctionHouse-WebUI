@@ -11,6 +11,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useWalletContext } from "@/providers/wallet-provider";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import {remove,append, loadWishlist} from "@/lib/storage";
 
 interface AuctionCardProps {
   auction: Auction;
@@ -50,6 +51,14 @@ export function AuctionCard({ auction }: AuctionCardProps) {
     e.preventDefault();
     e.stopPropagation();
     if (!isConnected) return;
+    if(isWatched){
+      remove(auction.type,auction.id);
+      console.log("Removed from watchlist:", auction.id);
+      console.log("Current watchlist:", loadWishlist());
+    }else{
+      append(auction.type, auction.id);
+      console.log("Added to watchlist:", auction.id);
+    }
     setIsWatched(!isWatched);
   };
 
