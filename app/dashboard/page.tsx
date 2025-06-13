@@ -4,29 +4,27 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useWalletContext } from "@/providers/wallet-provider";
 import { AuctionGrid } from "@/components/auction/auction-grid";
 import { getUserAuctions, getUserBids, getUserWatchlist, mockAuctions } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { User, PlusCircle } from "lucide-react";
 import Link from "next/link";
+import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("created");
-  const { isConnected, address, connect } = useWalletContext();
-  const router = useRouter();
+  const { isConnected, address} = useAccount();
   
   if (!isConnected) {
     return (
       <div className="container py-12 px-4 flex flex-col items-center justify-center min-h-[70vh]">
-        <div className="max-w-md w-full bg-card border rounded-xl p-8 text-center">
+        <div className="max-w-md w-full bg-card border rounded-xl p-8 text-center flex flex-col items-center">
           <h1 className="text-2xl font-bold mb-6">Connect Wallet</h1>
           <p className="text-muted-foreground mb-8">
             Connect your wallet to view your dashboard.
           </p>
-          <Button size="lg" onClick={connect}>
-            Connect Wallet
-          </Button>
+          <ConnectButton/>
         </div>
       </div>
     );

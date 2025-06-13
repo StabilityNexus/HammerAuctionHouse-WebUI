@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Auction, Bid } from "@/lib/mock-data";
-import { useWalletContext } from "@/providers/wallet-provider";
 import { Info, AlertCircle, Check } from "lucide-react";
 import { v4 as uuidv4 } from "@/lib/utils";
 import {
@@ -19,6 +18,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 interface BidFormProps {
   auction: Auction;
@@ -26,7 +27,7 @@ interface BidFormProps {
 }
 
 export function BidForm({ auction, onBidPlaced }: BidFormProps) {
-  const { isConnected, address, connect } = useWalletContext();
+  const { isConnected, address} = useAccount();
   const [bidAmount, setBidAmount] = useState((auction.currentPrice + (auction.minBidDelta || 0.1)).toFixed(2));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -66,9 +67,7 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
             Connect your wallet to place a bid on this auction.
           </p>
         </div>
-        <Button className="w-full" onClick={connect}>
-          Connect Wallet
-        </Button>
+        <ConnectButton/>
       </div>
     );
   }

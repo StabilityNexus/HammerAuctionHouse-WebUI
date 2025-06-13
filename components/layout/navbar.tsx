@@ -6,7 +6,8 @@ import { motion } from "framer-motion";
 import { Hammer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
-import { ConnectButton } from "@/components/ui/wallet-button";
+// import { ConnectButton } from "@/components/ui/wallet-button";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -56,7 +57,7 @@ export function Navbar() {
         </div>
         
         <div className="flex items-center gap-2">
-          <ConnectButton />
+          <ConnectButton accountStatus={"address"} chainStatus={"none"} showBalance={false} />
           <ModeToggle />
           <Button
             size="sm"

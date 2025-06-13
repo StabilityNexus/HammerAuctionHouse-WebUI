@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useWalletContext } from "@/providers/wallet-provider";
 import { AuctionCreationForm } from "@/components/auction/create-form";
 import { CreateAuctionSteps } from "@/components/auction/create-steps";
+import {useAccount} from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 const steps = [
   "Basic Information",
@@ -33,7 +34,7 @@ export default function CreateAuction() {
   });
   
   const router = useRouter();
-  const { isConnected, connect } = useWalletContext();
+  const { isConnected } = useAccount();
   
   const updateFormData = (data: Partial<typeof formData>) => {
     // Only update if the data has actually changed
@@ -76,9 +77,7 @@ export default function CreateAuction() {
           <p className="text-muted-foreground mb-8">
             You need to connect your wallet to create an auction on HAH.
           </p>
-          <Button size="lg" onClick={connect}>
-            Connect Wallet
-          </Button>
+          <ConnectButton/>
         </div>
       </div>
     );

@@ -8,17 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Auction } from "@/lib/mock-data";
 import { formatDistanceToNow } from "date-fns";
-import { useWalletContext } from "@/providers/wallet-provider";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {remove,append, loadWishlist} from "@/lib/storage";
+import {useAccount} from "wagmi";
 
 interface AuctionCardProps {
   auction: Auction;
 }
 
 export function AuctionCard({ auction }: AuctionCardProps) {
-  const { isConnected, address } = useWalletContext();
+  const { isConnected, address } = useAccount();
   const [isWatched, setIsWatched] = useState(() => 
     auction.watchedBy.includes(address)
   );
