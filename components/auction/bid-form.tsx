@@ -44,7 +44,7 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
     setTimeout(() => {
       const newBid: Bid = {
         id: uuidv4(),
-        bidder: address,
+        bidder: address!,
         amount: parseFloat(bidAmount),
         timestamp: Date.now(),
       };

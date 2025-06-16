@@ -32,9 +32,9 @@ export default function Dashboard() {
   
   // In a real app, we would fetch this data from the blockchain
   // For demo purposes, we'll use mock data
-  const createdAuctions = getUserAuctions(address);
-  const bidsPlaced = getUserBids(address);
-  const watchlist = getUserWatchlist(address);
+  const createdAuctions = getUserAuctions(address!);
+  const bidsPlaced = getUserBids(address!);
+  const watchlist = getUserWatchlist(address!);
   
   // For demo purposes, if user has no auctions, show some from mock data
   const hasNoData = createdAuctions.length === 0 && bidsPlaced.length === 0 && watchlist.length === 0;
@@ -51,7 +51,7 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold mb-2">Your Dashboard</h1>
           <div className="flex items-center gap-2 text-muted-foreground">
             <User className="h-4 w-4" />
-            <span>{`${address.slice(0, 6)}...${address.slice(-4)}`}</span>
+            <span>{`${address!.slice(0, 6)}...${address!.slice(-4)}`}</span>
           </div>
         </div>
         

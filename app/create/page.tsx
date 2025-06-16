@@ -34,7 +34,7 @@ export default function CreateAuction() {
   });
   
   const router = useRouter();
-  const { isConnected } = useAccount();
+ const { status } = useAccount();      // "connected" | "disconnected" | "connecting"
   
   const updateFormData = (data: Partial<typeof formData>) => {
     // Only update if the data has actually changed
@@ -69,7 +69,7 @@ export default function CreateAuction() {
   };
   
   // If not connected, show connect prompt
-  if (!isConnected) {
+  if (!status || status !== "connected") {
     return (
       <div className="container py-12 px-4 flex flex-col items-center justify-center min-h-[70vh]">
         <div className="max-w-md w-full bg-card border rounded-xl p-8 text-center">
