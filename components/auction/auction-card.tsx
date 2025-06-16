@@ -58,6 +58,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
     }else{
       append(auction.type, auction.id);
       console.log("Added to watchlist:", auction.id);
+      console.log("Current watchlist:", loadWishlist());
     }
     setIsWatched(!isWatched);
   };

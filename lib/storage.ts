@@ -1,24 +1,22 @@
 
 const STORAGE_KEY = 'hahWishlist'
 enum AuctionProtocol {
-    AllPay = '000',
-    English = '100',
-    Linear = '010',
-    Logarithmic = '110',
-    Exponential = '001',
-    Vickrey = '101',
+  AllPay = '1',
+  English = '2',
+  Linear = '3',
+  Logarithmic = '4',
+  Exponential = '5',
+  Vickrey = '6',
 }
-
 
 // Read raw string (comma‑separated fixed codes) from localStorage
 function _read() {
   return localStorage.getItem(STORAGE_KEY) || '';
 }
 
-function _generateCode(protocol: keyof typeof AuctionProtocol, id: string){
-    // Generate a fixed-width code based on protocol and id
-    // Example: "000123456" for AllPayAuction
-    return `${AuctionProtocol[protocol]}${id.padStart(6, '0')}`;
+// Example: "1123456" for AllPayAuction
+function _generateCode(protocol: keyof typeof AuctionProtocol, id: string) {
+  return `${AuctionProtocol[protocol]}${id.padStart(6, '0')}`;
 }
 
 function _write(raw: string) {
@@ -29,29 +27,31 @@ function _write(raw: string) {
   }
 }
 
-export function append(protocol: keyof typeof AuctionProtocol, id: string){
-    const existing = _read();
-    const raw = _generateCode(protocol, id);
-    const newRaw = existing ? `${existing},${raw}` : raw;
-    _write(newRaw);
+export function append(protocol: keyof typeof AuctionProtocol, id: string) {
+  const existing = _read();
+  const raw = _generateCode(protocol, id);
+  const list = existing ? existing.split(',') : [];
+  if (!list.includes(raw)) list.push(raw);
+  const newRaw = list.join(',');
+  _write(newRaw);
 }
 
 export function remove(protocol: keyof typeof AuctionProtocol, id: string) {
-    const existing = _read();
-    const raw = _generateCode(protocol, id);
-    const newRaw = existing
-        .split(',')
-        .filter(code => code !== raw)
-        .join(',');
-    _write(newRaw);
+  const existing = _read();
+  const raw = _generateCode(protocol, id);
+  const newRaw = existing
+    .split(',')
+    .filter(code => code !== raw)
+    .join(',');
+  _write(newRaw);
 }
 
-export function decodeCode(code: string){
-    // Decode a fixed-width code into protocol and id
-    type ValueOf<T> = T[keyof T];
-    const protocol = Object.values(AuctionProtocol).find(p => p === code.slice(0, 3)) as ValueOf<typeof AuctionProtocol>;
-    const id = code.slice(3);
-    return { protocol , id };
+export function decodeCode(code: string) {
+  // Decode a fixed-width code into protocol and id
+  type ValueOf<T> = T[keyof T];
+  const protocol = Object.values(AuctionProtocol).find(p => p === code.slice(0, 1)) as ValueOf<typeof AuctionProtocol>;
+  const id = code.slice(1);
+  return { protocol, id };
 }
 
 
