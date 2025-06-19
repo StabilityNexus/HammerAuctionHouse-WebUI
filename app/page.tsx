@@ -21,7 +21,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { HeroBackground } from "@/components/hero-background";
 import { HowItWorksSection } from "@/components/how-it-works";
-import BalanceScale from "@/public/balanceScale.svg";
 
 export default function Home() {
   const containerVariants = {

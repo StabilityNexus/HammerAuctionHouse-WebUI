@@ -35,7 +35,7 @@ export function Footer({
     },
     {
       platform: "Telegram",
-      url: "https://t.me/hammerchain",
+      url: "https://t.me/StabilityNexus",
       icon: <SiTelegram className="h-5 w-5" />,
       ariaLabel: "Follow HammerChain on Telegram"
     },
