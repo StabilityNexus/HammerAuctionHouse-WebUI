@@ -11,6 +11,7 @@ enum AuctionProtocol {
 
 // Read raw string (comma‑separated fixed codes) from localStorage
 function _read() {
+  if (typeof window === 'undefined') return '';
   return localStorage.getItem(STORAGE_KEY) || '';
 }
 
@@ -20,6 +21,7 @@ function _generateCode(protocol: keyof typeof AuctionProtocol, id: string) {
 }
 
 function _write(raw: string) {
+  if (typeof window === 'undefined') return '';
   try {
     localStorage.setItem(STORAGE_KEY, raw)
   } catch {
