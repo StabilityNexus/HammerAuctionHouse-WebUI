@@ -9,6 +9,15 @@ import { ModeToggle } from "@/components/mode-toggle";
 // import { ConnectButton } from "@/components/ui/wallet-button";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { cn } from "@/lib/utils";
+import testCreateAuction, {
+  abi,
+  AllPayAuction,
+  erc721Abi,
+} from "@/AllPayAuction";
+import { useWriteContract } from "wagmi";
+import { erc20Abi } from "viem";
+import { ethers } from "ethers";
+import { createAuction } from "@/AllPayAuction";
 
 const navItems = [
   { name: "Home", path: "/" },
@@ -18,20 +27,21 @@ const navItems = [
 ];
 
 export function Navbar() {
+  const { data: hash, writeContract } = useWriteContract();
   const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-center w-screen border-b bg-background/80 backdrop-blur-md">
       <div className="container w-full flex h-17 items-center justify-between">
         <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2">
-              <img
+          <Link href="/" className="flex items-center gap-2">
+            <img
               src="/logo.svg"
               alt="Hammer Auction House Logo"
               className="h-15 w-15 object-contain dark:invert"
-              />
-              {/* <span className="text-lg font-bold text-foreground">Hammer Auction House</span> */}
-            </Link>
+            />
+            {/* <span className="text-lg font-bold text-foreground">Hammer Auction House</span> */}
+          </Link>
           <nav className="hidden md:flex items-center space-x-4">
             {navItems.map((item) => (
               <Link
@@ -55,15 +65,37 @@ export function Navbar() {
             ))}
           </nav>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          <ConnectButton accountStatus={"address"} chainStatus={"none"} showBalance={false} />
+          <ConnectButton accountStatus={"address"} showBalance={false} />
           <ModeToggle />
           <Button
             size="sm"
             variant="default"
             asChild
             className="hidden md:flex"
+            onClick={async () => {
+              const auction: AllPayAuction = {
+                name: "Test Auction",
+                desc: "A test auction description",
+                imgUrl: "https://example.com/image.png",
+                auctionType: BigInt(1),
+                auctionedToken: "0x85DB289662cEC6aaC1e173adb3C27b3a6F0dc073",
+                auctionedTokenIdOrAmount: ethers.parseEther("10"),
+                biddingToken: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+                startingBid: ethers.parseEther("100"),
+                minBidDelta: ethers.parseEther("10"),
+                duration: BigInt(3600),
+                deadlineExtension: BigInt(300),
+              };
+
+              try {
+                await createAuction(writeContract,auction);
+                console.log("Auction created, transaction:", hash);
+              } catch (error) {
+                console.error("Failed to create auction:", error);
+              }
+            }}
           >
             <Link href="/create">Create Auction</Link>
           </Button>

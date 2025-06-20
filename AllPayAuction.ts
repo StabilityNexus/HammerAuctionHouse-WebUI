@@ -1,277 +1,596 @@
-import {useWriteContract,useWaitForTransactionReceipt,useReadContract,usePublicClient} from 'wagmi';
-import { AllPayAuction__factory } from './typechain-types';
+import { useWriteContract } from "wagmi";
+import { readContracts } from '@wagmi/core'
+import {wagmi_config} from "@/config"
+import { Abi, Address, erc20Abi, erc721Abi } from "viem";
+import { write } from "fs";
 
-const CONTRACT_ADDRESS = '0x6e9EFdB9943261C9cc0dCe6fa67769ABF513DE27'
+export const abi = [
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "SafeERC20FailedOperation",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "Id",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "description",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "imgUrl",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "auctioneer",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum Auction.AuctionType",
+        "name": "auctionType",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "auctionedToken",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "auctionedTokenIdOrAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "biddingToken",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "startingBid",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "minBidDelta",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "deadlineExtension",
+        "type": "uint256"
+      }
+    ],
+    "name": "AuctionCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "bidder",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bidAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "bidPlaced",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountWithdrawn",
+        "type": "uint256"
+      }
+    ],
+    "name": "fundsWithdrawn",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "withdrawer",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "auctionedTokenAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "auctionedTokenIdOrAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "itemWithdrawn",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "auctionCounter",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "auctions",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "description",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "imgUrl",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "auctioneer",
+        "type": "address"
+      },
+      {
+        "internalType": "enum Auction.AuctionType",
+        "name": "auctionType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "address",
+        "name": "auctionedToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "auctionedTokenIdOrAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "biddingToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "startingBid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "availableFunds",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minBidDelta",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "highestBid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "winner",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadlineExtension",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "isClaimed",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "bids",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "description",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "imgUrl",
+        "type": "string"
+      },
+      {
+        "internalType": "enum Auction.AuctionType",
+        "name": "auctionType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "address",
+        "name": "auctionedToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "auctionedTokenIdOrAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "biddingToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "startingBid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minBidDelta",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "duration",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadlineExtension",
+        "type": "uint256"
+      }
+    ],
+    "name": "createAuction",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "name": "onERC721Received",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "bidAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "placeBid",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdrawFunds",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdrawItem",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
+const contractAddress = "0x1b2f3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b"; 
 
-export const contractConfig={
-    address: CONTRACT_ADDRESS,
-    abi: AllPayAuction__factory.abi,
+export interface AllPayAuction {
+  name: string;
+  desc: string;
+  imgUrl: string;
+  auctionType: BigInt;
+  auctionedToken: Address;
+  auctionedTokenIdOrAmount: BigInt;
+  biddingToken: Address;
+  startingBid: BigInt;
+  minBidDelta: BigInt;
+  duration: BigInt;
+  deadlineExtension: BigInt;
 }
 
-const publicClient = usePublicClient({
-    chainId: 63
-});
-
-
-import { Contract, ethers, Signer } from "ethers"
-
-interface AuctionData {
-  id: string
-  name: string
-  description: string
-  imageUrl: string
-  auctionType: number
-  auctioneer: string
-  tokenAddress: string
-  tokenIdOrAmount: string
-  startingBid: string
-  highestBid: string
-  highestBidder: string
-  deadline: string
-  minBidDelta: string
-  deadlineExtension: string
-  totalBids: string
-  availableFunds: string
+async function approveToken(writeContract: any, tokenAddress: Address, spender: Address, amountOrId: BigInt,isNFT: boolean): Promise<void> {
+  try {
+    if(isNFT){
+      writeContract({
+        address: tokenAddress,
+        abi: erc721Abi,
+        functionName: "approve",
+        args: [spender, amountOrId],
+      });
+    }else{
+      writeContract({
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: "approve",
+        args: [spender, amountOrId],
+      });
+    }
+  } catch (error) {
+    console.error("Error approving token:", error);
+  }
 }
 
-interface BidEvent {
-  auctionId: string
-  bidder: string
-  amount: string
-  timestamp: number
+export async function createAuction(writeContract: any, {
+  name,
+  desc,
+  imgUrl,
+  auctionType,
+  auctionedToken,
+  auctionedTokenIdOrAmount,
+  biddingToken,
+  startingBid,
+  minBidDelta,
+  duration,
+  deadlineExtension,
+}: AllPayAuction): Promise<void> {
+  try {
+    await approveToken(writeContract, auctionedToken, contractAddress, auctionedTokenIdOrAmount, auctionType == BigInt(0));
+
+    writeContract({
+      address: contractAddress,
+      abi,
+      functionName: "createAuction",
+      args: [
+        name,
+        desc,
+        imgUrl,
+        auctionType,
+        auctionedToken,
+        auctionedTokenIdOrAmount,
+        biddingToken,
+        startingBid,
+        minBidDelta,
+        duration,
+        deadlineExtension,
+      ],
+    });
+  } catch (error) {
+    console.error("Error creating auction:", error);
+  }
 }
 
-const ABI = [
-  "event AuctionCreated(uint256 indexed auctionId, string name, string description, string imageUrl, uint8 auctionType, address indexed auctioneer, address tokenAddress, uint256 tokenIdOrAmount, uint256 startingBid, uint256 highestBid, uint256 deadline)",
-  "event BidPlaced(uint256 indexed auctionId, address indexed bidder, uint256 amount)",
-  "function createAuction(string memory name, string memory description, string memory imageUrl, uint8 auctionType, address tokenAddress, uint256 tokenIdOrAmount, uint256 startingBid, uint256 minBidDelta, uint256 deadlineExtension, uint256 deadline) external returns (uint256)",
-  "function placeBid(uint256 auctionId) external payable",
-  "function hasEnded(uint256 auctionId) external view returns (bool)",
-  "function withdrawAuctionedItem(uint256 auctionId) external",
-  "function withdrawFunds(uint256 auctionId) external",
-  "function auctions(uint256) external view returns (uint256 id, string name, string description, string imageUrl, uint8 auctionType, address auctioneer, address tokenAddress, uint256 tokenIdOrAmount, uint256 startingBid, uint256 highestBid, address highestBidder, uint256 deadline, uint256 minBidDelta, uint256 deadlineExtension, uint256 totalBids, uint256 availableFunds)",
-]
-
-const ERC20_ABI = [
-  "function approve(address spender, uint256 amount) returns (bool)",
-  "function balanceOf(address) view returns (uint256)",
-]
-
-const ERC721_ABI = [
-  "function approve(address to, uint256 tokenId)",
-  "function balanceOf(address) view returns (uint256)",
-]
-
-export class AllPayAuctionClient {
-  private contract: Contract
-
-  constructor(contractAddress: string, signer: Signer | ethers.Provider) {
-    this.contract = new ethers.Contract(contractAddress, ABI, signer)
+export async function placeBid(writeContract: any, auctionId: BigInt, bidAmount: BigInt,tokenAddress: Address,auctionType: BigInt): Promise<void> {
+  try {
+    await approveToken(writeContract, tokenAddress, contractAddress, bidAmount, auctionType == BigInt(0));
+    await writeContract({
+      address: contractAddress,
+      abi,
+      functionName: "placeBid",
+      args: [auctionId, bidAmount],
+    });
+  } catch (error) {
+    console.error("Error placing bid:", error);
   }
+}
 
-  async createAuction(
-    name: string,
-    description: string,
-    imageUrl: string,
-    auctionType: string,
-    tokenAddress: string,
-    tokenIdOrAmount: bigint,
-    startingBid: bigint,
-    minBidDelta: bigint,
-    deadlineExtension: bigint,
-    deadline: bigint
-  ): Promise<ethers.ContractTransactionReceipt> {
-    try {
-      // For NFT (type 0)
-      if (auctionType === "0") {
-        const nftContract = new ethers.Contract(
-          tokenAddress,
-          ERC721_ABI,
-          this.contract.runner
-        )
-        // For NFTs, we don't need to parseEther for the tokenId
-        const actualTokenId = tokenIdOrAmount.toString()
-        const tx = await nftContract.approve(
-          this.contract.target,
-          actualTokenId
-        )
-        await tx.wait()
-
-        // Create auction with original tokenId
-        const auctionTx = await this.contract.createAuction(
-          name,
-          description,
-          imageUrl,
-          auctionType,
-          tokenAddress,
-          actualTokenId, // Use the tokenId directly for NFTs
-          startingBid,
-          minBidDelta,
-          deadlineExtension,
-          deadline
-        )
-        return await auctionTx.wait()
-      }
-      // For ERC20 (type 1)
-      else {
-        const tokenContract = new ethers.Contract(
-          tokenAddress,
-          ERC20_ABI,
-          this.contract.runner
-        )
-        const tx = await tokenContract.approve(
-          this.contract.target,
-          tokenIdOrAmount
-        )
-        await tx.wait()
-
-        // Create auction with token amount
-        const auctionTx = await this.contract.createAuction(
-          name,
-          description,
-          imageUrl,
-          auctionType,
-          tokenAddress,
-          tokenIdOrAmount,
-          startingBid,
-          minBidDelta,
-          deadlineExtension,
-          deadline
-        )
-        return await auctionTx.wait()
-      }
-    } catch (error) {
-      console.error("Error creating auction:", error)
-      throw error
-    }
+export async function withdrawFunds(writeContract: any,auctionId: BigInt): Promise<void> {
+  try {
+    writeContract({
+      address: contractAddress,
+      abi,
+      functionName: "withdrawFunds",
+      args: [auctionId],
+    });
+  } catch (error) {
+    console.error("Error withdrawing funds:", error);
   }
+}
 
-  async placeBid(
-    auctionId: number,
-    bidAmount: bigint
-  ): Promise<ethers.ContractTransactionReceipt> {
-    try {
-      const tx = await this.contract.placeBid(auctionId, {
-        value: bidAmount,
-      })
-      return await tx.wait()
-    } catch (error) {
-      console.error("Error placing bid:", error)
-      throw error
-    }
-  }
-
-  async isEnded(auctionId: number): Promise<boolean> {
-    return this.contract.hasEnded(auctionId)
-  }
-
-  async withdrawAuctionedItem(
-    auctionId: number
-  ): Promise<ethers.ContractTransactionReceipt> {
-    return await this.contract.withdrawAuctionedItem(auctionId)
-  }
-
-  async withdrawFunds(
-    auctionId: number
-  ): Promise<ethers.ContractTransactionReceipt> {
-    return await this.contract.withdrawFunds(auctionId)
-  }
-
-  async getAuction(auctionId: number): Promise<AuctionData> {
-    const auction = await this.contract.auctions(auctionId)
-    return {
-      id: auction.id.toString(),
-      name: auction.name,
-      description: auction.description,
-      imageUrl: auction.imageUrl,
-      auctionType: auction.auctionType,
-      auctioneer: auction.auctioneer,
-      tokenAddress: auction.tokenAddress,
-      tokenIdOrAmount: auction.tokenIdOrAmount.toString(),
-      startingBid: auction.startingBid.toString(),
-      highestBid: auction.highestBid.toString(),
-      highestBidder: auction.highestBidder,
-      deadline: auction.deadline.toString(), // Blockchain stores timestamp in seconds
-      minBidDelta: auction.minBidDelta.toString(),
-      deadlineExtension: auction.deadlineExtension.toString(),
-      totalBids: auction.totalBids.toString(),
-      availableFunds: auction.availableFunds.toString(),
-    }
-  }
-
-  async getAllAuctions(): Promise<AuctionData[]> {
-    try {
-      const provider = this.contract.runner?.provider as ethers.Provider
-      const latestBlock = await provider.getBlockNumber()
-      const startBlock = Math.max(1, latestBlock - 50000) // Only look at last 50,000 blocks
-      const auctions: AuctionData[] = []
-
-      console.log(`Fetching events from block ${startBlock} to ${latestBlock}`)
-
-      const events = await this.contract.queryFilter(
-        "AuctionCreated",
-        startBlock,
-        latestBlock
-      )
-
-      for (const event of events) {
-        try {
-          const auctionId = (event as ethers.EventLog).args.auctionId.toString()
-          auctions.push(await this.getAuction(parseInt(auctionId)))
-        } catch (error) {
-          console.error(
-            `Error fetching auction ${(event as ethers.EventLog).args.auctionId}:`,
-            error
-          )
-        }
-      }
-
-      return auctions
-    } catch (error) {
-      console.error("Error fetching all auctions:", error)
-      throw error
-    }
-  }
-
-  async getAuctionBids(auctionId: number): Promise<BidEvent[]> {
-    const provider = this.contract.runner?.provider as ethers.Provider
-    const latestBlock = await provider.getBlockNumber()
-    const startBlock = Math.max(1, latestBlock - 50000) // Only look at last 50,000 blocks
-
-    const events = await this.contract.queryFilter(
-      "BidPlaced",
-      startBlock,
-      latestBlock
-    )
-    const filteredEvents = events.filter(
-      (event) =>
-        (event as ethers.EventLog).args.auctionId.toString() ===
-        auctionId.toString()
-    )
-
-    // Get block data for all filtered events
-    const eventPromises = filteredEvents.map(async (event) => {
-      const block = await event.getBlock()
-      return {
-        auctionId: (event as ethers.EventLog).args.auctionId.toString(),
-        bidder: (event as ethers.EventLog).args.bidder,
-        amount: (event as ethers.EventLog).args.amount.toString(),
-        timestamp: block.timestamp, // Get timestamp from block data
-      }
+export async function withdrawItem(writeContract: any, auctionId: BigInt): Promise<void> {
+  try {
+    writeContract({
+      address: contractAddress,
+      abi,
+      functionName: "withdrawItem",
+      args: [auctionId],
     })
-
-    return Promise.all(eventPromises)
-  }
-
-  onAuctionCreated(callback: (event: any) => void): void {
-    this.contract.on("AuctionCreated", callback)
-  }
-
-  onBidPlaced(callback: (event: any) => void): void {
-    this.contract.on("BidPlaced", callback)
-  }
-
-  onAuctionEnded(callback: (event: any) => void): void {
-    this.contract.on("AuctionEnded", callback)
+  } catch (error) {
+    console.error("Error withdrawing item:", error);
   }
 }
+
+//Read functions will include fetchin auction data corresponding to the auctionId
+export async function getAuction(auctionId: BigInt): Promise<any>{
+  try {
+    const data = await readContracts(wagmi_config, {
+      contracts: [
+        {
+          address: contractAddress,
+          abi: abi as Abi,
+          functionName: 'auctions',
+          args: [auctionId] 
+        }
+      ]
+    })
+    return data;
+  } catch (error) {
+    console.error("Error fetching auction data:", error);
+  }
+}
+
+//complete read functions for all
+// then events fetching
+// then modularize the code
+// then UI components
