@@ -1,6 +1,6 @@
-import { useWriteContract } from "wagmi";
-import { Address, erc20Abi, erc721Abi } from "viem";
-import { write } from "fs";
+import { getBlockNumber, readContracts } from '@wagmi/core'
+import { wagmi_config } from "@/config"
+import { Abi, Address, erc20Abi, erc721Abi, parseAbiItem } from "viem";
 
 export const abi= [
     {

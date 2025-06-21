@@ -1,8 +1,7 @@
-import { useWriteContract } from "wagmi";
-import { readContracts } from '@wagmi/core'
-import {wagmi_config} from "@/config"
-import { Abi, Address, erc20Abi, erc721Abi } from "viem";
-import { write } from "fs";
+import { getBlockNumber, readContracts } from '@wagmi/core'
+import { wagmi_config } from "@/config"
+import { Abi, Address, erc20Abi, erc721Abi, parseAbiItem } from "viem";
+
 
 export const abi = [
   {
@@ -454,32 +453,32 @@ export const abi = [
     "type": "function"
   }
 ]
-const contractAddress = "0x1b2f3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b"; 
+const contractAddress = "0x6e9EFdB9943261C9cc0dCe6fa67769ABF513DE27";
 
 export interface AllPayAuction {
   name: string;
   desc: string;
   imgUrl: string;
-  auctionType: BigInt;
+  auctionType: bigint;
   auctionedToken: Address;
-  auctionedTokenIdOrAmount: BigInt;
+  auctionedTokenIdOrAmount: bigint;
   biddingToken: Address;
-  startingBid: BigInt;
-  minBidDelta: BigInt;
-  duration: BigInt;
-  deadlineExtension: BigInt;
+  startingBid: bigint;
+  minBidDelta: bigint;
+  duration: bigint;
+  deadlineExtension: bigint;
 }
 
-async function approveToken(writeContract: any, tokenAddress: Address, spender: Address, amountOrId: BigInt,isNFT: boolean): Promise<void> {
+async function approveToken(writeContract: any, tokenAddress: Address, spender: Address, amountOrId: BigInt, isNFT: boolean) {
   try {
-    if(isNFT){
+    if (isNFT) {
       writeContract({
         address: tokenAddress,
         abi: erc721Abi,
         functionName: "approve",
         args: [spender, amountOrId],
       });
-    }else{
+    } else {
       writeContract({
         address: tokenAddress,
         abi: erc20Abi,
@@ -504,7 +503,7 @@ export async function createAuction(writeContract: any, {
   minBidDelta,
   duration,
   deadlineExtension,
-}: AllPayAuction): Promise<void> {
+}: AllPayAuction) {
   try {
     await approveToken(writeContract, auctionedToken, contractAddress, auctionedTokenIdOrAmount, auctionType == BigInt(0));
 
@@ -531,7 +530,7 @@ export async function createAuction(writeContract: any, {
   }
 }
 
-export async function placeBid(writeContract: any, auctionId: BigInt, bidAmount: BigInt,tokenAddress: Address,auctionType: BigInt): Promise<void> {
+export async function placeBid(writeContract: any, auctionId: BigInt, bidAmount: BigInt, tokenAddress: Address, auctionType: bigint) {
   try {
     await approveToken(writeContract, tokenAddress, contractAddress, bidAmount, auctionType == BigInt(0));
     await writeContract({
@@ -545,7 +544,7 @@ export async function placeBid(writeContract: any, auctionId: BigInt, bidAmount:
   }
 }
 
-export async function withdrawFunds(writeContract: any,auctionId: BigInt): Promise<void> {
+export async function withdrawFunds(writeContract: any, auctionId: bigint) {
   try {
     writeContract({
       address: contractAddress,
@@ -558,7 +557,7 @@ export async function withdrawFunds(writeContract: any,auctionId: BigInt): Promi
   }
 }
 
-export async function withdrawItem(writeContract: any, auctionId: BigInt): Promise<void> {
+export async function withdrawItem(writeContract: any, auctionId: bigint) {
   try {
     writeContract({
       address: contractAddress,
@@ -572,7 +571,7 @@ export async function withdrawItem(writeContract: any, auctionId: BigInt): Promi
 }
 
 //Read functions will include fetchin auction data corresponding to the auctionId
-export async function getAuction(auctionId: BigInt): Promise<any>{
+export async function getAuction(auctionId: bigint) {
   try {
     const data = await readContracts(wagmi_config, {
       contracts: [
@@ -580,15 +579,59 @@ export async function getAuction(auctionId: BigInt): Promise<any>{
           address: contractAddress,
           abi: abi as Abi,
           functionName: 'auctions',
-          args: [auctionId] 
+          args: [auctionId]
         }
       ]
-    })
+    });
     return data;
   } catch (error) {
     console.error("Error fetching auction data:", error);
+    throw error;
   }
 }
+// Fetch bidders with a provided PublicClient
+export async function getBidders(
+  client: any,
+  auctionId: bigint
+) {
+  try {
+    const currentBlock = await getBlockNumber(wagmi_config);
+    const fromBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
+    const logs = await client.getLogs({
+      address: contractAddress,
+      event: parseAbiItem(
+        'event bidPlaced(uint256 indexed auctionId, address bidder, uint256 bidAmount)'
+      ),
+      args: [auctionId],
+      fromBlock,
+      toBlock: currentBlock,
+    });
+    return logs;
+  } catch (error) {
+    console.error("Error fetching bidders:", error);
+    throw error;
+  }
+}
+
+export async function getAllAuctions(client: any) {
+  try {
+    const currentBlock = await getBlockNumber(wagmi_config);
+    const fromBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
+    const logs = await client.getLogs({
+      address: contractAddress,
+      event: parseAbiItem(
+        'event AuctionCreated(uint256 indexed Id,string name,string description,string imgUrl,address auctioneer,uint8 auctionType,address auctionedToken,uint256 auctionedTokenIdOrAmount,address biddingToken,uint256 startingBid,uint256 minBidDelta,uint256 deadline,uint256 deadlineExtension)'
+      ),
+      fromBlock,
+      toBlock: currentBlock,
+    });
+    return logs.map((log: any) => log.args);
+  } catch (error) {
+    console.error("Error fetching bidders:", error);
+    throw error;
+  }
+}
+
 
 //complete read functions for all
 // then events fetching

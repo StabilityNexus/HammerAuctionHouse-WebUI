@@ -1,8 +1,9 @@
-import { useWriteContract } from "wagmi";
-import { Address, erc20Abi, erc721Abi } from "viem";
-import { write } from "fs";
+import { getBlockNumber, readContracts } from '@wagmi/core'
+import { wagmi_config } from "@/config"
+import { Abi, Address, erc20Abi, erc721Abi, parseAbiItem } from "viem";
 
-export const abi=  [
+
+export const abi =  [
     {
       "inputs": [
         {
@@ -440,27 +441,27 @@ export interface LogarithmicReverseDutchAuction {
   name: string;
   desc: string;
   imgUrl: string;
-  auctionType: BigInt;
+  auctionType: bigint;
   auctionedToken: Address;
-  auctionedTokenIdOrAmount: BigInt;
+  auctionedTokenIdOrAmount: bigint;
   biddingToken: Address;
-  startingPrice: BigInt;
-  reservedPrice: BigInt;
-  decayFactor: BigInt;
-  duration: BigInt;
+  startingPrice: bigint;
+  reservedPrice: bigint;
+  decayFactor: bigint;
+  duration: bigint;
 }
 
 
-async function approveToken(writeContract: any, tokenAddress: Address, spender: Address, amountOrId: BigInt,isNFT: boolean): Promise<void> {
+async function approveToken(writeContract: any, tokenAddress: Address, spender: Address, amountOrId: bigint, isNFT: boolean) {
   try {
-    if(isNFT){
+    if (isNFT) {
       writeContract({
         address: tokenAddress,
         abi: erc721Abi,
         functionName: "approve",
         args: [spender, amountOrId],
       });
-    }else{
+    } else {
       writeContract({
         address: tokenAddress,
         abi: erc20Abi,
@@ -485,7 +486,7 @@ export async function createAuction(writeContract: any, {
   startingPrice,
   duration,
   decayFactor
-}: LogarithmicReverseDutchAuction): Promise<void> {
+}: LogarithmicReverseDutchAuction) {
   try {
     await approveToken(writeContract, auctionedToken, contractAddress, auctionedTokenIdOrAmount, auctionType == BigInt(0));
 
@@ -512,7 +513,7 @@ export async function createAuction(writeContract: any, {
   }
 }
 
-export async function placeBid(writeContract: any, auctionId: BigInt, bidAmount: BigInt,tokenAddress: Address,auctionType: BigInt): Promise<void> {
+export async function placeBid(writeContract: any, auctionId: bigint, bidAmount: bigint, tokenAddress: Address, auctionType: bigint) {
   try {
     await approveToken(writeContract, tokenAddress, contractAddress, bidAmount, auctionType == BigInt(0));
     await writeContract({
@@ -527,26 +528,23 @@ export async function placeBid(writeContract: any, auctionId: BigInt, bidAmount:
 }
 
 
-async function getCurrentPrice(){
-    //to be implemented
+
+export async function withdrawItem(writeContract: any, auctionId: bigint, auctionType: bigint) {
+  try {
+    const currentPrice = await getCurrentPrice(auctionId);
+    approveToken(writeContract, contractAddress, contractAddress, currentPrice, auctionType == BigInt(0)); // Assuming auctionedToken is the contract itself for NFT
+    writeContract({
+      address: contractAddress,
+      abi,
+      functionName: "withdrawItem",
+      args: [auctionId],
+    })
+  } catch (error) {
+    console.error("Error withdrawing item:", error);
+  }
 }
 
-export async function withdrawItem(writeContract: any, auctionId: BigInt,auctionType: BigInt): Promise<void> {
-    try {
-        const currentPrice= await getCurrentPrice();
-        approveToken(writeContract, contractAddress, contractAddress, currentPrice, auctionType==BigInt(0)); // Assuming auctionedToken is the contract itself for NFT
-        writeContract({
-            address: contractAddress,
-            abi,
-            functionName: "withdrawItem",
-            args: [auctionId],
-        })
-    } catch (error) {
-        console.error("Error withdrawing item:", error);
-    }
-}
-
-export async function withdrawFunds(writeContract: any,auctionId: BigInt): Promise<void> {
+export async function withdrawFunds(writeContract: any, auctionId: bigint) {
   try {
     writeContract({
       address: contractAddress,
@@ -558,5 +556,63 @@ export async function withdrawFunds(writeContract: any,auctionId: BigInt): Promi
     console.error("Error withdrawing funds:", error);
   }
 }
-// Call the test function
-// testCreateAuction();
+
+//Read functions will include fetchin auction data corresponding to the auctionId
+
+export async function getCurrentPrice(auctionId: bigint) {
+  try {
+    const data = await readContracts(wagmi_config, {
+      contracts: [
+        {
+          address: contractAddress,
+          abi: abi as Abi,
+          functionName: 'getCurrentPrice',
+          args: [auctionId]
+        }
+      ]
+    });
+    if (data[0].error) { throw new Error("Failed to fetch current price"); }
+    return data[0].result as bigint;
+  } catch (error) {
+    console.error("Error fetching current price:", error);
+    throw error;
+  }
+}
+
+export async function getAuction(auctionId: bigint) {
+  try {
+    const data = await readContracts(wagmi_config, {
+      contracts: [
+        {
+          address: contractAddress,
+          abi: abi as Abi,
+          functionName: 'auctions',
+          args: [auctionId]
+        }
+      ]
+    });
+    return data;
+  } catch (error) {
+    console.error("Error fetching auction data:", error);
+    throw error;
+  }
+}
+
+export async function getAllAuctions(client: any) {
+  try {
+    const currentBlock = await getBlockNumber(wagmi_config);
+    const fromBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
+    const logs = await client.getLogs({
+      address: contractAddress,
+      event: parseAbiItem(
+        'event AuctionCreated(uint256 indexed Id,string name,string description,string imgUrl,address auctioneer,uint8 auctionType,address auctionedToken,uint256 auctionedTokenIdOrAmount,address biddingToken,uint256 startingPrice,uint256 reservedPrice,uint256 decayFactor,uint256 deadline)'
+      ),
+      fromBlock,
+      toBlock: currentBlock,
+    });
+    return logs.map((log: any) => log.args);
+  } catch (error) {
+    console.error("Error fetching bidders:", error);
+    throw error;
+  }
+}

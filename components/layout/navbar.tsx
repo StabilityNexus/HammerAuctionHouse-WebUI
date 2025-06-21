@@ -9,15 +9,12 @@ import { ModeToggle } from "@/components/mode-toggle";
 // import { ConnectButton } from "@/components/ui/wallet-button";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { cn } from "@/lib/utils";
-import testCreateAuction, {
-  abi,
-  AllPayAuction,
-  erc721Abi,
-} from "@/AllPayAuction";
-import { useWriteContract } from "wagmi";
+import { abi, AllPayAuction, getAuction, getBidders } from "@/AllPayAuction";
+import { useWriteContract, usePublicClient } from "wagmi";
 import { erc20Abi } from "viem";
 import { ethers } from "ethers";
 import { createAuction } from "@/AllPayAuction";
+import { use } from "react";
 
 const navItems = [
   { name: "Home", path: "/" },
@@ -28,6 +25,7 @@ const navItems = [
 
 export function Navbar() {
   const { data: hash, writeContract } = useWriteContract();
+  const publicClient = usePublicClient({chainId: 63});
   const pathname = usePathname();
 
   return (
@@ -75,25 +73,11 @@ export function Navbar() {
             asChild
             className="hidden md:flex"
             onClick={async () => {
-              const auction: AllPayAuction = {
-                name: "Test Auction",
-                desc: "A test auction description",
-                imgUrl: "https://example.com/image.png",
-                auctionType: BigInt(1),
-                auctionedToken: "0x85DB289662cEC6aaC1e173adb3C27b3a6F0dc073",
-                auctionedTokenIdOrAmount: ethers.parseEther("10"),
-                biddingToken: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
-                startingBid: ethers.parseEther("100"),
-                minBidDelta: ethers.parseEther("10"),
-                duration: BigInt(3600),
-                deadlineExtension: BigInt(300),
-              };
-
               try {
-                await createAuction(writeContract,auction);
-                console.log("Auction created, transaction:", hash);
+                const data = await getBidders(publicClient, BigInt(1));
+                console.log("Auction Data:", data);
               } catch (error) {
-                console.error("Failed to create auction:", error);
+                console.error("Error fetching bidders:", error);
               }
             }}
           >
