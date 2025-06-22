@@ -1,4 +1,3 @@
-
 const STORAGE_KEY = 'hahWishlist'
 enum AuctionProtocol {
   AllPay = '1',
@@ -16,7 +15,7 @@ function _read() {
 }
 
 // Example: "1123456" for AllPayAuction
-function _generateCode(protocol: keyof typeof AuctionProtocol, id: string) {
+function encode(protocol: keyof typeof AuctionProtocol, id: string) {
   return `${AuctionProtocol[protocol]}${id.padStart(6, '0')}`;
 }
 
@@ -31,7 +30,7 @@ function _write(raw: string) {
 
 export function append(protocol: keyof typeof AuctionProtocol, id: string) {
   const existing = _read();
-  const raw = _generateCode(protocol, id);
+  const raw = encode(protocol, id);
   const list = existing ? existing.split(',') : [];
   if (!list.includes(raw)) list.push(raw);
   const newRaw = list.join(',');
@@ -40,7 +39,7 @@ export function append(protocol: keyof typeof AuctionProtocol, id: string) {
 
 export function remove(protocol: keyof typeof AuctionProtocol, id: string) {
   const existing = _read();
-  const raw = _generateCode(protocol, id);
+  const raw = encode(protocol, id);
   const newRaw = existing
     .split(',')
     .filter(code => code !== raw)
@@ -48,18 +47,22 @@ export function remove(protocol: keyof typeof AuctionProtocol, id: string) {
   _write(newRaw);
 }
 
-export function decodeCode(code: string) {
-  // Decode a fixed-width code into protocol and id
-  type ValueOf<T> = T[keyof T];
-  const protocol = Object.values(AuctionProtocol).find(p => p === code.slice(0, 1)) as ValueOf<typeof AuctionProtocol>;
+export function decode(code: string) {
+  // Decode a fixed-width code into auction name and id
+  const protocolValue = code.slice(0, 1);
+  // Find the enum key (auction name) for this protocol value
+  const protocolName = (Object.entries(AuctionProtocol).find(([, val]) => val === protocolValue)?.[0]) as keyof typeof AuctionProtocol;
   const id = code.slice(1);
-  return { protocol, id };
+  return { protocol: protocolName, id };
 }
 
 
 // Read into array of codes
 export function loadWishlist() {
-  const raw = _read()
-  if (!raw) return []
-  return raw.split(',').filter(code => code.length > 0)
+  const raw = _read();
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .filter(code => code.length > 0)
+    .map(code => decode(code));
 }
