@@ -1,6 +1,6 @@
 // Mock data for auctions
 
-export type AuctionType = 'english' | 'dutch' | 'all-pay' | 'vickrey';
+export type AuctionType = 'English' | 'Exponential' | 'AllPay' | 'Vickrey' | 'Linear' | 'Logarithmic';
 
 export interface Bid {
   id: string;
@@ -43,7 +43,7 @@ const randomPastDate = () => {
   return pastDate;
 };
 
-// Generate random wallet address
+// Generate random wAllPayet address
 const randomAddress = () => {
   return "0x" + [...Array(40)].map(() => Math.floor(Math.random() * 16).toString(16)).join("");
 };
@@ -55,7 +55,7 @@ export const mockAuctions: Auction[] = [
     description: "A rare NFT from the Cosmic Voyagers collection. This piece represents the journey through the astral plane with vibrant colors and intricate details.",
     imageUrl: "https://images.pexels.com/photos/1484759/pexels-photo-1484759.jpeg?auto=compress&cs=tinysrgb&w=800",
     creator: "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b",
-    type: "english",
+    type: "English",
     startPrice: 1.5,
     reservePrice: 3.0,
     currentPrice: 2.75,
@@ -91,7 +91,7 @@ export const mockAuctions: Auction[] = [
     description: "A masterpiece blending traditional art with digital techniques. This NFT showcases the evolution of artistic expression in the digital age.",
     imageUrl: "https://images.pexels.com/photos/3573555/pexels-photo-3573555.jpeg?auto=compress&cs=tinysrgb&w=800",
     creator: "0xcreator2",
-    type: "dutch",
+    type: "Linear",
     startPrice: 5.0,
     reservePrice: 2.0,
     currentPrice: 3.5,
@@ -129,7 +129,7 @@ for (let i = 0; i < 10; i++) {
   }
   
   // Generate random auction type
-  const auctionTypes: AuctionType[] = ['english', 'dutch', 'all-pay', 'vickrey'];
+  const auctionTypes: AuctionType[] = ['English', 'Linear', 'AllPay', 'Vickrey'];
   const type = auctionTypes[Math.floor(Math.random() * auctionTypes.length)];
   
   const startPrice = Math.round((0.5 + Math.random() * 10) * 100) / 100;
@@ -194,8 +194,8 @@ for (let i = 0; i < 10; i++) {
     currentPrice,
     startTime,
     endTime,
-    minBidDelta: type === 'english' ? 0.1 : undefined,
-    decayFactor: type === 'dutch' ? 0.05 + Math.random() * 0.2 : undefined,
+    minBidDelta: type === 'English' ? 0.1 : undefined,
+    decayFactor: type === 'Linear' ? 0.05 + Math.random() * 0.2 : undefined,
     status,
     bids,
     watchedBy: Math.random() > 0.7 ? [randomAddress()] : [],
