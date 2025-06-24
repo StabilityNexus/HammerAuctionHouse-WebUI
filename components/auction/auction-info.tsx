@@ -18,30 +18,30 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
   const infoItems = [
     {
       label: "Auction Type",
-      value: auction.type.charAt(0).toUpperCase() + auction.type.slice(1),
-      tooltip: getAuctionTypeDescription(auction.type),
+      value: auction.protocol.charAt(0).toUpperCase() + auction.protocol.slice(1),
+      tooltip: getAuctionTypeDescription(auction.protocol),
     },
     {
       label: "Start Price",
-      value: `${auction.startPrice} ETH`,
+      value: `${auction.startingBid} ETH`,
     },
-    {
-      label: "Reserve Price",
-      value: auction.reservePrice ? `${auction.reservePrice} ETH` : "None",
-      tooltip: "The minimum price that must be met for the auction to be successful",
-    },
-    {
-      label: "Start Time",
-      value: format(auction.startTime, "PPp"),
-    },
+    // {
+    //   label: "Reserve Price",
+    //   value: auction.reservedPrice ? `${auction.reservedPrice} ETH` : "None",
+    //   tooltip: "The minimum price that must be met for the auction to be successful",
+    // },
+    // {
+    //   label: "Start Time",
+    //   value: format(Numberauction.startTime, "PPp"),
+    // },
     {
       label: "End Time",
-      value: format(auction.endTime, "PPp"),
+      value: format(Number(auction.deadline), "PPp"),
     }
   ];
   
   // Add auction-type specific parameters
-  if (auction.type === "english" && auction.minBidDelta) {
+  if (auction.protocol === "English" && auction.minBidDelta) {
     infoItems.push({
       label: "Minimum Bid Increment",
       value: `${auction.minBidDelta} ETH`,
@@ -49,13 +49,13 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
     });
   }
   
-  if (auction.type === "dutch" && auction.decayFactor) {
-    infoItems.push({
-      label: "Decay Factor",
-      value: auction.decayFactor.toString(),
-      tooltip: "The rate at which the price decreases over time until a bid is placed or reserve price is reached",
-    });
-  }
+  // if (auction.protocol === "dutch" && auction.decayFactor) {
+  //   infoItems.push({
+  //     label: "Decay Factor",
+  //     value: auction.decayFactor.toString(),
+  //     tooltip: "The rate at which the price decreases over time until a bid is placed or reserve price is reached",
+  //   });
+  // }
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -85,13 +85,13 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
 
 function getAuctionTypeDescription(type: string): string {
   switch (type) {
-    case "english":
+    case "English":
       return "English auctions start at a minimum price and increase as bidders compete. The highest bid wins when the auction ends.";
-    case "dutch":
+    case "Linear":
       return "Dutch auctions start at a high price that gradually decreases until a bidder accepts the price.";
-    case "all-pay":
+    case "AllPay":
       return "All-pay auctions require all participants to pay their bids regardless of whether they win.";
-    case "vickrey":
+    case "Vickrey":
       return "Vickrey (second-price sealed-bid) auctions have hidden bids where the highest bidder wins but pays the second-highest price.";
     default:
       return "";

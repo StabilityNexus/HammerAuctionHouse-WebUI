@@ -56,6 +56,13 @@ export function decodeCode(code: string){
     return { protocol , id };
 }
 
+export function isPresent(protocol: keyof typeof AuctionProtocol, id: string){
+    const raw = _read();
+    if (!raw) return false;
+    const code = _generateCode(protocol, id);
+    return raw.split(',').includes(code);
+}
+
 
 // Read into array of codes
 export function loadWishlist() {

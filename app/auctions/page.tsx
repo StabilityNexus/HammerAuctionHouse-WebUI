@@ -1,23 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AuctionGrid } from "@/components/auction/auction-grid";
 import { AuctionFilter } from "@/components/auction/auction-filter";
-import { mockAuctions, AuctionType } from "@/lib/mock-data";
+import { mockAuctions, AuctionType, Auction } from "@/lib/mock-data";
+import { usePublicClient } from "wagmi";
+import { all_AllPay } from "@/AllPayAuction";
+import { start } from "repl";
+import { parseAbiItem } from "viem";
+import { set } from "date-fns";
 
 export default function AuctionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<AuctionType[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
+  const [fetchedAuctions,setFetchedAuctions] = useState<Auction[]>([])
+  const publicClient = usePublicClient({ chainId: 63 })!;
+  const fetchAuctions = async () => {
+    const end = await publicClient.getBlockNumber();
+    const start = BigInt(Number(end) - 100000); // Fetch last 1000 blocks
+    // const auctions = await all_AllPay(publicClient,fromBlock, toBlock);
+    const auctions =await all_AllPay(publicClient,start,end);
+    setFetchedAuctions(auctions);
+  };
+
+  useEffect(() => {
+    fetchAuctions().catch(console.error);
+  }, [publicClient]);
 
   // Filter auctions based on search and filters
-  const filteredAuctions = mockAuctions.filter((auction) => {
+  const filteredAuctions = fetchedAuctions.filter((auction) => {
     const matchesSearch =
-      auction.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      auction.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       auction.description.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesType =
-      selectedTypes.length === 0 || selectedTypes.includes(auction.type);
+      selectedTypes.length === 0 || selectedTypes.includes(auction.protocol);
 
     const matchesStatus =
       selectedStatus.length === 0 || selectedStatus.includes(auction.status);

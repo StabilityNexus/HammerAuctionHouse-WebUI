@@ -1,7 +1,7 @@
 import { getBlockNumber, readContracts } from '@wagmi/core'
 import { wagmi_config } from "@/config"
-import { Abi, Address, erc20Abi, erc721Abi, parseAbiItem } from "viem";
-
+import { Abi, Address, erc20Abi, erc721Abi, parseAbiItem, PublicClient } from "viem";
+import { usePublicClient } from "wagmi";
 
 export const abi = [
   {
@@ -592,38 +592,37 @@ export async function getAuction(auctionId: bigint) {
 // Fetch bidders with a provided PublicClient
 export async function getBidders(
   client: any,
-  auctionId: bigint
+  auctionId: bigint,
+  start: bigint,
+  end: bigint
 ) {
   try {
-    const currentBlock = await getBlockNumber(wagmi_config);
-    const fromBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
     const logs = await client.getLogs({
       address: contractAddress,
       event: parseAbiItem(
         'event bidPlaced(uint256 indexed auctionId, address bidder, uint256 bidAmount)'
       ),
       args: [auctionId],
-      fromBlock,
-      toBlock: currentBlock,
+      fromBlock: start,
+      toBlock: end,
     });
-    return logs;
+    return logs.map((log: any) => log.args);
   } catch (error) {
     console.error("Error fetching bidders:", error);
     throw error;
   }
 }
 
-export async function getAllAuctions(client: any) {
+export async function all_AllPay(client: any,start: bigint,end: bigint) {
   try {
-    const currentBlock = await getBlockNumber(wagmi_config);
-    const fromBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
+    // const fromBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
     const logs = await client.getLogs({
       address: contractAddress,
       event: parseAbiItem(
         'event AuctionCreated(uint256 indexed Id,string name,string description,string imgUrl,address auctioneer,uint8 auctionType,address auctionedToken,uint256 auctionedTokenIdOrAmount,address biddingToken,uint256 startingBid,uint256 minBidDelta,uint256 deadline,uint256 deadlineExtension)'
       ),
-      fromBlock,
-      toBlock: currentBlock,
+      fromBlock: start,
+      toBlock: end,
     });
     return logs.map((log: any) => log.args);
   } catch (error) {

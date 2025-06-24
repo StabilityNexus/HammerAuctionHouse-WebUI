@@ -10,7 +10,7 @@ import { Auction } from "@/lib/mock-data";
 import { formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { remove, append, loadWishlist } from "@/lib/storage";
+import { remove, append, loadWishlist, isPresent } from "@/lib/storage";
 import { useAccount } from "wagmi";
 
 interface AuctionCardProps {
@@ -22,8 +22,16 @@ export function AuctionCard({ auction }: AuctionCardProps) {
   const [isWatched, setIsWatched] = useState(false);
 
   useEffect(() => {
-    setIsWatched(!!address && auction.watchedBy.includes(address));
+    setIsWatched(!!address && isPresent(auction.protocol,auction.id));
   }, [address, auction]);
+
+  let status = "";
+  if(Number(auction.deadline)-Date.now()>0){
+    status = "active";
+  }else{
+    status = "ended";
+  }
+  
 
   // Determine auction status text and color
   let statusConfig = {
@@ -33,14 +41,14 @@ export function AuctionCard({ auction }: AuctionCardProps) {
     bgOpacity: "bg-opacity-10",
   };
 
-  if (auction.status === "active") {
+  if (status === "active") {
     statusConfig = {
       text: "Active",
       bgColor: "bg-green-500",
       textColor: "text-green-500",
       bgOpacity: "bg-opacity-10",
     };
-  } else if (auction.status === "ended") {
+  } else if (status === "ended") {
     statusConfig = {
       text: "Ended",
       bgColor: "bg-gray-500",
@@ -54,11 +62,11 @@ export function AuctionCard({ auction }: AuctionCardProps) {
     e.stopPropagation();
     if (!isConnected) return;
     if (isWatched) {
-      remove(auction.type, auction.id);
+      remove(auction.protocol, auction.id);
       console.log("Removed from watchlist:", auction.id);
       console.log("Current watchlist:", loadWishlist());
     } else {
-      append(auction.type, auction.id);
+      append(auction.protocol, auction.id);
       console.log("Added to watchlist:", auction.id);
     }
     setIsWatched(!isWatched);
@@ -73,8 +81,8 @@ export function AuctionCard({ auction }: AuctionCardProps) {
       <Link href={`/auctions/${auction.id}`} className="block">
         <div className="aspect-square relative overflow-hidden bg-muted">
           <Image
-            src={auction.imageUrl}
-            alt={auction.title}
+            src={auction.imgUrl}
+            alt={auction.name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
@@ -111,35 +119,35 @@ export function AuctionCard({ auction }: AuctionCardProps) {
         <div className="p-4">
           <div className="flex justify-between items-start gap-2">
             <h3 className="font-semibold text-lg line-clamp-1">
-              {auction.title}
+              {auction.name}
             </h3>
             <Badge variant="outline" className="capitalize">
-              {auction.type}
+              {auction.protocol}
             </Badge>
           </div>
 
           <div className="mt-2 flex justify-between items-baseline">
             <div>
               <p className="text-muted-foreground text-sm">Current bid</p>
-              <p className="font-medium text-lg">{auction.currentPrice} ETH</p>
+              <p className="font-medium text-lg">{auction.highestBid} ETH</p>
             </div>
 
             <div className="flex items-center text-sm text-muted-foreground gap-1">
               <Clock className="h-3.5 w-3.5" />
-              {auction.status === "upcoming" ? (
+              {status === "upcoming" ? (
                 <span>
                   Starts{" "}
-                  {formatDistanceToNow(auction.startTime, { addSuffix: true })}
+                  {formatDistanceToNow(Number(auction.deadline), { addSuffix: true })}
                 </span>
-              ) : auction.status === "active" ? (
+              ) : status === "active" ? (
                 <span>
                   Ends{" "}
-                  {formatDistanceToNow(auction.endTime, { addSuffix: true })}
+                  {formatDistanceToNow(Number(auction.deadline), { addSuffix: true })}
                 </span>
               ) : (
                 <span>
                   Ended{" "}
-                  {formatDistanceToNow(auction.endTime, { addSuffix: true })}
+                  {formatDistanceToNow(Number(auction.deadline), { addSuffix: true })}
                 </span>
               )}
             </div>
@@ -147,7 +155,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
 
           <div className="mt-3 pt-3 border-t text-sm text-muted-foreground truncate">
             Created by{" "}
-            {`${auction.creator.substring(0, 6)}...${auction.creator.substring(
+            {`${auction.auctioneer.substring(0, 6)}...${auction.auctioneer.substring(
               38
             )}`}
           </div>
