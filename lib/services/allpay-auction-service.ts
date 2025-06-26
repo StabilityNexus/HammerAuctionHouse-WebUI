@@ -695,7 +695,7 @@ export class AllPayAuctionService implements IAuctionService {
         return [];
       }
 
-      const start = counter > BigInt(n) ? counter - BigInt(n) : BigInt(1);
+      const start = counter > BigInt(n) ? counter - BigInt(n) : BigInt(0);
       const end = counter;
 
       console.log(`Fetching auctions from ID ${start} to ${end}`);

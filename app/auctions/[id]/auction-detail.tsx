@@ -374,7 +374,9 @@ export function AuctionDetail({
               {/* Withdraw Funds Button - Only for auctioneer */}
               {userAddress?.toLowerCase() ===
                 currentAuction.auctioneer.toLowerCase() &&
-                currentAuction.availableFunds! > 0 && (
+                currentAuction.availableFunds! > 0 &&
+                (currentAuction.protocol != "English" ||
+                  Date.now() >= Number(currentAuction.deadline) * 1000) && (
                   // Only show if there are funds to withdraw
                   <Button
                     onClick={handleWithdrawFunds}
