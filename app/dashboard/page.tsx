@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionGrid } from "@/components/auction/auction-grid";
-import { getUserAuctions, getUserBids, getUserWatchlist, mockAuctions } from "@/lib/mock-data";
+import { getUserAuctions, getUserBids, getUserWatchlist, mockAuctions, getBidsForAuction, getTotalAmountPaid } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
-import { User, PlusCircle } from "lucide-react";
+import { User, PlusCircle, DollarSign, Gavel, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -44,8 +44,74 @@ export default function Dashboard() {
   const demoBids = hasNoData ? [mockAuctions[2]] : bidsPlaced;
   const demoWatchlist = hasNoData ? [mockAuctions[3]] : watchlist;
 
+  // Calculate AllPay auction statistics
+  const allPayAuctions = mockAuctions.filter(auction => auction.protocol === "AllPay");
+  const userAllPayBids = allPayAuctions.flatMap(auction => 
+    getBidsForAuction(auction.id).filter(bid => bid.bidder.toLowerCase() === address?.toLowerCase())
+  );
+  const totalPaidInAllPay = userAllPayBids.reduce((sum, bid) => sum + bid.amount, 0);
+  const allPayAuctionsParticipated = new Set(userAllPayBids.map(bid => bid.auctionId)).size;
+
   return (
     <div className="container py-8 px-4 w-screen">
+      {/* AllPay Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card border rounded-lg p-6"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-10 w-10 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
+              <DollarSign className="h-5 w-5 text-orange-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Paid (AllPay)</p>
+              <p className="text-2xl font-bold text-orange-600">{totalPaidInAllPay.toFixed(4)} ETH</p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">Amount paid in AllPay auctions</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-card border rounded-lg p-6"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+              <Gavel className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">AllPay Participations</p>
+              <p className="text-2xl font-bold text-blue-600">{allPayAuctionsParticipated}</p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">AllPay auctions participated in</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-card border rounded-lg p-6"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-10 w-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Average Bid</p>
+              <p className="text-2xl font-bold text-green-600">
+                {userAllPayBids.length > 0 ? (totalPaidInAllPay / userAllPayBids.length).toFixed(4) : '0.0000'} ETH
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">Average bid in AllPay auctions</p>
+        </motion.div>
+      </div>
+
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">Your Dashboard</h1>

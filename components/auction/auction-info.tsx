@@ -23,17 +23,8 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
     },
     {
       label: "Start Price",
-      value: `${auction.startingBid} ETH`,
+      value: `${auction.startingBid ? Number(auction.startingBid) / 1e18 : 0} ETH`,
     },
-    // {
-    //   label: "Reserve Price",
-    //   value: auction.reservedPrice ? `${auction.reservedPrice} ETH` : "None",
-    //   tooltip: "The minimum price that must be met for the auction to be successful",
-    // },
-    // {
-    //   label: "Start Time",
-    //   value: format(Numberauction.startTime, "PPp"),
-    // },
     {
       label: "End Time",
       value: format(Number(auction.deadline), "PPp"),
@@ -41,11 +32,19 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
   ];
   
   // Add auction-type specific parameters
-  if (auction.protocol === "English" && auction.minBidDelta) {
+  if ((auction.protocol === "English" || auction.protocol === "AllPay") && auction.minBidDelta) {
     infoItems.push({
       label: "Minimum Bid Increment",
-      value: `${auction.minBidDelta} ETH`,
+      value: `${Number(auction.minBidDelta) / 1e18} ETH`,
       tooltip: "The minimum amount by which each new bid must exceed the current highest bid",
+    });
+  }
+
+  if (auction.protocol === "AllPay") {
+    infoItems.push({
+      label: "Payment Model",
+      value: "All bidders pay",
+      tooltip: "In AllPay auctions, every bidder must pay their bid amount, regardless of winning",
     });
   }
   

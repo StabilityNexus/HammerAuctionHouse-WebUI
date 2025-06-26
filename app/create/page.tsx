@@ -7,8 +7,108 @@ import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuctionCreationForm } from "@/components/auction/create-form";
 import { CreateAuctionSteps } from "@/components/auction/create-steps";
-import {useAccount} from "wagmi";
+import { useAccount, useWriteContract } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { 
+  getAuctionService, 
+  EnglishAuctionParams, 
+  AllPayAuctionParams, 
+  DutchAuctionParams, 
+  VickreyAuctionParams,
+  parseBidAmount 
+} from "@/lib/auction-service";
+import { AuctionType } from "@/lib/mock-data";
+import { Address } from "viem";
+
+// Transform form data to auction service parameters
+function transformFormDataToParams(formData: any, auctionType: AuctionType) {
+  // Common base parameters for all auction types
+  const baseParams = {
+    name: formData.title,
+    description: formData.description,
+    imgUrl: formData.imageUrl || "/placeholder.jpg",
+    auctionType: BigInt(formData.auctionType === "NFT" ? 0 : 1), // Fixed field name
+    auctionedToken: formData.auctionedTokenAddress as Address,
+    auctionedTokenIdOrAmount: BigInt(
+      formData.auctionType === "NFT" ? (formData.tokenId || "1") : (formData.tokenAmount || "100")
+    ),
+    biddingToken: formData.biddingTokenAddress as Address,
+  };
+
+  // Helper function to convert duration from days/hours/minutes to seconds
+  const getDurationInSeconds = (days: string, hours: string, minutes: string): bigint => {
+    const d = parseInt(days || "0");
+    const h = parseInt(hours || "0");
+    const m = parseInt(minutes || "0");
+    return BigInt(d * 86400 + h * 3600 + m * 60);
+  };
+
+  switch (auctionType) {
+    case "English":
+    case "AllPay": {
+      const duration = formData.duration 
+        ? BigInt(formData.duration) 
+        : getDurationInSeconds(formData.days || "3", formData.hours || "0", formData.minutes || "0");
+      
+      return {
+        ...baseParams,
+        startingBid: parseBidAmount(formData.startPrice || "0.1"),
+        minBidDelta: parseBidAmount(formData.minBidDelta || "0.01"),
+        duration,
+        deadlineExtension: BigInt(parseInt(formData.deadlineExtension || "300")), // 5 minutes default
+      } as EnglishAuctionParams | AllPayAuctionParams;
+    }
+
+    case "Linear":
+    case "Exponential": 
+    case "Logarithmic": {
+      const duration = formData.duration 
+        ? BigInt(formData.duration) 
+        : getDurationInSeconds(formData.days || "3", formData.hours || "0", formData.minutes || "0");
+      
+      const params: DutchAuctionParams = {
+        ...baseParams,
+        startingPrice: parseBidAmount(formData.startPrice || "1.0"),
+        reservedPrice: parseBidAmount(formData.reservePrice || "0.1"),
+        duration,
+      };
+
+      // Add decay factor for exponential/logarithmic
+      if (auctionType === "Exponential" || auctionType === "Logarithmic") {
+        params.decayFactor = BigInt(Math.floor(parseFloat(formData.decayFactor || "0.1") * 1e18));
+      }
+
+      return params;
+    }
+
+    case "Vickrey": {
+      const commitDuration = formData.commitDuration 
+        ? BigInt(formData.commitDuration)
+        : getDurationInSeconds(
+            formData.commitDays || "1", 
+            formData.commitHours || "0", 
+            formData.commitMinutes || "0"
+          );
+      
+      const revealDuration = formData.revealDuration 
+        ? BigInt(formData.revealDuration)
+        : getDurationInSeconds(
+            formData.revealDays || "1", 
+            formData.revealHours || "0", 
+            formData.revealMinutes || "0"
+          );
+
+      return {
+        ...baseParams,
+        bidCommitDuration: commitDuration,
+        bidRevealDuration: revealDuration,
+      } as VickreyAuctionParams;
+    }
+
+    default:
+      throw new Error(`Unsupported auction type: ${auctionType}`);
+  }
+}
 
 const steps = [
   "Basic Information",
@@ -20,30 +120,46 @@ const steps = [
 export default function CreateAuction() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     imageUrl: "",
     type: "english",
+    subtype: "linear", // For Dutch auctions
     startPrice: "0.1",
     reservePrice: "",
     duration: "3",
+    days: "3",
+    hours: "0", 
+    minutes: "0",
     minBidDelta: "0.05",
+    deadlineExtension: "300",
     decayFactor: "0.1",
+    // Vickrey auction fields
+    commitDays: "1",
+    commitHours: "0",
+    commitMinutes: "0",
+    revealDays: "1", 
+    revealHours: "0",
+    revealMinutes: "0",
+    commitDuration: "",
+    revealDuration: "",
+    // Token fields
     tokenAddress: "",
+    biddingTokenAddress: "0x0000000000000000000000000000000000000000", // ETH placeholder
+    auctionedTokenAddress: "0x0000000000000000000000000000000000000000",
+    auctionType: "NFT", // Fixed field name from tokenType
+    tokenId: "1",
+    tokenAmount: "100",
   });
   
   const router = useRouter();
- const { status } = useAccount();      // "connected" | "disconnected" | "connecting"
+  const { status, address } = useAccount();
+  const { writeContract } = useWriteContract();
   
   const updateFormData = (data: Partial<typeof formData>) => {
-    // Only update if the data has actually changed
-    setFormData(prev => {
-      const hasChanges = Object.entries(data).some(
-        ([key, value]) => prev[key as keyof typeof prev] !== value
-      );
-      return hasChanges ? { ...prev, ...data } : prev;
-    });
+    setFormData(prev => ({ ...prev, ...data }));
   };
   
   const goToNextStep = () => {
@@ -60,12 +176,57 @@ export default function CreateAuction() {
     }
   };
   
-  const handleSubmit = () => {
-    setIsSubmitted(true);
-    // Simulate creation delay
-    setTimeout(() => {
-      router.push("/dashboard");
-    }, 2000);
+  const handleSubmit = async () => {
+    if (!address || !writeContract) return;
+    
+    setIsSubmitting(true);
+    try {
+      // Map form auction type to our AuctionType
+      let auctionType: AuctionType;
+      switch (formData.type) {
+        case "all-pay":
+          auctionType = "AllPay";
+          break;
+        case "english":
+          auctionType = "English";
+          break;
+        case "dutch":
+          // Map to specific Dutch auction type based on subtype
+          if (formData.subtype === "exponential") {
+            auctionType = "Exponential";
+          } else if (formData.subtype === "logarithmic") {
+            auctionType = "Logarithmic";
+          } else {
+            auctionType = "Linear";
+          }
+          break;
+        case "vickrey":
+          auctionType = "Vickrey";
+          break;
+        default:
+          auctionType = "English";
+      }
+
+      const auctionService = getAuctionService(auctionType);
+      
+      // Prepare auction parameters based on type
+      const params = transformFormDataToParams(formData, auctionType);
+      console.log("Submitting auction with params:", params);
+      await auctionService.createAuction(writeContract, params);
+      
+      setIsSubmitted(true);
+      
+      // Redirect after success
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 2000);
+      
+    } catch (error) {
+      console.error("Error creating auction:", error);
+      // Handle error (you might want to show a toast notification)
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   // If not connected, show connect prompt
@@ -123,29 +284,12 @@ export default function CreateAuction() {
             currentStep={currentStep}
             formData={formData}
             updateFormData={updateFormData}
+            goToNextStep={goToNextStep}
+            goToPrevStep={goToPrevStep}
+            handleFinalSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+            totalSteps={steps.length}
           />
-          
-          <div className="flex justify-between mt-8 pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={goToPrevStep}
-              disabled={currentStep === 0}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            
-            {currentStep < steps.length - 1 ? (
-              <Button onClick={goToNextStep}>
-                Continue
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            ) : (
-              <Button onClick={handleSubmit}>
-                Create Auction
-              </Button>
-            )}
-          </div>
         </div>
       </div>
     </div>

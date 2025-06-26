@@ -17,8 +17,13 @@ function _read() {
 
 function _generateCode(protocol: keyof typeof AuctionProtocol, id: string){
     // Generate a fixed-width code based on protocol and id
-    // Example: "1123456" for AllPayAuction
+    // Example: "1000001" for AllPayAuction
     return `${AuctionProtocol[protocol]}${id.padStart(6, '0')}`;
+}
+
+// Export the function to be used by other components
+export function generateCode(protocol: keyof typeof AuctionProtocol, id: string){
+    return _generateCode(protocol, id);
 }
 
 function _write(raw: string) {

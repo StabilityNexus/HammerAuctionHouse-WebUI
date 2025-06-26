@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { HelpCircle, Upload } from "lucide-react";
+import { HelpCircle, Upload, ArrowLeft, ArrowRight } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -33,11 +33,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { DecayPreviewChart } from "@/components/auction/decay-preview-chart";
+import { clear } from "console";
+import { title } from "process";
 
 interface AuctionCreationFormProps {
   currentStep: number;
   formData: any;
   updateFormData: (data: any) => void;
+  goToNextStep: () => void;
+  goToPrevStep: () => void;
+  handleFinalSubmit: () => void;
+  isSubmitting?: boolean;
+  totalSteps: number;
 }
 
 // Sample images for demo
@@ -52,63 +59,61 @@ export function AuctionCreationForm({
   currentStep,
   formData,
   updateFormData,
+  goToNextStep,
+  goToPrevStep,
+  handleFinalSubmit,
+  isSubmitting = false,
+  totalSteps,
 }: AuctionCreationFormProps) {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
   // Step 1: Basic Information
+  const formSchema_1 = z.object({
+    title: z.string().min(5, "Title must be at least 5 characters").max(100),
+    description: z
+      .string()
+      .min(20, "Description must be at least 20 characters")
+      .max(500),
+    imageUrl: z.string().url("Must be a valid URL").optional(),
+  });
+
+  type FormValues_1 = z.infer<typeof formSchema_1>;
+
+  const form_1 = useForm<FormValues_1>({
+    resolver: zodResolver(formSchema_1),
+    defaultValues: {
+      title: formData.title || "",
+      description: formData.description || "",
+      imageUrl: formData.imageUrl || "",
+    },
+  });
+  const onSubmit = (data: FormValues_1) => {
+    updateFormData({
+      ...data,
+    });
+    goToNextStep();
+  };
   const Step1Form = () => {
-    const formSchema = z.object({
-      title: z.string().min(5, "Title must be at least 5 characters").max(100),
-      description: z.string().min(20, "Description must be at least 20 characters").max(500),
-    });
-    
-    type FormValues = z.infer<typeof formSchema>;
-    
-    const form = useForm<FormValues>({
-      resolver: zodResolver(formSchema),
-      defaultValues: {
-        title: formData.title || "",
-        description: formData.description || "",
-      },
-    });
-    
-    const onSubmit = (data: FormValues) => {
-      updateFormData({ 
-        ...data, 
-        imageUrl: selectedImage || formData.imageUrl || sampleImages[0],
-      });
-    };
-    
-    // Incorrect to be resolved
-    React.useEffect(() => {
-      const subscription = form.watch((value) => {
-        const timer = setTimeout(() => {
-          updateFormData(value);
-        }, 300); // 300ms debounce
-        return () => clearTimeout(timer);
-      });
-      return () => subscription.unsubscribe();
-    }, [form, updateFormData]);
-    
     return (
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <Form {...form_1}>
+        <form onSubmit={form_1.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
-            control={form.control}
+            control={form_1.control}
             name="title"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Auction Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter a title for your auction" {...field} />
+                  <Input
+                    placeholder="Enter a title for your auction"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
+
           <FormField
-            control={form.control}
+            control={form_1.control}
             name="description"
             render={({ field }) => (
               <FormItem>
@@ -124,34 +129,46 @@ export function AuctionCreationForm({
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form_1.control}
+            name="imageUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Artwork Image</FormLabel>
+                <FormControl>
+                  <Input
+                    type="url"
+                    placeholder="Paste image URL (https://...)"
+                    {...field}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          ></FormField>
           
-          <div>
-            <Label>Artwork Image</Label>
-            <p className="text-sm text-muted-foreground mb-3">
-              Select an image for your auction or choose from our samples
-            </p>
-            {/* Custom image URL input */}
-            <div className="mb-4">
-              <Input
-                type="url"
-                placeholder="Paste image URL (https://...)"
-                value={selectedImage || formData.imageUrl || ""}
-                onChange={e => {
-                  setSelectedImage(e.target.value);
-                  updateFormData({ ...formData, imageUrl: e.target.value });
-                }}
-                className="mb-2"
-              />
-              <p className="text-xs text-muted-foreground">
-                Or select from the samples below
-              </p>
-            </div>
+          {/* Navigation Buttons */}
+          <div className="flex justify-between mt-8 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={goToPrevStep}
+              disabled={currentStep === 0}
+              type="button"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            
+            <Button type="submit">
+              Continue
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
         </form>
       </Form>
     );
   };
-  
+
   // Utility to convert days/hours/minutes to seconds
   function getDurationSeconds(days: string, hours: string, minutes: string) {
     const d = parseInt(days) || 0;
@@ -160,51 +177,62 @@ export function AuctionCreationForm({
     return d * 86400 + h * 3600 + m * 60;
   }
 
-  // Step 2: Auction Settings
-  const Step2Form = () => {
-    // Common fields
-    const durationFields = {
-      days: z.string().optional(),
-      hours: z.string().optional(),
-      minutes: z.string().optional(),
-    };
+  // Step 2: Auction Settings - Moved outside component for performance
+  // Common fields for all auction types
+  const durationFields = {
+    days: z.string().optional(),
+    hours: z.string().optional(),
+    minutes: z.string().optional(),
+  };
 
-    // Schemas for each auction type
-    const englishAllPaySchema = z.object({
-      type: z.enum(["english", "all-pay"]),
-      startPrice: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
-        message: "Start price must be greater than 0",
+  // Form schemas for auction types
+  const englishAllPaySchema = z.object({
+    type: z.enum(["english", "all-pay"]),
+    startPrice: z
+      .string()
+      .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
+        message: "Starting price must be greater than 0",
       }),
-      reservePrice: z.string().optional(),
-      minBidDelta: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
-        message: "Minimum bid increment must be greater than 0",
+    minBidDelta: z
+      .string()
+      .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
+        message: "Minimum bid increment must be 0 or more tokens",
       }),
-      deadlineExtension: z.string().refine(val => !isNaN(parseInt(val)) && parseInt(val) >= 0, {
+    deadlineExtension: z
+      .string()
+      .refine((val) => !isNaN(parseInt(val)) && parseInt(val) >= 0, {
         message: "Deadline extension must be 0 or more seconds",
       }),
-      ...durationFields,
-    });
+    ...durationFields,
+  });
 
-    const dutchSchema = z.object({
+  const dutchSchema = z
+    .object({
       type: z.literal("dutch"),
       subtype: z.enum(["linear", "exponential", "logarithmic"]),
-      startPrice: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
-        message: "Start price must be greater than 0",
-      }),
+      startPrice: z
+        .string()
+        .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
+          message: "Start price must be greater than 0",
+        }),
       reservePrice: z.string().optional(),
       decayFactor: z.string().optional(), // Only required for exp/log
       ...durationFields,
-    }).refine(
+    })
+    .refine(
       (data) =>
         data.subtype === "linear" ||
-        ((data.subtype === "exponential" || data.subtype === "logarithmic") && data.decayFactor && parseFloat(data.decayFactor) > 0),
+        ((data.subtype === "exponential" || data.subtype === "logarithmic") &&
+          data.decayFactor &&
+          parseFloat(data.decayFactor) > 0),
       {
         message: "Decay factor required for exponential/logarithmic",
         path: ["decayFactor"],
       }
     );
 
-    const vickreySchema = z.object({
+  const vickreySchema = z
+    .object({
       type: z.literal("vickrey"),
       commitDays: z.string().optional(),
       commitHours: z.string().optional(),
@@ -212,7 +240,8 @@ export function AuctionCreationForm({
       revealDays: z.string().optional(),
       revealHours: z.string().optional(),
       revealMinutes: z.string().optional(),
-    }).refine(
+    })
+    .refine(
       (data) => {
         const revealSeconds = getDurationSeconds(
           data.revealDays || "",
@@ -221,125 +250,162 @@ export function AuctionCreationForm({
         );
         return revealSeconds >= 86400;
       },
-      { message: "Reveal period must be at least 1 day", path: ["revealDays"] }
+      {
+        message: "Reveal period must be at least 1 day",
+        path: ["revealDays"],
+      }
     );
 
-    // Select schema based on type
-    type FormValues = z.infer<typeof formSchema>;
-    let formSchema: any;
-    switch (formData.type) {
-      case "english":
-      case "all-pay":
-        formSchema = englishAllPaySchema;
-        break;
-      case "dutch":
-        formSchema = dutchSchema;
-        break;
-      case "vickrey":
-        formSchema = vickreySchema;
-        break;
-      default:
-        formSchema = englishAllPaySchema;
-    }
+  // Select schema based on type
+  let formSchema: any;
+  switch (formData.type) {
+    case "english":
+    case "all-pay":
+      formSchema = englishAllPaySchema;
+      break;
+    case "dutch":
+      formSchema = dutchSchema;
+      break;
+    case "vickrey":
+      formSchema = vickreySchema;
+      break;
+    default:
+      formSchema = englishAllPaySchema;
+  }
 
-    // Auction type selection tab
-    const auctionTypes = [
-      {
-        value: "english",
-        label: "English Auction",
-        description: "Bids increase over time, highest bid wins when auction ends.",
-      },
-      {
-        value: "all-pay",
-        label: "All-Pay Auction",
-        description: "All bidders pay their bids, highest bid wins.",
-      },
-      {
-        value: "dutch",
-        label: "Reverse Dutch Auction",
-        description: "Price decreases over time until someone buys. Supports linear, exponential, logarithmic.",
-      },
-      {
-        value: "vickrey",
-        label: "Vickrey Auction",
-        description: "Sealed bids, highest bidder wins but pays second-highest price.",
-      },
-    ];
+  type FormValues = z.infer<typeof englishAllPaySchema> | z.infer<typeof dutchSchema> | z.infer<typeof vickreySchema>;
 
-    // Default values for each type
-    const defaultValues: any = (() => {
-      if (formData.type === "dutch") {
-        return {
-          type: "dutch",
-          subtype: formData.subtype || "linear",
-          startPrice: formData.startPrice || "0.1",
-          reservePrice: formData.reservePrice || "",
-          decayFactor: formData.decayFactor || "",
-          days: formData.days || "3",
-          hours: formData.hours || "0",
-          minutes: formData.minutes || "0",
-        };
-      }
-      if (formData.type === "vickrey") {
-        return {
-          type: "vickrey",
-          commitDays: formData.commitDays || "1",
-          commitHours: formData.commitHours || "0",
-          commitMinutes: formData.commitMinutes || "0",
-          revealDays: formData.revealDays || "2",
-          revealHours: formData.revealHours || "0",
-          revealMinutes: formData.revealMinutes || "0",
-        };
-      }
-      // english/all-pay
+  // Auction type selection tab
+  const auctionTypes = [
+    {
+      value: "english",
+      label: "English Auction",
+      description:
+        "Bids increase over time, highest bid wins when auction ends.",
+    },
+    {
+      value: "all-pay",
+      label: "All-Pay Auction",
+      description: "All bidders pay their bids, highest bid wins.",
+    },
+    {
+      value: "dutch",
+      label: "Reverse Dutch Auction",
+      description:
+        "Price decreases over time until someone buys. Supports linear, exponential, logarithmic.",
+    },
+    {
+      value: "vickrey",
+      label: "Vickrey Auction",
+      description:
+        "Sealed bids, highest bidder wins but pays second-highest price.",
+    },
+  ];
+
+  // Default values for each type
+  const defaultValues: any = (() => {
+    if (formData.type === "dutch") {
       return {
-        type: formData.type || "english",
+        type: "dutch",
+        subtype: formData.subtype || "linear",
         startPrice: formData.startPrice || "0.1",
-        reservePrice: formData.reservePrice || "",
-        minBidDelta: formData.minBidDelta || "0.05",
-        deadlineExtension: formData.deadlineExtension || "60",
+        reservePrice: formData.reservePrice || "0",
+        decayFactor: formData.decayFactor || "",
         days: formData.days || "3",
         hours: formData.hours || "0",
         minutes: formData.minutes || "0",
       };
-    })();
+    }
+    if (formData.type === "vickrey") {
+      return {
+        type: "vickrey",
+        commitDays: formData.commitDays || "1",
+        commitHours: formData.commitHours || "0",
+        commitMinutes: formData.commitMinutes || "0",
+        revealDays: formData.revealDays || "2",
+        revealHours: formData.revealHours || "0",
+        revealMinutes: formData.revealMinutes || "0",
+      };
+    }
+    // english/all-pay
+    return {
+      type: formData.type || "english",
+      startPrice: formData.startPrice || "0.1",
+      minBidDelta: formData.minBidDelta || "0.05",
+      deadlineExtension: formData.deadlineExtension || "60",
+      days: formData.days || "3",
+      hours: formData.hours || "0",
+      minutes: formData.minutes || "0",
+    };
+  })();
 
-    const form = useForm<FormValues>({
-      resolver: zodResolver(formSchema),
-      defaultValues,
+  // Step 2 form state moved outside component
+  const form_2 = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+  });
+
+  // Reset form when relevant dependencies change
+  React.useEffect(() => {
+    // Only reset when type changes to avoid infinite loops
+    if (form_2.getValues().type !== formData.type) {
+      form_2.reset(defaultValues);
+    }
+  }, [formData.type]);
+
+  // Watch only auction type changes to trigger form updates
+  React.useEffect(() => {
+    const subscription = form_2.watch((value, { name }) => {
+      if (name === "type" && value.type !== formData.type) {
+        // Only update formData when auction type changes
+        updateFormData({ ...formData, type: value.type });
+      }
     });
+    return () => subscription.unsubscribe();
+  }, [form_2, formData, updateFormData]);
 
-    const { watch, setValue, handleSubmit, getValues } = form;
-    const auctionType = watch("type");
-    const dutchSubtype = watch("subtype");
+  const onSubmit_2 = (data: FormValues) => {
+    let update: any = { ...data };
+    if (data.type === "vickrey") {
+      update.commitDuration = getDurationSeconds(
+        data.commitDays || "0",
+        data.commitHours || "0",
+        data.commitMinutes || "0"
+      );
+      update.revealDuration = getDurationSeconds(
+        data.revealDays || "0",
+        data.revealHours || "0",
+        data.revealMinutes || "0"
+      );
+    } else {
+      update.duration = getDurationSeconds(
+        data.days || "0",
+        data.hours || "0",
+        data.minutes || "0"
+      );
+    }
+    updateFormData(update);
+    goToNextStep();
+  };
 
-    // Watch all relevant Dutch fields for chart
-    const dutchStartPrice = watch("startPrice");
-    const dutchReservePrice = watch("reservePrice");
-    const dutchDecayFactor = watch("decayFactor");
-    const dutchDuration = getDurationSeconds(watch("days"), watch("hours"), watch("minutes"));
-
-    // Restore auto-save: update formData every 300ms as user types
-    React.useEffect(() => {
-      const subscription = watch((value) => {
-        let update: any = { ...value };
-        if (value.type === "vickrey") {
-          update.commitDuration = getDurationSeconds(value.commitDays, value.commitHours, value.commitMinutes);
-          update.revealDuration = getDurationSeconds(value.revealDays, value.revealHours, value.revealMinutes);
-        } else {
-          update.duration = getDurationSeconds(value.days, value.hours, value.minutes);
-        }
-        const timer = setTimeout(() => {
-          updateFormData(update);
-        }, 300);
-        return () => clearTimeout(timer);
-      });
-      return () => subscription.unsubscribe();
-    }, [watch, updateFormData]);
+  const Step2Form = () => {
+    // Get current values from formData for conditional rendering (no reactive updates)
+    const auctionType = formData.type || "english";
+    const dutchSubtype = formData.subtype || "linear";
+    
+    // Dutch auction specific fields for chart - using formData instead of watch
+    const dutchStartPrice = formData.startPrice || "0";
+    const dutchReservePrice = formData.reservePrice || "0";
+    const dutchDecayFactor = formData.decayFactor || "0";
+    const dutchDuration = getDurationSeconds(
+      formData.days || "0",
+      formData.hours || "0",
+      formData.minutes || "0"
+    );
 
     return (
-      <Form {...form}>
-        <form className="space-y-6">
+      <Form {...form_2}>
+        <form onSubmit={form_2.handleSubmit(onSubmit_2)} className="space-y-6">
           {/* Auction Type Tabs */}
           <div className="mb-6">
             <Label className="mb-2 block">Auction Type</Label>
@@ -353,10 +419,16 @@ export function AuctionCreationForm({
                       ? "border-primary bg-primary/5"
                       : "hover:border-primary/50"
                   }`}
-                  onClick={() => setValue("type", type.value)}
+                  onClick={() => {
+                    form_2.setValue("type", type.value as "english" | "all-pay" | "dutch" | "vickrey");
+                    // Trigger form submission to update formData
+                    form_2.handleSubmit(onSubmit_2)();
+                  }}
                 >
                   <div className="font-medium mb-1">{type.label}</div>
-                  <div className="text-xs text-muted-foreground">{type.description}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {type.description}
+                  </div>
                 </button>
               ))}
             </div>
@@ -366,7 +438,7 @@ export function AuctionCreationForm({
           {(auctionType === "english" || auctionType === "all-pay") && (
             <>
               <FormField
-                control={form.control}
+                control={form_2.control}
                 name="startPrice"
                 render={({ field }) => (
                   <FormItem>
@@ -379,20 +451,7 @@ export function AuctionCreationForm({
                 )}
               />
               <FormField
-                control={form.control}
-                name="reservePrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reserve Price (ETH)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" min="0" placeholder="Optional" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
+                control={form_2.control}
                 name="minBidDelta"
                 render={({ field }) => (
                   <FormItem>
@@ -403,7 +462,10 @@ export function AuctionCreationForm({
                           <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="max-w-xs">The minimum amount by which each new bid must exceed the current highest bid.</p>
+                          <p className="max-w-xs">
+                            The minimum amount by which each new bid must exceed
+                            the current highest bid.
+                          </p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -415,7 +477,7 @@ export function AuctionCreationForm({
                 )}
               />
               <FormField
-                control={form.control}
+                control={form_2.control}
                 name="deadlineExtension"
                 render={({ field }) => (
                   <FormItem>
@@ -426,7 +488,10 @@ export function AuctionCreationForm({
                           <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="max-w-xs">Time (in seconds) by which the auction deadline extends when a new bid is placed near the end.</p>
+                          <p className="max-w-xs">
+                            Time (in seconds) by which the auction deadline
+                            extends when a new bid is placed near the end.
+                          </p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -446,13 +511,16 @@ export function AuctionCreationForm({
                       <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="max-w-xs">Total auction duration. You can set days, hours, and minutes.</p>
+                      <p className="max-w-xs">
+                        Total auction duration. You can set days, hours, and
+                        minutes.
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </div>
                 <div className="flex gap-2">
                   <FormField
-                    control={form.control}
+                    control={form_2.control}
                     name="days"
                     render={({ field }) => (
                       <FormItem>
@@ -464,7 +532,7 @@ export function AuctionCreationForm({
                     )}
                   />
                   <FormField
-                    control={form.control}
+                    control={form_2.control}
                     name="hours"
                     render={({ field }) => (
                       <FormItem>
@@ -476,7 +544,7 @@ export function AuctionCreationForm({
                     )}
                   />
                   <FormField
-                    control={form.control}
+                    control={form_2.control}
                     name="minutes"
                     render={({ field }) => (
                       <FormItem>
@@ -496,12 +564,19 @@ export function AuctionCreationForm({
           {auctionType === "dutch" && (
             <>
               <FormField
-                control={form.control}
+                control={form_2.control}
                 name="subtype"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Reverse Dutch Subtype</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select 
+                      value={field.value} 
+                      onValueChange={(value) => {
+                        field.onChange(value as "linear" | "exponential" | "logarithmic");
+                        form_2.setValue("subtype", value as "linear" | "exponential" | "logarithmic");
+                        form_2.handleSubmit(onSubmit_2)();
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select subtype" />
                       </SelectTrigger>
@@ -515,7 +590,7 @@ export function AuctionCreationForm({
                 )}
               />
               <FormField
-                control={form.control}
+                control={form_2.control}
                 name="startPrice"
                 render={({ field }) => (
                   <FormItem>
@@ -528,27 +603,40 @@ export function AuctionCreationForm({
                 )}
               />
               <FormField
-                control={form.control}
+                control={form_2.control}
                 name="reservePrice"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Reserve Price (ETH)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" min="0" placeholder="Optional" {...field} />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="Optional"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              {(dutchSubtype === "exponential" || dutchSubtype === "logarithmic") && (
+              {(dutchSubtype === "exponential" ||
+                dutchSubtype === "logarithmic") && (
                 <FormField
-                  control={form.control}
+                  control={form_2.control}
                   name="decayFactor"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Decay Factor</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" min="0.01" max="1" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          max="1"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -564,13 +652,16 @@ export function AuctionCreationForm({
                       <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="max-w-xs">Total auction duration. You can set days, hours, and minutes.</p>
+                      <p className="max-w-xs">
+                        Total auction duration. You can set days, hours, and
+                        minutes.
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </div>
                 <div className="flex gap-2">
                   <FormField
-                    control={form.control}
+                    control={form_2.control}
                     name="days"
                     render={({ field }) => (
                       <FormItem>
@@ -582,7 +673,7 @@ export function AuctionCreationForm({
                     )}
                   />
                   <FormField
-                    control={form.control}
+                    control={form_2.control}
                     name="hours"
                     render={({ field }) => (
                       <FormItem>
@@ -594,7 +685,7 @@ export function AuctionCreationForm({
                     )}
                   />
                   <FormField
-                    control={form.control}
+                    control={form_2.control}
                     name="minutes"
                     render={({ field }) => (
                       <FormItem>
@@ -630,13 +721,15 @@ export function AuctionCreationForm({
                     <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="max-w-xs">Duration in which bidders can commit their sealed bids.</p>
+                    <p className="max-w-xs">
+                      Duration in which bidders can commit their sealed bids.
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </div>
               <div className="flex gap-2 mb-4">
                 <FormField
-                  control={form.control}
+                  control={form_2.control}
                   name="commitDays"
                   render={({ field }) => (
                     <FormItem>
@@ -648,7 +741,7 @@ export function AuctionCreationForm({
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={form_2.control}
                   name="commitHours"
                   render={({ field }) => (
                     <FormItem>
@@ -660,7 +753,7 @@ export function AuctionCreationForm({
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={form_2.control}
                   name="commitMinutes"
                   render={({ field }) => (
                     <FormItem>
@@ -679,13 +772,16 @@ export function AuctionCreationForm({
                     <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="max-w-xs">Duration when all committed bidders are expected to reveal their bids. Must be at least 1 day.</p>
+                    <p className="max-w-xs">
+                      Duration when all committed bidders are expected to reveal
+                      their bids. Must be at least 1 day.
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </div>
               <div className="flex gap-2">
                 <FormField
-                  control={form.control}
+                  control={form_2.control}
                   name="revealDays"
                   render={({ field }) => (
                     <FormItem>
@@ -697,7 +793,7 @@ export function AuctionCreationForm({
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={form_2.control}
                   name="revealHours"
                   render={({ field }) => (
                     <FormItem>
@@ -709,7 +805,7 @@ export function AuctionCreationForm({
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={form_2.control}
                   name="revealMinutes"
                   render={({ field }) => (
                     <FormItem>
@@ -724,28 +820,57 @@ export function AuctionCreationForm({
               <FormMessage />
             </>
           )}
+          
+          {/* Navigation Buttons */}
+          <div className="flex justify-between mt-8 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={goToPrevStep}
+              disabled={currentStep === 0}
+              type="button"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            
+            <Button type="submit">
+              Continue
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         </form>
       </Form>
     );
   };
-  
+
   // Step 3: Token Setup
   const Step3Form = () => {
-    const formSchema = z.object({
-      biddingTokenAddress: z.string().min(1, "Bidding token address is required"),
-      auctionType: z.enum(["NFT", "ERC20"]),
-      auctionedTokenAddress: z.string().min(1, "Auctioned token address is required"),
-      tokenId: z.string().optional(),
-      tokenAmount: z.string().optional(),
-    }).refine(
-      (data) =>
-        (data.auctionType === "NFT" && data.tokenId && data.tokenId.length > 0) ||
-        (data.auctionType === "ERC20" && data.tokenAmount && data.tokenAmount.length > 0),
-      {
-        message: "Token ID is required for NFT, Token Amount is required for ERC20",
-        path: ["auctionType"],
-      }
-    );
+    const formSchema = z
+      .object({
+        biddingTokenAddress: z
+          .string()
+          .min(1, "Bidding token address is required"),
+        auctionType: z.enum(["NFT", "ERC20"]),
+        auctionedTokenAddress: z
+          .string()
+          .min(1, "Auctioned token address is required"),
+        tokenId: z.string().optional(),
+        tokenAmount: z.string().optional(),
+      })
+      .refine(
+        (data) =>
+          (data.auctionType === "NFT" &&
+            data.tokenId &&
+            data.tokenId.length > 0) ||
+          (data.auctionType === "ERC20" &&
+            data.tokenAmount &&
+            data.tokenAmount.length > 0),
+        {
+          message:
+            "Token ID is required for NFT, Token Amount is required for ERC20",
+          path: ["auctionType"],
+        }
+      );
 
     type FormValues = z.infer<typeof formSchema>;
 
@@ -763,20 +888,19 @@ export function AuctionCreationForm({
     const { watch, setValue } = form;
     const auctionType = watch("auctionType");
 
-    React.useEffect(() => {
-      const subscription = watch((value) => {
-        updateFormData(value);
-      });
-      return () => subscription.unsubscribe();
-    }, [watch]);
+    const onSubmit_3 = (data: FormValues) => {
+      updateFormData(data);
+      goToNextStep();
+    };
 
     return (
       <Form {...form}>
-        <form className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit_3)} className="space-y-6">
           <div className="bg-muted/50 rounded-lg p-4 mb-6">
             <h3 className="font-medium mb-2">Token Setup</h3>
             <p className="text-sm text-muted-foreground">
-              Specify the ERC20 token to be used for bidding, the auction type, and the token being auctioned (NFT or ERC20).
+              Specify the ERC20 token to be used for bidding, the auction type,
+              and the token being auctioned (NFT or ERC20).
             </p>
           </div>
 
@@ -787,10 +911,7 @@ export function AuctionCreationForm({
               <FormItem>
                 <FormLabel>Bidding Token Address (ERC20)</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="0x..."
-                    {...field}
-                  />
+                  <Input placeholder="0x..." {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -846,10 +967,7 @@ export function AuctionCreationForm({
                     : "ERC20 Token Address"}
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="0x..."
-                    {...field}
-                  />
+                  <Input placeholder="0x..." {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -865,10 +983,7 @@ export function AuctionCreationForm({
                 <FormItem>
                   <FormLabel>NFT Token ID</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Enter NFT Token ID"
-                      {...field}
-                    />
+                    <Input placeholder="Enter NFT Token ID" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -896,12 +1011,29 @@ export function AuctionCreationForm({
               )}
             />
           )}
-
+          
+          {/* Navigation Buttons */}
+          <div className="flex justify-between mt-8 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={goToPrevStep}
+              disabled={currentStep === 0}
+              type="button"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            
+            <Button type="submit">
+              Continue
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         </form>
       </Form>
     );
   };
-  
+
   // Step 4: Review & Submit
   const Step4Form = () => {
     // Helper for duration formatting
@@ -910,13 +1042,15 @@ export function AuctionCreationForm({
       const d = Math.floor(seconds / 86400);
       const h = Math.floor((seconds % 86400) / 3600);
       const m = Math.floor((seconds % 3600) / 60);
-      return [
-        d > 0 ? `${d}days` : null,
-        h > 0 ? `${h}hours` : null,
-        m > 0 ? `${m}minutes` : null,
-      ]
-        .filter(Boolean)
-        .join(" ") || "0m";
+      return (
+        [
+          d > 0 ? `${d}days ` : null,
+          h > 0 ? `${h}hours ` : null,
+          m > 0 ? `${m}minutes` : null,
+        ]
+          .filter(Boolean)
+          .join(" ") || "0m"
+      );
     }
 
     // Auction settings
@@ -926,23 +1060,29 @@ export function AuctionCreationForm({
     // Duration
     let durationLabel = "-";
     if (auctionType === "vickrey") {
-      durationLabel = `Commit: ${formatDuration(formData.commitDuration)} | Reveal: ${formatDuration(formData.revealDuration)}`;
+      durationLabel = `Commit: ${formatDuration(
+        formData.commitDuration
+      )} | Reveal: ${formatDuration(formData.revealDuration)}`;
     } else {
       durationLabel = formatDuration(formData.duration);
     }
+
+    console.log("Reviewing auction data:", formData);
 
     return (
       <div className="space-y-8">
         <div className="flex items-center gap-6">
           <div className="aspect-square relative w-28 h-28 rounded-lg overflow-hidden bg-muted">
             <img
-              src={formData.imageUrl || sampleImages[0]}
+              src={formData.imageUrl}
               alt="Auction preview"
               className="object-cover w-full h-full"
             />
           </div>
           <div className="space-y-1 flex-1 min-w-0">
-            <h3 className="text-lg font-semibold truncate">{formData.title || "Untitled Auction"}</h3>
+            <h3 className="text-lg font-semibold truncate">
+              {formData.title || "Untitled Auction"}
+            </h3>
             <p className="text-sm text-muted-foreground line-clamp-2">
               {formData.description || "No description provided."}
             </p>
@@ -961,16 +1101,20 @@ export function AuctionCreationForm({
               <>
                 <div className="text-muted-foreground">Start Price</div>
                 <div className="font-medium">{formData.startPrice} ETH</div>
-                {formData.reservePrice && (
+                {/* {formData.reservePrice && (
                   <>
                     <div className="text-muted-foreground">Reserve Price</div>
-                    <div className="font-medium">{formData.reservePrice} ETH</div>
+                    <div className="font-medium">
+                      {formData.reservePrice} ETH
+                    </div>
                   </>
-                )}
+                )} */}
                 <div className="text-muted-foreground">Min Bid Increment</div>
                 <div className="font-medium">{formData.minBidDelta} ETH</div>
                 <div className="text-muted-foreground">Deadline Extension</div>
-                <div className="font-medium">{formData.deadlineExtension} sec</div>
+                <div className="font-medium">
+                  {formData.deadlineExtension} sec
+                </div>
               </>
             ) : null}
 
@@ -983,10 +1127,13 @@ export function AuctionCreationForm({
                 {formData.reservePrice && (
                   <>
                     <div className="text-muted-foreground">Reserve Price</div>
-                    <div className="font-medium">{formData.reservePrice} ETH</div>
+                    <div className="font-medium">
+                      {formData.reservePrice} ETH
+                    </div>
                   </>
                 )}
-                {(formData.subtype === "exponential" || formData.subtype === "logarithmic") && (
+                {(formData.subtype === "exponential" ||
+                  formData.subtype === "logarithmic") && (
                   <>
                     <div className="text-muted-foreground">Decay Factor</div>
                     <div className="font-medium">{formData.decayFactor}</div>
@@ -998,22 +1145,32 @@ export function AuctionCreationForm({
             {auctionType === "vickrey" ? (
               <>
                 <div className="text-muted-foreground">Commit Period</div>
-                <div className="font-medium">{formatDuration(formData.commitDuration)}</div>
+                <div className="font-medium">
+                  {formatDuration(formData.commitDuration)}
+                </div>
                 <div className="text-muted-foreground">Reveal Period</div>
-                <div className="font-medium">{formatDuration(formData.revealDuration)}</div>
+                <div className="font-medium">
+                  {formatDuration(formData.revealDuration)}
+                </div>
               </>
             ) : null}
 
             {/* Token Setup */}
             <div className="col-span-2 border-t pt-2 mt-2" />
             <div className="text-muted-foreground">Bidding Token (ERC20)</div>
-            <div className="font-medium break-all">{formData.biddingTokenAddress}</div>
+            <div className="font-medium break-all">
+              {formData.biddingTokenAddress}
+            </div>
             <div className="text-muted-foreground">Auctioned Token Type</div>
             <div className="font-medium">{tokenType}</div>
             <div className="text-muted-foreground">
-              {tokenType === "NFT" ? "NFT Contract Address" : "ERC20 Token Address"}
+              {tokenType === "NFT"
+                ? "NFT Contract Address"
+                : "ERC20 Token Address"}
             </div>
-            <div className="font-medium break-all">{formData.auctionedTokenAddress}</div>
+            <div className="font-medium break-all">
+              {formData.auctionedTokenAddress}
+            </div>
             {tokenType === "NFT" && (
               <>
                 <div className="text-muted-foreground">NFT Token ID</div>
@@ -1031,9 +1188,31 @@ export function AuctionCreationForm({
 
         <div className="bg-blue-500/10 text-blue-500 p-4 rounded-lg">
           <p className="text-sm">
-            By creating this auction, you agree to our Terms of Service and Auction Rules.
-            Once published, your auction will be visible to all HammerChain users.
+            By creating this auction, you agree to our Terms of Service and
+            Auction Rules. Once published, your auction will be visible to all
+            HammerChain users.
           </p>
+        </div>
+        
+        {/* Navigation Buttons */}
+        <div className="flex justify-between mt-8 pt-4 border-t">
+          <Button
+            variant="outline"
+            onClick={goToPrevStep}
+            disabled={currentStep === 0}
+            type="button"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+          
+          <Button 
+            onClick={handleFinalSubmit}
+            disabled={isSubmitting}
+            type="button"
+          >
+            {isSubmitting ? "Creating..." : "Create Auction"}
+          </Button>
         </div>
       </div>
     );

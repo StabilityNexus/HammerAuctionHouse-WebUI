@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +18,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useAccount, useWriteContract } from "wagmi";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { placeBid } from "@/AllPayAuction";
+import { getAuctionService } from "@/lib/auction-service";
 import { Address } from "viem";
 
 interface BidFormProps {
@@ -30,51 +30,97 @@ interface BidFormProps {
 
 export function BidForm({ auction, onBidPlaced }: BidFormProps) {
   const { isConnected, address } = useAccount();
-  const [bidAmount, setBidAmount] = useState<string>();
+  const [bidAmount, setBidAmount] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  if (auction.protocol == "English" || auction.protocol == "AllPay") {
-    setBidAmount(
-      (
-        Number(auction.highestBid!) + (Number(auction.minBidDelta) || 0.1)
-      ).toFixed(2)
-    );
-  }
+  const { 
+    writeContract, 
+    data: hash,
+    isPending,
+    error: writeError 
+  } = useWriteContract();
+  
+  // Wait for transaction confirmation
+  const { 
+    isLoading: isConfirming, 
+    isSuccess: isConfirmed,
+    error: confirmError
+  } = useWaitForTransactionReceipt({
+    hash,
+  });
 
-  const minBidAmount =
-    Number(auction.highestBid!) + (Number(auction.minBidDelta) || 0.1);
-  const isValidBid =
-    !isNaN(parseFloat(bidAmount!)) && parseFloat(bidAmount!) >= minBidAmount;
+  // Handle successful transaction confirmation
+  useEffect(() => {
+    if (isConfirmed && hash) {
+      console.log("Transaction confirmed:", hash);
+      
+      // Create a bid object for immediate UI update
+      const newBid: Bid = {
+        id: uuidv4(),
+        auctionId: auction.id,
+        bidder: address || "",
+        amount: parseFloat(bidAmount),
+        timestamp: Date.now(),
+      };
+
+      onBidPlaced(newBid);
+      setShowSuccess(true);
+      setIsSubmitting(false);
+      
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 3000);
+    }
+  }, [isConfirmed, hash, auction.id, address, bidAmount, onBidPlaced]);
+
+  // Handle transaction errors
+  useEffect(() => {
+    if (writeError || confirmError) {
+      console.error("Transaction error:", writeError || confirmError);
+      setIsSubmitting(false);
+    }
+  }, [writeError, confirmError]);
+
+  useEffect(() => {
+    if (auction.protocol === "English" || auction.protocol === "AllPay") {
+      const currentBid = auction.highestBid ? Number(auction.highestBid) / 1e18 : 0;
+      const minDelta = auction.minBidDelta ? Number(auction.minBidDelta) / 1e18 : 0.1;
+      setBidAmount((currentBid + minDelta).toFixed(2));
+    }
+  }, [auction]);
+
+  const currentBid = auction.highestBid ? Number(auction.highestBid) / 1e18 : 0;
+  const minDelta = auction.minBidDelta ? Number(auction.minBidDelta) / 1e18 : 0.1;
+  const minBidAmount = currentBid + minDelta;
+  const isValidBid = !isNaN(parseFloat(bidAmount)) && parseFloat(bidAmount) >= minBidAmount;
 
   const handleSubmit = async () => {
-    if (!isValidBid || !isConnected) return;
-    const { data: hash, writeContract } = useWriteContract();
+    if (!isValidBid || !isConnected || !address || isSubmitting) return;
+
     setIsSubmitting(true);
-    if (!writeContract) return;
-    await placeBid(
-      writeContract,
-      BigInt(auction.id),
-      BigInt(parseFloat(bidAmount!)),
-      auction.biddingToken! as Address,
-      BigInt(auction.auctionType)
-    );
-    const newBid: Bid = {
-      id: uuidv4(),
-      bidder: address!,
-      amount: parseFloat(bidAmount!),
-      timestamp: Date.now(),
-    };
-
-    onBidPlaced(newBid);
-    setIsSubmitting(false);
-    setShowSuccess(true);
-
-    // Hide success message after 3 seconds
-    setTimeout(() => setShowSuccess(false), 3000);
-    // Simulate transaction processing
-    // setTimeout(() => {
-
-    // }, 1500);
+    try {
+      const auctionService = getAuctionService(auction.protocol);
+      const bidAmountWei = BigInt(Math.floor(parseFloat(bidAmount) * 1e18));
+      
+      console.log("Placing bid:", {
+        auctionId: auction.id,
+        bidAmount: bidAmountWei,
+        protocol: auction.protocol
+      });
+      
+      // Use the service to place the bid, which will handle the writeContract call
+      await auctionService.placeBid(
+        writeContract,
+        BigInt(auction.id),
+        bidAmountWei,
+        auction.biddingToken as Address,
+        BigInt(auction.auctionType)
+      );
+      
+    } catch (error) {
+      console.error("Error placing bid transaction:", error);
+      setIsSubmitting(false);
+    }
   };
 
   if (!isConnected) {
@@ -136,9 +182,39 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
               className="bg-green-500/10 text-green-500 p-4 rounded-lg flex items-start"
             >
               <Check className="h-5 w-5 mr-3 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium">
+                  Your bid has been placed successfully!
+                </p>
+                <p className="text-sm mt-1">
+                  Transaction confirmed on the blockchain. Bid history will update shortly.
+                </p>
+              </div>
+            </motion.div>
+          )}
+          
+          {isPending && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="bg-blue-500/10 text-blue-500 p-4 rounded-lg flex items-start"
+            >
+              <Info className="h-5 w-5 mr-3 mt-0.5 shrink-0" />
               <p>
-                Your bid has been placed successfully! The transaction has been
-                confirmed.
+                Please confirm the transaction in your wallet...
+              </p>
+            </motion.div>
+          )}
+          
+          {isConfirming && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="bg-yellow-500/10 text-yellow-500 p-4 rounded-lg flex items-start"
+            >
+              <Info className="h-5 w-5 mr-3 mt-0.5 shrink-0" />
+              <p>
+                Transaction submitted! Waiting for blockchain confirmation...
               </p>
             </motion.div>
           )}
@@ -146,8 +222,14 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button className="w-full" disabled={!isValidBid || isSubmitting}>
-              {isSubmitting ? "Processing..." : "Place Bid"}
+            <Button 
+              className="w-full" 
+              disabled={!isValidBid || isSubmitting || isPending || isConfirming}
+            >
+              {isPending && "Preparing Transaction..."}
+              {isConfirming && "Confirming..."}
+              {!isPending && !isConfirming && isSubmitting && "Processing..."}
+              {!isPending && !isConfirming && !isSubmitting && "Place Bid"}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>

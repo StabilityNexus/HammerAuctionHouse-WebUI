@@ -5,9 +5,10 @@ import { Address } from "viem";
 export type AuctionType = 'English' | 'Exponential' | 'AllPay' | 'Vickrey' | 'Linear' | 'Logarithmic';
 
 export interface Bid {
+  id: string;
   auctionId: string;
   bidder: string;
-  bidAmount: number;
+  amount: number;
   timestamp: number;
 }
 
@@ -38,6 +39,7 @@ export interface Auction {
   bidCommitEnd?: bigint;
   bidRevealEnd?: bigint;
   startTime?: bigint;
+  availableFunds?: bigint
 }
 
 // Random image URLs from Pexels
@@ -124,7 +126,7 @@ for (let i = 0; i < 10; i++) {
   if (isUpcoming) {
     status = 'upcoming';
     startTime = BigInt(Math.floor(randomFutureDate()));
-    deadline = startTime + BigInt(1000 * 60 * 60 * 24 * (3 + Math.random() * 7));
+    deadline = startTime + BigInt(Math.floor(1000 * 60 * 60 * 24 * (3 + Math.random() * 7)));
   } else if (isActive) {
     status = 'active';
     startTime = BigInt(Math.floor(randomPastDate()));
@@ -132,7 +134,7 @@ for (let i = 0; i < 10; i++) {
   } else {
     status = 'ended';
     deadline = BigInt(Math.floor(randomPastDate()));
-    startTime = deadline - BigInt(1000 * 60 * 60 * 24 * (3 + Math.random() * 7));
+    startTime = deadline - BigInt(Math.floor(1000 * 60 * 60 * 24 * (3 + Math.random() * 7)));
   }
 
   const auctionTypes: AuctionType[] = ['English', 'AllPay']; //for now only these
@@ -187,4 +189,72 @@ export function getUserWatchlist(userAddress: string): Auction[] {
 
 export function getAuctionById(id: string): Auction | undefined {
   return mockAuctions.find(auction => auction.id === id);
+}
+
+// Mock bids data - specifically for AllPay auctions where everyone pays
+export const mockBids: Bid[] = [
+  // Bids for auction "1" (AllPay auction)
+  {
+    id: "bid-1-1",
+    auctionId: "1",
+    bidder: "0xa123456789012345678901234567890123456789",
+    amount: 2.5,
+    timestamp: Date.now() - 1000 * 60 * 30, // 30 minutes ago
+  },
+  {
+    id: "bid-1-2", 
+    auctionId: "1",
+    bidder: "0xb123456789012345678901234567890123456789",
+    amount: 3.2,
+    timestamp: Date.now() - 1000 * 60 * 25, // 25 minutes ago
+  },
+  {
+    id: "bid-1-3",
+    auctionId: "1", 
+    bidder: "0xc123456789012345678901234567890123456789",
+    amount: 4.1,
+    timestamp: Date.now() - 1000 * 60 * 20, // 20 minutes ago
+  },
+  {
+    id: "bid-1-4",
+    auctionId: "1",
+    bidder: "0xa123456789012345678901234567890123456789", // Same bidder increases bid
+    amount: 5.0,
+    timestamp: Date.now() - 1000 * 60 * 15, // 15 minutes ago
+  },
+  {
+    id: "bid-1-5",
+    auctionId: "1",
+    bidder: "0xd123456789012345678901234567890123456789",
+    amount: 6.8,
+    timestamp: Date.now() - 1000 * 60 * 10, // 10 minutes ago
+  },
+  {
+    id: "bid-1-6",
+    auctionId: "1",
+    bidder: "0xe123456789012345678901234567890123456789",
+    amount: 8.5,
+    timestamp: Date.now() - 1000 * 60 * 5, // 5 minutes ago
+  },
+];
+
+// Get bids for a specific auction
+export function getBidsForAuction(auctionId: string): Bid[] {
+  return mockBids.filter(bid => bid.auctionId === auctionId);
+}
+
+// Get total amount paid in AllPay auction (sum of all bids)
+export function getTotalAmountPaid(auctionId: string): number {
+  const auction = getAuctionById(auctionId);
+  if (auction?.protocol !== 'AllPay') return 0;
+  
+  return mockBids
+    .filter(bid => bid.auctionId === auctionId)
+    .reduce((total, bid) => total + bid.amount, 0);
+}
+
+// Get unique bidders for an auction
+export function getUniqueBidders(auctionId: string): string[] {
+  const bids = mockBids.filter(bid => bid.auctionId === auctionId);
+  return [...new Set(bids.map(bid => bid.bidder))];
 }

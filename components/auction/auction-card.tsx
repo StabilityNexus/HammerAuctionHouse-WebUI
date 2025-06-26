@@ -10,8 +10,9 @@ import { Auction } from "@/lib/mock-data";
 import { formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { remove, append, loadWishlist, isPresent } from "@/lib/storage";
+import { remove, append, loadWishlist, isPresent, generateCode } from "@/lib/storage";
 import { useAccount } from "wagmi";
+import { etherUnits, formatEther } from "viem";
 
 interface AuctionCardProps {
   auction: Auction;
@@ -26,12 +27,16 @@ export function AuctionCard({ auction }: AuctionCardProps) {
   }, [address, auction]);
 
   let status = "";
-  if(Number(auction.deadline)-Date.now()>0){
+  if (Number(auction.deadline) * 1000 - Date.now() > 0) {
     status = "active";
-  }else{
+  } else {
     status = "ended";
   }
-  
+  console.log("Auction status:", auction);
+  // Calculate current price (highest bid or starting bid)
+  const currentPrice = auction.highestBid ? Number(formatEther(auction.highestBid)) : 
+                       auction.startingBid ? Number(formatEther(auction.startingBid)) : 0;
+  console.log("Current price:", auction.highestBid, "ETH");
 
   // Determine auction status text and color
   let statusConfig = {
@@ -72,13 +77,16 @@ export function AuctionCard({ auction }: AuctionCardProps) {
     setIsWatched(!isWatched);
   };
 
+  // Generate encoded auction ID for URL
+  const encodedAuctionId = generateCode(auction.protocol, auction.id);
+
   return (
     <motion.div
       whileHover={{ y: -5 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className="bg-card rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-all border"
     >
-      <Link href={`/auctions/${auction.id}`} className="block">
+      <Link href={`/auctions/${encodedAuctionId}`} className="block">
         <div className="aspect-square relative overflow-hidden bg-muted">
           <Image
             src={auction.imgUrl}
@@ -129,7 +137,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
           <div className="mt-2 flex justify-between items-baseline">
             <div>
               <p className="text-muted-foreground text-sm">Current bid</p>
-              <p className="font-medium text-lg">{auction.highestBid} ETH</p>
+              <p className="font-medium text-lg">{currentPrice.toFixed(4)} ETH</p>
             </div>
 
             <div className="flex items-center text-sm text-muted-foreground gap-1">
@@ -137,17 +145,17 @@ export function AuctionCard({ auction }: AuctionCardProps) {
               {status === "upcoming" ? (
                 <span>
                   Starts{" "}
-                  {formatDistanceToNow(Number(auction.deadline), { addSuffix: true })}
+                  {formatDistanceToNow(Number(auction.deadline) * 1000, { addSuffix: true })}
                 </span>
               ) : status === "active" ? (
                 <span>
                   Ends{" "}
-                  {formatDistanceToNow(Number(auction.deadline), { addSuffix: true })}
+                  {formatDistanceToNow(Number(auction.deadline) * 1000, { addSuffix: true })}
                 </span>
               ) : (
                 <span>
                   Ended{" "}
-                  {formatDistanceToNow(Number(auction.deadline), { addSuffix: true })}
+                  {formatDistanceToNow(Number(auction.deadline) * 1000, { addSuffix: true })}
                 </span>
               )}
             </div>
