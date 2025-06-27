@@ -42,9 +42,11 @@ export function AuctionFilter({
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const auctionTypes: { value: AuctionType; label: string }[] = [
     { value: "English", label: "English" },
-    { value: "Dutch", label: "Dutch" },
+    { value: "Linear", label: "Linear Dutch" },
+    { value: "Exponential", label: "Exponential Dutch" },
+    { value: "Logarithmic", label: "Logarithmic Dutch" },
     { value: "AllPay", label: "All-Pay" },
-    { value: "Vickreay", label: "Vickrey" },
+    { value: "Vickrey", label: "Vickrey" },
   ];
 
   const statusOptions = [

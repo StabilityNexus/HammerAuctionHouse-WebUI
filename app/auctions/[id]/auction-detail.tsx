@@ -22,6 +22,7 @@ import {
 } from "wagmi";
 import { decodeCode } from "@/lib/storage";
 import { toast } from "sonner";
+import { DutchAuctionPrice } from "@/components/auction/dutch-auction-price";
 
 interface AuctionDetailProps {
   auction: Auction | undefined;
@@ -39,6 +40,7 @@ export function AuctionDetail({
   const [error, setError] = useState<string | null>(null);
   const [isWithdrawingFunds, setIsWithdrawingFunds] = useState(false);
   const [isWithdrawingItem, setIsWithdrawingItem] = useState(false);
+  const [currentDutchPrice, setCurrentDutchPrice] = useState<bigint>(BigInt(0));
 
   const publicClient = usePublicClient();
   const { data: blockNumber } = useBlockNumber({ watch: true });
@@ -117,9 +119,8 @@ export function AuctionDetail({
       const auctionService = getAuctionService(protocolName);
       const auctionData = await auctionService.getAuction(BigInt(auctionId));
 
-      console.log("Fetched auction data:", auctionData);
-
       if (auctionData) {
+        // console.log("Fetched auction data:", auctionData);
         // Convert contract data to our Auction interface format
         const formattedAuction: Auction = {
           protocol: protocolName,
@@ -140,20 +141,39 @@ export function AuctionDetail({
           biddingToken:
             auctionData.biddingToken ||
             "0x0000000000000000000000000000000000000000",
-          startingBid: BigInt(auctionData.startingBid || 0),
+          // Handle different auction types - Dutch auctions use startingPrice, others use startingBid
+          startingBid: ["Linear", "Exponential", "Logarithmic"].includes(
+            protocolName
+          )
+            ? BigInt(auctionData.startingPrice || 0)
+            : BigInt(auctionData.startingBid || 0),
           minBidDelta: BigInt(auctionData.minBidDelta || 0),
           highestBid: BigInt(auctionData.highestBid || 0),
+          reservedPrice: BigInt(auctionData.reservedPrice || 0),
+          startingPrice: BigInt(auctionData.startingPrice || 0), // For Dutch auctions
+          decayFactor: BigInt(auctionData.decayFactor || 0), // For Exponential/Logarithmic Dutch auctions
           winner:
             auctionData.winner || "0x0000000000000000000000000000000000000000",
           deadline: BigInt(auctionData.deadline || Date.now() + 86400000),
           deadlineExtension: BigInt(auctionData.deadlineExtension || 0),
+          duration: BigInt(auctionData.duration || 86400),
           isClaimed: auctionData.isClaimed || false,
-          availableFunds: auctionData.availableFunds || BigInt(0),
+          availableFunds: BigInt(auctionData.availableFunds || 0),
         };
 
         setCurrentAuction(formattedAuction);
+
+        // For Dutch auctions, initialize current price with starting price
+        if (["Linear", "Exponential", "Logarithmic"].includes(protocolName)) {
+          if (Number(formattedAuction.deadline) * 1000 < Date.now()) {
+            setCurrentDutchPrice(BigInt(0));
+          } else {
+            setCurrentDutchPrice(BigInt(auctionData.startingPrice || 0));
+          }
+        }
+
         // Fetch bids after setting auction data
-        setTimeout(() => fetchBidsFromContract(), 100);
+        // setTimeout(() => fetchBidsFromContract(), 100);
       }
     } catch (err) {
       console.error(
@@ -169,6 +189,34 @@ export function AuctionDetail({
       setIsLoading(false);
     }
   };
+
+  // Fetch current price for Dutch auctions
+  const fetchCurrentPrice = useCallback(async () => {
+    if (
+      !currentAuction ||
+      !["Linear", "Exponential", "Logarithmic"].includes(protocolName)
+    ) {
+      return;
+    }
+
+    // Don't fetch price if auction has ended - set to 0 instead
+    if (Date.now() >= Number(currentAuction.deadline) * 1000) {
+      setCurrentDutchPrice(BigInt(0));
+      return;
+    }
+
+    try {
+      const auctionService = getAuctionService(protocolName);
+      if (auctionService.getCurrentPrice) {
+        const price = await auctionService.getCurrentPrice(BigInt(auctionId));
+        setCurrentDutchPrice(price);
+      }
+    } catch (err) {
+      console.error("Error fetching current price:", err);
+      // Set to 0 on error as well
+      setCurrentDutchPrice(BigInt(0));
+    }
+  }, [currentAuction, protocolName, auctionId]);
 
   useEffect(() => {
     if (auction) {
@@ -187,6 +235,46 @@ export function AuctionDetail({
       fetchBidsFromContract();
     }
   }, [fetchBidsFromContract]);
+
+  // Fetch current price once on auction or protocol change
+  useEffect(() => {
+    fetchCurrentPrice();
+  }, [fetchCurrentPrice]);
+
+  // Handle Dutch auction purchase (for Dutch auctions, this replaces bidding)
+  const handleDutchPurchase = useCallback(async () => {
+    if (!currentAuction || !userAddress || !isConnected) {
+      toast.error("Please connect your wallet");
+      return;
+    }
+
+    if (!["Linear", "Exponential", "Logarithmic"].includes(protocolName)) {
+      toast.error("This action is only available for Dutch auctions");
+      return;
+    }
+
+    const auctionEnded = Date.now() >= Number(currentAuction.deadline) * 1000;
+    if (auctionEnded) {
+      toast.error("Auction has ended");
+      return;
+    }
+
+    try {
+      const auctionService = getAuctionService(protocolName);
+      await auctionService.withdrawItem(writeContract, BigInt(auctionId));
+      toast.success("Purchase transaction submitted!");
+    } catch (error) {
+      console.error("Error purchasing Dutch auction item:", error);
+      toast.error("Failed to purchase item");
+    }
+  }, [
+    currentAuction,
+    userAddress,
+    isConnected,
+    protocolName,
+    auctionId,
+    writeContract,
+  ]);
 
   // Callback to refetch bids after successful bid placement
   const handleBidPlaced = useCallback(
@@ -295,6 +383,8 @@ export function AuctionDetail({
       </div>
     );
   }
+
+  // console.log("Current auction data:", currentAuction);
 
   if (!currentAuction) {
     return (
@@ -435,16 +525,58 @@ export function AuctionDetail({
             <div className="flex justify-between mb-4">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">
-                  Current Price
+                  {["Linear", "Exponential", "Logarithmic"].includes(
+                    protocolName
+                  )
+                    ? "Current Price (Dutch Auction)"
+                    : "Current Price"}
                 </p>
                 <p className="text-3xl font-bold">
-                  {bids.length > 0
+                  {["Linear", "Exponential", "Logarithmic"].includes(
+                    protocolName
+                  )
+                    ? Date.now() >= Number(currentAuction.deadline) * 1000
+                      ? "Auction Ended"
+                      : (Number(currentDutchPrice) / 1e18).toFixed(4)
+                    : bids.length > 0
                     ? Math.max(...bids.map((b) => b.amount))
                     : currentAuction.startingBid
                     ? Number(currentAuction.startingBid) / 1e18
                     : 0}{" "}
-                  ETH
+                  {["Linear", "Exponential", "Logarithmic"].includes(
+                    protocolName
+                  ) && Date.now() >= Number(currentAuction.deadline) * 1000
+                    ? ""
+                    : "ETH"}
                 </p>
+                {["Linear", "Exponential", "Logarithmic"].includes(
+                  protocolName
+                ) && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    <div>
+                      Starting:{" "}
+                      {currentAuction.startingBid
+                        ? (Number(currentAuction.startingBid) / 1e18).toFixed(4)
+                        : 0}{" "}
+                      ETH
+                    </div>
+                    <div>
+                      Reserve:{" "}
+                      {currentAuction.reservedPrice
+                        ? (Number(currentAuction.reservedPrice) / 1e18).toFixed(
+                            4
+                          )
+                        : 0}{" "}
+                      ETH
+                    </div>
+                    {protocolName === "Exponential" && currentAuction.decayFactor && (
+                      <div>
+                        Decay Factor:{" "}
+                        {(Number(currentAuction.decayFactor) / 1e3).toFixed(3)}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="text-right">
@@ -489,6 +621,22 @@ export function AuctionDetail({
               </div>
             )}
           </div>
+
+          {/* Dutch Auction Price Display */}
+          {currentAuction &&
+            ["Linear", "Exponential", "Logarithmic"].includes(protocolName) && (
+              <div className="mb-6">
+                <DutchAuctionPrice
+                  auctionId={BigInt(auctionId)}
+                  protocol={protocolName}
+                  isEnded={
+                    currentAuction.isClaimed ||
+                    Date.now() >= Number(currentAuction.deadline) * 1000
+                  }
+                  onBuyout={handleDutchPurchase}
+                />
+              </div>
+            )}
 
           {(bids.length > 0 || isLoadingBids) && (
             <div className="mb-6">

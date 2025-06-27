@@ -17,6 +17,7 @@ import {
   VickreyAuctionParams,
   parseBidAmount 
 } from "@/lib/auction-service";
+import { ExponentialDutchAuctionParams } from "@/lib/services/exponential-dutch-auction-service";
 import { AuctionType } from "@/lib/mock-data";
 import { Address } from "viem";
 
@@ -66,19 +67,30 @@ function transformFormDataToParams(formData: any, auctionType: AuctionType) {
         ? BigInt(formData.duration) 
         : getDurationInSeconds(formData.days || "3", formData.hours || "0", formData.minutes || "0");
       
-      const params: DutchAuctionParams = {
+      // Base Dutch auction parameters
+      const dutchParams: DutchAuctionParams = {
         ...baseParams,
         startingPrice: parseBidAmount(formData.startPrice || "1.0"),
         reservedPrice: parseBidAmount(formData.reservePrice || "0.1"),
         duration,
       };
 
-      // Add decay factor for exponential/logarithmic
-      if (auctionType === "Exponential" || auctionType === "Logarithmic") {
-        params.decayFactor = BigInt(Math.floor(parseFloat(formData.decayFactor || "0.1") * 1e18));
+      // Add decay factor for exponential/logarithmic (scaled by 10^3 for precision)
+      if (auctionType === "Exponential") {
+        const exponentialParams: ExponentialDutchAuctionParams = {
+          ...dutchParams,
+          decayFactor: BigInt(Math.floor(parseFloat(formData.decayFactor || "1.0") * 1e3)),
+        };
+        return exponentialParams;
+      } else if (auctionType === "Logarithmic") {
+        const logarithmicParams: DutchAuctionParams = {
+          ...dutchParams,
+          decayFactor: BigInt(Math.floor(parseFloat(formData.decayFactor || "1.0") * 1e3)),
+        };
+        return logarithmicParams;
       }
 
-      return params;
+      return dutchParams;
     }
 
     case "Vickrey": {

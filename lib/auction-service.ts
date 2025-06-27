@@ -30,8 +30,8 @@ export interface AllPayAuctionParams extends BaseAuctionParams {
 export interface DutchAuctionParams extends BaseAuctionParams {
   startingPrice: bigint;
   reservedPrice: bigint;
-  duration: bigint;
   decayFactor?: bigint;
+  duration: bigint;
 }
 
 export interface VickreyAuctionParams extends BaseAuctionParams {
@@ -48,10 +48,10 @@ export type AuctionParams =
 
 // Auction contract addresses
 export const AUCTION_CONTRACTS: Record<AuctionType, Address> = {
-  English: "0x6e9EFdB9943261C9cc0dCe6fa67769ABF513DE27", // Same as AllPay for now
+  English: "0x34a084157dC3f3F1B23000b4F677f3f054681B98",
   AllPay: "0x6e9EFdB9943261C9cc0dCe6fa67769ABF513DE27",
-  Exponential: "0x6e9EFdB9943261C9cc0dCe6fa67769ABF513DE27",
-  Linear: "0x6e9EFdB9943261C9cc0dCe6fa67769ABF513DE27",
+  Exponential: "0x300Da75f03B2f6Fd9159d997b25FAb6e30f6857e", // Exponential Dutch Auction contract
+  Linear: "0x83a7c45b47a1909dA8BD7CBB7Be4326c56BAF090", // Linear Dutch Auction contract
   Logarithmic: "0x6e9EFdB9943261C9cc0dCe6fa67769ABF513DE27",
   Vickrey: "0x6e9EFdB9943261C9cc0dCe6fa67769ABF513DE27",
 };
@@ -71,6 +71,9 @@ export interface IAuctionService {
   // New counter-based methods
   getAuctionCounter(): Promise<bigint>;
   getLastNAuctions(n?: number): Promise<any[]>;
+  
+  // Dutch auction specific methods
+  getCurrentPrice?(auctionId: bigint): Promise<bigint>;
 }
 
 // Factory function to get the appropriate auction service

@@ -25,6 +25,7 @@ export interface Auction {
   auctionedTokenIdOrAmount: bigint;
   biddingToken: string;
   startingBid?: bigint;
+  startingPrice?: bigint; // For Dutch auctions
   minBidDelta?: bigint;
   highestBid?: bigint;
   winner: string;

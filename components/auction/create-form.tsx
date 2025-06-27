@@ -256,24 +256,39 @@ export function AuctionCreationForm({
       }
     );
 
-  // Select schema based on type
-  let formSchema: any;
-  switch (formData.type) {
-    case "english":
-    case "all-pay":
-      formSchema = englishAllPaySchema;
-      break;
-    case "dutch":
-      formSchema = dutchSchema;
-      break;
-    case "vickrey":
-      formSchema = vickreySchema;
-      break;
-    default:
-      formSchema = englishAllPaySchema;
-  }
+  // Select schema based on type - recalculate when formData changes
+  const formSchema = React.useMemo(() => {
+    switch (formData.type) {
+      case "english":
+      case "all-pay":
+        return englishAllPaySchema;
+      case "dutch":
+        return dutchSchema;
+      case "vickrey":
+        return vickreySchema;
+      default:
+        return englishAllPaySchema;
+    }
+  }, [formData.type]);
 
-  type FormValues = z.infer<typeof englishAllPaySchema> | z.infer<typeof dutchSchema> | z.infer<typeof vickreySchema>;
+  type FormValues = {
+    type: "english" | "all-pay" | "dutch" | "vickrey";
+    subtype?: "linear" | "exponential" | "logarithmic";
+    startPrice?: string;
+    minBidDelta?: string;
+    deadlineExtension?: string;
+    reservePrice?: string;
+    decayFactor?: string;
+    days?: string;
+    hours?: string;
+    minutes?: string;
+    commitDays?: string;
+    commitHours?: string;
+    commitMinutes?: string;
+    revealDays?: string;
+    revealHours?: string;
+    revealMinutes?: string;
+  };
 
   // Auction type selection tab
   const auctionTypes = [
@@ -302,8 +317,8 @@ export function AuctionCreationForm({
     },
   ];
 
-  // Default values for each type
-  const defaultValues: any = (() => {
+  // Default values for each type - recalculate when formData changes
+  const defaultValues: any = React.useMemo(() => {
     if (formData.type === "dutch") {
       return {
         type: "dutch",
@@ -337,21 +352,19 @@ export function AuctionCreationForm({
       hours: formData.hours || "0",
       minutes: formData.minutes || "0",
     };
-  })();
+  }, [formData]);
 
   // Step 2 form state moved outside component
   const form_2 = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema as any), // Use any to allow dynamic schema switching
     defaultValues,
   });
 
   // Reset form when relevant dependencies change
   React.useEffect(() => {
-    // Only reset when type changes to avoid infinite loops
-    if (form_2.getValues().type !== formData.type) {
-      form_2.reset(defaultValues);
-    }
-  }, [formData.type]);
+    // Reset form when type changes or when schema/defaults change
+    form_2.reset(defaultValues);
+  }, [formData.type, formData.subtype, defaultValues, formSchema]);
 
   // Watch only auction type changes to trigger form updates
   React.useEffect(() => {
@@ -384,6 +397,10 @@ export function AuctionCreationForm({
         data.minutes || "0"
       );
     }
+    
+    console.log("Step 2 form submission data:", update);
+    
+    // Always update formData and proceed to next step if validation passes
     updateFormData(update);
     goToNextStep();
   };
@@ -392,7 +409,8 @@ export function AuctionCreationForm({
     // Get current values from formData for conditional rendering (no reactive updates)
     const auctionType = formData.type || "english";
     const dutchSubtype = formData.subtype || "linear";
-    
+    console.log("Current auction type:", auctionType);
+    console.log("Dutch subtype:", dutchSubtype);
     // Dutch auction specific fields for chart - using formData instead of watch
     const dutchStartPrice = formData.startPrice || "0";
     const dutchReservePrice = formData.reservePrice || "0";
@@ -421,8 +439,14 @@ export function AuctionCreationForm({
                   }`}
                   onClick={() => {
                     form_2.setValue("type", type.value as "english" | "all-pay" | "dutch" | "vickrey");
-                    // Trigger form submission to update formData
-                    form_2.handleSubmit(onSubmit_2)();
+                    
+                    // Immediately update formData with the new auction type
+                    const currentFormData = form_2.getValues();
+                    const update = { 
+                      ...currentFormData, 
+                      type: type.value as "english" | "all-pay" | "dutch" | "vickrey"
+                    };
+                    updateFormData(update);
                   }}
                 >
                   <div className="font-medium mb-1">{type.label}</div>
@@ -574,7 +598,14 @@ export function AuctionCreationForm({
                       onValueChange={(value) => {
                         field.onChange(value as "linear" | "exponential" | "logarithmic");
                         form_2.setValue("subtype", value as "linear" | "exponential" | "logarithmic");
-                        form_2.handleSubmit(onSubmit_2)();
+                        
+                        // Immediately update formData with the new subtype
+                        const currentFormData = form_2.getValues();
+                        const update = { 
+                          ...currentFormData, 
+                          subtype: value as "linear" | "exponential" | "logarithmic"
+                        };
+                        updateFormData(update);
                       }}
                     >
                       <SelectTrigger>
@@ -833,7 +864,13 @@ export function AuctionCreationForm({
               Back
             </Button>
             
-            <Button type="submit">
+            <Button 
+              type="submit"
+              onClick={() => {
+                // Force validation before submission
+                form_2.handleSubmit(onSubmit_2)();
+              }}
+            >
               Continue
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
