@@ -51,10 +51,10 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
         infoItems.push({
           label: "Decay Factor",
           value: auction.protocol === "Exponential" 
-            ? (Number(auction.decayFactor) / 1e3).toFixed(3)
+            ? (Number(auction.decayFactor) / 1e5).toFixed(5)
             : auction.decayFactor.toString(),
           tooltip: auction.protocol === "Exponential" 
-            ? "The exponential decay rate factor (scaled by 10^3). Higher values mean faster price decay."
+            ? "The exponential decay rate factor (scaled by 10^5). Higher values mean faster price decay."
             : "The rate at which the price decreases over time until someone buys or reserve price is reached",
         });
       }

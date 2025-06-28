@@ -199,8 +199,8 @@ export function AuctionDetail({
       return;
     }
 
-    // Don't fetch price if auction has ended - set to 0 instead
-    if (Date.now() >= Number(currentAuction.deadline) * 1000) {
+    // Don't fetch price if auction is claimed or has ended - set to 0 instead
+    if (currentAuction.isClaimed || Date.now() >= Number(currentAuction.deadline) * 1000) {
       setCurrentDutchPrice(BigInt(0));
       return;
     }
@@ -209,6 +209,7 @@ export function AuctionDetail({
       const auctionService = getAuctionService(protocolName);
       if (auctionService.getCurrentPrice) {
         const price = await auctionService.getCurrentPrice(BigInt(auctionId));
+        console.log(`Current price for ${protocolName} auction ${auctionId}:`, price);
         setCurrentDutchPrice(price);
       }
     } catch (err) {
@@ -535,7 +536,9 @@ export function AuctionDetail({
                   {["Linear", "Exponential", "Logarithmic"].includes(
                     protocolName
                   )
-                    ? Date.now() >= Number(currentAuction.deadline) * 1000
+                    ? currentAuction.isClaimed
+                      ? "Sold"
+                      : Date.now() >= Number(currentAuction.deadline) * 1000
                       ? "Auction Ended"
                       : (Number(currentDutchPrice) / 1e18).toFixed(4)
                     : bids.length > 0
@@ -545,7 +548,7 @@ export function AuctionDetail({
                     : 0}{" "}
                   {["Linear", "Exponential", "Logarithmic"].includes(
                     protocolName
-                  ) && Date.now() >= Number(currentAuction.deadline) * 1000
+                  ) && (currentAuction.isClaimed || Date.now() >= Number(currentAuction.deadline) * 1000)
                     ? ""
                     : "ETH"}
                 </p>
@@ -622,21 +625,7 @@ export function AuctionDetail({
             )}
           </div>
 
-          {/* Dutch Auction Price Display */}
-          {currentAuction &&
-            ["Linear", "Exponential", "Logarithmic"].includes(protocolName) && (
-              <div className="mb-6">
-                <DutchAuctionPrice
-                  auctionId={BigInt(auctionId)}
-                  protocol={protocolName}
-                  isEnded={
-                    currentAuction.isClaimed ||
-                    Date.now() >= Number(currentAuction.deadline) * 1000
-                  }
-                  onBuyout={handleDutchPurchase}
-                />
-              </div>
-            )}
+          {/* Note: Dutch Auction Price Display removed - buy functionality is now integrated in BidForm */}
 
           {(bids.length > 0 || isLoadingBids) && (
             <div className="mb-6">

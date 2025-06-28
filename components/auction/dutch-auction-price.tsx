@@ -18,6 +18,9 @@ export function DutchAuctionPrice({ auctionId, isEnded, onBuyout, protocol = "Li
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
 
+  // Check if this is a reverse Dutch auction
+  const isReverseDutchAuction = ["Linear", "Exponential", "Logarithmic"].includes(protocol);
+
   useEffect(() => {
     const fetchCurrentPrice = async () => {
       // Don't fetch if auction has ended
@@ -30,6 +33,7 @@ export function DutchAuctionPrice({ auctionId, isEnded, onBuyout, protocol = "Li
         const dutchService = getAuctionService(protocol);
         if (dutchService.getCurrentPrice) {
           const price = await dutchService.getCurrentPrice(auctionId);
+          console.log('Current price fetched:', price);
           setCurrentPrice(price);
         }
       } catch (error) {
@@ -41,7 +45,19 @@ export function DutchAuctionPrice({ auctionId, isEnded, onBuyout, protocol = "Li
 
     // Fetch price once when component mounts or dependencies change
     fetchCurrentPrice();
-  }, [auctionId, protocol, isEnded]);
+    
+    // Update price periodically for reverse Dutch auctions
+    let interval: NodeJS.Timeout;
+    if (isReverseDutchAuction && !isEnded) {
+      interval = setInterval(fetchCurrentPrice, 5000); // Update every 5 seconds
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [auctionId, protocol, isEnded, isReverseDutchAuction]);
 
   const handleBuyout = async () => {
     if (!walletClient || isEnded) return;
@@ -67,7 +83,9 @@ export function DutchAuctionPrice({ auctionId, isEnded, onBuyout, protocol = "Li
         </p>
       </div>
       
-      {!isEnded && (
+      {/* Only show Buy Now button for non-reverse Dutch auctions */}
+      {/* For reverse Dutch auctions (Linear, Exponential, Logarithmic), buy functionality is in BidForm */}
+      {!isReverseDutchAuction && !isEnded && (
         <Button 
           onClick={handleBuyout} 
           disabled={isLoading || isEnded}

@@ -50,9 +50,9 @@ export type AuctionParams =
 export const AUCTION_CONTRACTS: Record<AuctionType, Address> = {
   English: "0x34a084157dC3f3F1B23000b4F677f3f054681B98",
   AllPay: "0x6e9EFdB9943261C9cc0dCe6fa67769ABF513DE27",
-  Exponential: "0x300Da75f03B2f6Fd9159d997b25FAb6e30f6857e", // Exponential Dutch Auction contract
+  Exponential: "0xB3F916c2f40aeF1Ed158E5fc99CE402a0a871311", // Exponential Dutch Auction contract
   Linear: "0x83a7c45b47a1909dA8BD7CBB7Be4326c56BAF090", // Linear Dutch Auction contract
-  Logarithmic: "0x6e9EFdB9943261C9cc0dCe6fa67769ABF513DE27",
+  Logarithmic: "0x9C9E785501d6A9EEdA181c52653d7729E5E5d7DE", // Logarithmic Dutch Auction contract
   Vickrey: "0x6e9EFdB9943261C9cc0dCe6fa67769ABF513DE27",
 };
 

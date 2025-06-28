@@ -18,6 +18,7 @@ import {
   parseBidAmount 
 } from "@/lib/auction-service";
 import { ExponentialDutchAuctionParams } from "@/lib/services/exponential-dutch-auction-service";
+import { LogarithmicDutchAuctionParams } from "@/lib/services/logarithmic-dutch-auction-service";
 import { AuctionType } from "@/lib/mock-data";
 import { Address } from "viem";
 
@@ -79,13 +80,13 @@ function transformFormDataToParams(formData: any, auctionType: AuctionType) {
       if (auctionType === "Exponential") {
         const exponentialParams: ExponentialDutchAuctionParams = {
           ...dutchParams,
-          decayFactor: BigInt(Math.floor(parseFloat(formData.decayFactor || "1.0") * 1e3)),
+          decayFactor: BigInt(Math.floor(parseFloat(formData.decayFactor || "1.0") * 1e5)),
         };
         return exponentialParams;
       } else if (auctionType === "Logarithmic") {
-        const logarithmicParams: DutchAuctionParams = {
+        const logarithmicParams: LogarithmicDutchAuctionParams = {
           ...dutchParams,
-          decayFactor: BigInt(Math.floor(parseFloat(formData.decayFactor || "1.0") * 1e3)),
+          decayFactor: BigInt(Math.floor(parseFloat(formData.decayFactor || "1.0") * 1e5)),
         };
         return logarithmicParams;
       }

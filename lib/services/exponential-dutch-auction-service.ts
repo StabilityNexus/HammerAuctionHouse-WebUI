@@ -380,13 +380,14 @@ export interface ExponentialDutchAuctionParams extends DutchAuctionParams {
 
 // Exponential Dutch Auction Service Implementation
 export class ExponentialDutchAuctionService implements IAuctionService {
-  contractAddress: Address = "0x300Da75f03B2f6Fd9159d997b25FAb6e30f6857e";
+  contractAddress: Address = "0xB3F916c2f40aeF1Ed158E5fc99CE402a0a871311";
 
   private mapAuctionData(auctionData: any): any {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 17) {
       console.warn("Invalid auction data:", auctionData);
       return null;
     }
+
 
     return {
       id: auctionData[0],
@@ -495,7 +496,7 @@ export class ExponentialDutchAuctionService implements IAuctionService {
         parseEther(String(params.auctionedTokenIdOrAmount)),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
-      
+
       console.log("Creating Exponential Dutch auction:", params);
       await writeContract({
         address: this.contractAddress,

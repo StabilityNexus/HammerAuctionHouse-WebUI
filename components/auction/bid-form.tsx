@@ -50,30 +50,25 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
     hash,
   });
 
-  const isDutchAuction = auction.protocol.toLowerCase().includes("dutch");
+  // Check if this is a reverse Dutch auction (Linear, Exponential, Logarithmic)
+  const isReverseDutchAuction = ["Linear", "Exponential", "Logarithmic"].includes(auction.protocol);
   const reservePrice = auction.reservedPrice ? Number(auction.reservedPrice) / 1e18 : 0;
   const currentBid = auction.highestBid ? Number(auction.highestBid) / 1e18 : 0;
   const minDelta = auction.minBidDelta ? Number(auction.minBidDelta) / 1e18 : 0.1;
-  const minBidAmount = isDutchAuction ? reservePrice : currentBid + minDelta;
+  const minBidAmount = isReverseDutchAuction ? reservePrice : currentBid + minDelta;
   
-  const isValidBid = !isNaN(parseFloat(bidAmount)) && parseFloat(bidAmount) >= minBidAmount;
+  const isValidBid = isReverseDutchAuction ? true : (!isNaN(parseFloat(bidAmount)) && parseFloat(bidAmount) >= minBidAmount);
 
-  // Update Dutch auction price
+  // Update Dutch auction price for reverse Dutch auctions
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
     const updatePrice = async () => {
-      if (isDutchAuction && !auction.isClaimed) {
+      if (isReverseDutchAuction && !auction.isClaimed && Date.now() < Number(auction.deadline) * 1000) {
         try {
-          const price = await getAuctionService(auction.protocol)
-            .placeBid(
-              undefined,
-              BigInt(auction.id),
-              BigInt(0),
-              auction.biddingToken as Address,
-              BigInt(auction.auctionType || 0)
-            );
-          if (typeof price === 'bigint') {
+          const auctionService = getAuctionService(auction.protocol);
+          if (auctionService.getCurrentPrice) {
+            const price = await auctionService.getCurrentPrice(BigInt(auction.id));
             setCurrentPrice(price);
             setBidAmount((Number(price) / 1e18).toFixed(4));
           }
@@ -83,10 +78,10 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
       }
     };
 
-    if (isDutchAuction && !auction.isClaimed) {
+    if (isReverseDutchAuction && !auction.isClaimed && Date.now() < Number(auction.deadline) * 1000) {
       updatePrice();
-      interval = setInterval(updatePrice, 1000);
-    } else if (!isDutchAuction) {
+      interval = setInterval(updatePrice, 5000); // Update every 5 seconds
+    } else if (!isReverseDutchAuction) {
       const minBid = currentBid + minDelta;
       setBidAmount(minBid.toFixed(4));
     }
@@ -96,7 +91,7 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
         clearInterval(interval);
       }
     };
-  }, [auction, isDutchAuction, currentBid, minDelta]);
+  }, [auction, isReverseDutchAuction, currentBid, minDelta]);
 
   // Handle successful transaction confirmation
   useEffect(() => {
@@ -131,13 +126,18 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
 
   const handleSubmit = async () => {
     if (!isValidBid || !isConnected || !address || isSubmitting) return;
+    
+    // Prevent submission if auction is claimed or ended
+    if (isReverseDutchAuction && (auction.isClaimed || Date.now() >= Number(auction.deadline) * 1000)) {
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       const auctionService = getAuctionService(auction.protocol);
 
-      if (isDutchAuction) {
-        // For Dutch auctions, call withdrawItem to purchase at current price
+      if (isReverseDutchAuction) {
+        // For reverse Dutch auctions, call withdrawItem to purchase at current price
         await auctionService.withdrawItem(
           writeContract,
           BigInt(auction.id)
@@ -164,7 +164,7 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
         <div className="bg-muted p-4 rounded-lg flex items-start gap-3 mb-4">
           <Info className="h-5 w-5 shrink-0 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
-            Connect your wallet to {isDutchAuction ? "purchase this item" : "place a bid"}.
+            Connect your wallet to {isReverseDutchAuction ? "purchase this item" : "place a bid"}.
           </p>
         </div>
         <ConnectButton.Custom>
@@ -182,16 +182,59 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
     <>
       <div className="mt-4 space-y-4">
         <div>
-          {isDutchAuction ? (
+          {isReverseDutchAuction ? (
             <div className="flex flex-col space-y-2">
               <div className="flex justify-between items-baseline">
                 <span className="text-sm font-medium">Current Price</span>
-                <span className="text-lg font-semibold">{bidAmount} ETH</span>
+                <span className="text-lg font-semibold">
+                  {auction.isClaimed 
+                    ? "Sold" 
+                    : Date.now() >= Number(auction.deadline) * 1000
+                    ? "Auction Ended"
+                    : `${bidAmount} ETH`}
+                </span>
               </div>
               <div className="text-xs text-muted-foreground flex justify-between">
                 <span>Reserve Price: {reservePrice} ETH</span>
-                <span>Initial Price: {Number(auction.startingBid) / 1e18} ETH</span>
+                <span>Starting Price: {Number(auction.startingBid || auction.startingPrice || 0) / 1e18} ETH</span>
               </div>
+              {auction.isClaimed ? (
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-2">
+                  <div className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-green-600" />
+                    <p className="text-green-800 dark:text-green-200 text-sm font-medium">
+                      Item Sold
+                    </p>
+                  </div>
+                  <p className="text-green-700 dark:text-green-300 text-xs mt-1">
+                    This auction has been completed and the item has been sold.
+                  </p>
+                </div>
+              ) : Date.now() >= Number(auction.deadline) * 1000 ? (
+                <div className="bg-gray-50 dark:bg-gray-950/20 border border-gray-200 dark:border-gray-800 rounded-lg p-3 mt-2">
+                  <div className="flex items-center gap-2">
+                    <Info className="h-4 w-4 text-gray-600" />
+                    <p className="text-gray-800 dark:text-gray-200 text-sm font-medium">
+                      Auction Ended
+                    </p>
+                  </div>
+                  <p className="text-gray-700 dark:text-gray-300 text-xs mt-1">
+                    This auction has ended and is no longer available for purchase.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-2">
+                  <div className="flex items-center gap-2">
+                    <Info className="h-4 w-4 text-blue-600" />
+                    <p className="text-blue-800 dark:text-blue-200 text-sm font-medium">
+                      Dutch Auction
+                    </p>
+                  </div>
+                  <p className="text-blue-700 dark:text-blue-300 text-xs mt-1">
+                    Price decreases over time. Buy now at the current price, or wait for it to decrease further.
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -240,7 +283,7 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
               <Check className="h-5 w-5 mr-3 mt-0.5 shrink-0" />
               <div>
                 <p className="font-medium">
-                  {isDutchAuction ? "Purchase successful!" : "Your bid has been placed successfully!"}
+                  {isReverseDutchAuction ? "Purchase successful!" : "Your bid has been placed successfully!"}
                 </p>
                 <p className="text-sm mt-1">
                   Transaction confirmed on the blockchain.
@@ -280,25 +323,44 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
           <AlertDialogTrigger asChild>
             <Button 
               className="w-full" 
-              disabled={!isValidBid || isSubmitting || isPending || isConfirming}
+              disabled={
+                !isValidBid || 
+                isSubmitting || 
+                isPending || 
+                isConfirming || 
+                (isReverseDutchAuction && (auction.isClaimed || Date.now() >= Number(auction.deadline) * 1000))
+              }
             >
               {isPending && "Preparing Transaction..."}
               {isConfirming && "Confirming..."}
               {!isPending && !isConfirming && isSubmitting && "Processing..."}
-              {!isPending && !isConfirming && !isSubmitting && (isDutchAuction ? "Purchase Now" : "Place Bid")}
+              {!isPending && !isConfirming && !isSubmitting && 
+                (isReverseDutchAuction 
+                  ? auction.isClaimed 
+                    ? "Sold" 
+                    : Date.now() >= Number(auction.deadline) * 1000
+                    ? "Auction Ended"
+                    : "Buy Now"
+                  : "Place Bid")}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {isDutchAuction ? "Confirm purchase" : "Confirm your bid"}
+                {isReverseDutchAuction ? "Confirm Purchase" : "Confirm your bid"}
               </AlertDialogTitle>
               <AlertDialogDescription>
-                {isDutchAuction ? (
-                  <>
-                    You are about to purchase {auction.name} for {bidAmount} ETH.
-                    This action cannot be undone after confirmation.
-                  </>
+                {isReverseDutchAuction ? (
+                  auction.isClaimed ? (
+                    "This item has already been sold and is no longer available for purchase."
+                  ) : Date.now() >= Number(auction.deadline) * 1000 ? (
+                    "This auction has ended and is no longer available for purchase."
+                  ) : (
+                    <>
+                      You are about to purchase {auction.name} for {bidAmount} ETH.
+                      This action cannot be undone after confirmation.
+                    </>
+                  )
                 ) : (
                   <>
                     You are about to place a bid of {bidAmount} ETH on{" "}
@@ -309,9 +371,11 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSubmit}>
-                {isDutchAuction ? "Confirm Purchase" : "Confirm Bid"}
-              </AlertDialogAction>
+              {!(isReverseDutchAuction && (auction.isClaimed || Date.now() >= Number(auction.deadline) * 1000)) && (
+                <AlertDialogAction onClick={handleSubmit}>
+                  {isReverseDutchAuction ? "Confirm Purchase" : "Confirm Bid"}
+                </AlertDialogAction>
+              )}
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
