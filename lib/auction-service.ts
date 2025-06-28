@@ -53,7 +53,7 @@ export const AUCTION_CONTRACTS: Record<AuctionType, Address> = {
   Exponential: "0xB3F916c2f40aeF1Ed158E5fc99CE402a0a871311", // Exponential Dutch Auction contract
   Linear: "0x83a7c45b47a1909dA8BD7CBB7Be4326c56BAF090", // Linear Dutch Auction contract
   Logarithmic: "0x9C9E785501d6A9EEdA181c52653d7729E5E5d7DE", // Logarithmic Dutch Auction contract
-  Vickrey: "0x6e9EFdB9943261C9cc0dCe6fa67769ABF513DE27",
+  Vickrey: "0x19fcfb4c99cB7313e7c24dBD5114180Fd104B2A8",
 };
 
 // Abstract auction service interface

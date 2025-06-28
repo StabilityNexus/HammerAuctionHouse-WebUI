@@ -240,21 +240,26 @@ export function AuctionCreationForm({
       revealDays: z.string().optional(),
       revealHours: z.string().optional(),
       revealMinutes: z.string().optional(),
-    })
-    .refine(
-      (data) => {
-        const revealSeconds = getDurationSeconds(
-          data.revealDays || "",
-          data.revealHours || "",
-          data.revealMinutes || ""
-        );
-        return revealSeconds >= 86400;
-      },
-      {
-        message: "Reveal period must be at least 1 day",
-        path: ["revealDays"],
-      }
-    );
+    });
+    // .refine(
+    //   (data) => {
+    //     const revealSeconds = getDurationSeconds(
+    //       data.revealDays || "",
+    //       data.revealHours || "",
+    //       data.revealMinutes || ""
+    //     );
+    //     return revealSeconds >= 86400;
+    //   },
+    //   {
+    //     message: "Reveal period must be at least 1 day",
+    //     path: ["revealDays"],
+    //   }
+    // );
+
+    //HwqahUKQuaDTSzKE
+    //0x6cb4e58fc144edc3a628f03742b20bb4f219a9ed15da6e4bca68554b1c18d0b4
+    //xA6bUmv8UxpMgqUa
+    //0x0e53246a2bb29022f1e92f49c30f2269248c0f60de421d9a6f16c01bcebab09c
 
   // Select schema based on type - recalculate when formData changes
   const formSchema = React.useMemo(() => {

@@ -22,6 +22,8 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagm
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { getAuctionService } from "@/lib/auction-service";
 import { Address } from "viem";
+import { VickreyCommitForm } from "./vickrey-commit-form";
+import { VickreyRevealForm } from "./vickrey-reveal-form";
 
 interface BidFormProps {
   auction: Auction;
@@ -52,12 +54,33 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
 
   // Check if this is a reverse Dutch auction (Linear, Exponential, Logarithmic)
   const isReverseDutchAuction = ["Linear", "Exponential", "Logarithmic"].includes(auction.protocol);
+  const isVickreyAuction = auction.protocol === "Vickrey";
+  
   const reservePrice = auction.reservedPrice ? Number(auction.reservedPrice) / 1e18 : 0;
   const currentBid = auction.highestBid ? Number(auction.highestBid) / 1e18 : 0;
   const minDelta = auction.minBidDelta ? Number(auction.minBidDelta) / 1e18 : 0.1;
   const minBidAmount = isReverseDutchAuction ? reservePrice : currentBid + minDelta;
   
   const isValidBid = isReverseDutchAuction ? true : (!isNaN(parseFloat(bidAmount)) && parseFloat(bidAmount) >= minBidAmount);
+
+  // Determine Vickrey auction phase
+  const getVickreyPhase = () => {
+    if (!isVickreyAuction) return null;
+    
+    const now = BigInt(Date.now());
+    const commitEnd = auction.bidCommitEnd || BigInt(0);
+    const revealEnd = auction.bidRevealEnd || BigInt(0);
+    
+    if (now < commitEnd * BigInt(1000)) {
+      return "commit";
+    } else if (now < revealEnd * BigInt(1000)) {
+      return "reveal";
+    } else {
+      return "ended";
+    }
+  };
+
+  const vickreyPhase = getVickreyPhase();
 
   // Update Dutch auction price for reverse Dutch auctions
   useEffect(() => {
@@ -164,7 +187,7 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
         <div className="bg-muted p-4 rounded-lg flex items-start gap-3 mb-4">
           <Info className="h-5 w-5 shrink-0 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
-            Connect your wallet to {isReverseDutchAuction ? "purchase this item" : "place a bid"}.
+            Connect your wallet to {isReverseDutchAuction ? "purchase this item" : isVickreyAuction ? "participate in this auction" : "place a bid"}.
           </p>
         </div>
         <ConnectButton.Custom>
@@ -174,6 +197,85 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
             </Button>
           )}
         </ConnectButton.Custom>
+      </div>
+    );
+  }
+
+  // Handle Vickrey auction with commit/reveal phases
+  if (isVickreyAuction) {
+    const handleVickreySuccess = () => {
+      // Refresh auction data or show success message
+      const newBid: Bid = {
+        id: uuidv4(),
+        auctionId: auction.id,
+        bidder: address || "",
+        amount: 0, // Hidden for Vickrey
+        timestamp: Date.now(),
+      };
+      onBidPlaced(newBid);
+    };
+
+    return (
+      <div className="mt-4 space-y-4">
+        {vickreyPhase === "commit" && (
+          <>
+            <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-start gap-3">
+                <Info className="h-4 w-4 text-blue-600 mt-0.5" />
+                <div>
+                  <p className="text-blue-800 dark:text-blue-200 text-sm font-medium">
+                    Commit Phase Active
+                  </p>
+                  <p className="text-blue-700 dark:text-blue-300 text-xs mt-1">
+                    Submit a sealed bid. Your bid amount will remain hidden until the reveal phase.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <VickreyCommitForm 
+              auction={auction}
+              onCommitPlaced={handleVickreySuccess}
+            />
+          </>
+        )}
+
+        {vickreyPhase === "reveal" && (
+          <>
+            <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+              <div className="flex items-start gap-3">
+                <Info className="h-4 w-4 text-orange-600 mt-0.5" />
+                <div>
+                  <p className="text-orange-800 dark:text-orange-200 text-sm font-medium">
+                    Reveal Phase Active
+                  </p>
+                  <p className="text-orange-700 dark:text-orange-300 text-xs mt-1">
+                    Reveal your previously committed bid to be eligible for winning.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <VickreyRevealForm 
+              auctionId={BigInt(auction.id)}
+              onRevealSuccess={handleVickreySuccess}
+            />
+          </>
+        )}
+
+        {vickreyPhase === "ended" && (
+          <div className="bg-gray-50 dark:bg-gray-950/20 p-4 rounded-lg border border-gray-200 dark:border-gray-800">
+            <div className="flex items-start gap-3">
+              <Info className="h-4 w-4 text-gray-600 mt-0.5" />
+              <div>
+                <p className="text-gray-800 dark:text-gray-200 text-sm font-medium">
+                  Auction Ended
+                </p>
+                <p className="text-gray-700 dark:text-gray-300 text-xs mt-1">
+                  The bid reveal phase has ended. Check the results to see if you won.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

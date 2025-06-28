@@ -211,20 +211,66 @@ export default function AuctionsPage() {
     }
   };
 
+  const fetchVickreyAuctions = async () => {
+    if (!publicClient) return [];
+    
+    try {
+      const vickreyService = getAuctionService("Vickrey");
+      console.log("Fetching Vickrey auctions...");
+      
+      const currentBlock = await publicClient.getBlockNumber();
+      const startBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
+      const auctions = await vickreyService.getAllAuctions(publicClient, startBlock, currentBlock);
+      console.log("Fetched Vickrey auctions:", auctions);
+      
+      return auctions.map((auction: any, index: number) => ({
+        protocol: "Vickrey" as AuctionType,
+        id: auction.id?.toString() || auction.Id?.toString() || index.toString(),
+        name: auction.name || "Unknown Auction",
+        description: auction.description || "No description available",
+        imgUrl: auction.imgUrl || "/placeholder.jpg",
+        auctioneer: auction.auctioneer || "0x0000000000000000000000000000000000000000",
+        auctionType: auction.auctionType?.toString() || "0",
+        auctionedToken: auction.auctionedToken || "0x0000000000000000000000000000000000000000",
+        auctionedTokenIdOrAmount: BigInt(auction.auctionedTokenIdOrAmount || 0),
+        biddingToken: auction.biddingToken || "0x0000000000000000000000000000000000000000",
+        // Vickrey auctions don't have starting bids, use winningBid if available
+        startingBid: BigInt(auction.winningBid || 0),
+        minBidDelta: BigInt(0), // Not applicable for Vickrey
+        highestBid: BigInt(auction.winningBid || 0),
+        winner: auction.winner || "0x0000000000000000000000000000000000000000",
+        // Vickrey uses bidRevealEnd as deadline
+        deadline: BigInt(auction.bidRevealEnd || Date.now() + 86400000),
+        deadlineExtension: BigInt(0), // Not applicable for Vickrey
+        // Custom Vickrey fields
+        bidCommitEnd: BigInt(auction.bidCommitEnd || Date.now() + 43200000), // 12 hours default
+        bidRevealEnd: BigInt(auction.bidRevealEnd || Date.now() + 86400000), // 24 hours default
+        startTime: BigInt(auction.startTime || Date.now()),
+        availableFunds: BigInt(auction.availableFunds || 0),
+        winningBid: BigInt(auction.winningBid || 0),
+        isClaimed: auction.isClaimed || false,
+      }));
+    } catch (error) {
+      console.error("Error fetching Vickrey auctions:", error);
+      return [];
+    }
+  };
+
   const fetchAllAuctions = async () => {
     if (!publicClient) return;
     
     setIsLoading(true);
     try {
-      const [allPayAuctions, englishAuctions, linearDutchAuctions, exponentialDutchAuctions, logarithmicDutchAuctions] = await Promise.all([
+      const [allPayAuctions, englishAuctions, linearDutchAuctions, exponentialDutchAuctions, logarithmicDutchAuctions, vickreyAuctions] = await Promise.all([
         fetchAllPayAuctions(),
         fetchEnglishAuctions(),
         fetchLinearDutchAuctions(),
         fetchExponentialDutchAuctions(),
-        fetchLogarithmicDutchAuctions()
+        fetchLogarithmicDutchAuctions(),
+        fetchVickreyAuctions()
       ]);
       
-      setFetchedAuctions([...allPayAuctions, ...englishAuctions, ...linearDutchAuctions, ...exponentialDutchAuctions, ...logarithmicDutchAuctions]);
+      setFetchedAuctions([...allPayAuctions, ...englishAuctions, ...linearDutchAuctions, ...exponentialDutchAuctions, ...logarithmicDutchAuctions, ...vickreyAuctions]);
     } catch (error) {
       console.error("Error fetching auctions:", error);
       setFetchedAuctions(mockAuctions);
@@ -279,7 +325,7 @@ export default function AuctionsPage() {
           {isLoading ? (
             <div className="text-center py-10">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-              <p className="mt-4">Loading All-Pay, English, Linear Dutch, Exponential Dutch, and Logarithmic Dutch Auctions...</p>
+              <p className="mt-4">Loading All-Pay, English, Linear Dutch, Exponential Dutch, Logarithmic Dutch, and Vickrey Auctions...</p>
             </div>
           ) : (
             <AuctionGrid auctions={filteredAuctions} />

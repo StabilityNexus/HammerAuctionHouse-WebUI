@@ -74,6 +74,23 @@ export function AuctionDetail({
 
   const protocolName = getProtocolName(protocolNumber);
 
+  // Helper function to determine Vickrey auction phase
+  const getVickreyPhase = (auction: Auction) => {
+    if (auction.protocol !== "Vickrey") return null;
+    
+    const now = BigInt(Date.now());
+    const commitEnd = Number(auction.bidCommitEnd)*1000 || BigInt(0);
+    const revealEnd = Number(auction.bidRevealEnd)*1000 || BigInt(0);
+    
+    if (now < commitEnd) {
+      return "commit";
+    } else if (now < revealEnd) {
+      return "reveal";
+    } else {
+      return "ended";
+    }
+  };
+
   // Fetch bids from contract using the appropriate service
   const fetchBidsFromContract = useCallback(async () => {
     if (!publicClient || !auctionId || !currentAuction) return;
@@ -159,9 +176,17 @@ export function AuctionDetail({
           duration: BigInt(auctionData.duration || 86400),
           isClaimed: auctionData.isClaimed || false,
           availableFunds: BigInt(auctionData.availableFunds || 0),
+          // Vickrey-specific fields
+          ...(protocolName === "Vickrey" && {
+            bidCommitEnd: BigInt(auctionData.bidCommitEnd || Date.now() + 86400000),
+            bidRevealEnd: BigInt(auctionData.bidRevealEnd || Date.now() + 172800000),
+            startTime: BigInt(auctionData.startTime || Date.now()),
+            winningBid: BigInt(auctionData.winningBid || 0),
+          }),
         };
 
         setCurrentAuction(formattedAuction);
+        console.log("Formatted auction data:", formattedAuction);
 
         // For Dutch auctions, initialize current price with starting price
         if (["Linear", "Exponential", "Logarithmic"].includes(protocolName)) {
@@ -442,7 +467,11 @@ export function AuctionDetail({
             <div className="absolute bottom-4 right-4">
               <Badge
                 status={
-                  Date.now() < Number(currentAuction.deadline) * 1000
+                  protocolName === "Vickrey"
+                    ? getVickreyPhase(currentAuction) === "ended"
+                      ? "ended"
+                      : "active"
+                    : Date.now() < Number(currentAuction.deadline) * 1000
                     ? "active"
                     : "ended"
                 }
@@ -530,6 +559,10 @@ export function AuctionDetail({
                     protocolName
                   )
                     ? "Current Price (Dutch Auction)"
+                    : protocolName === "Vickrey"
+                    ? getVickreyPhase(currentAuction) === "ended"
+                      ? "Winning Bid"
+                      : "Vickrey Auction"
                     : "Current Price"}
                 </p>
                 <p className="text-3xl font-bold">
@@ -541,6 +574,20 @@ export function AuctionDetail({
                       : Date.now() >= Number(currentAuction.deadline) * 1000
                       ? "Auction Ended"
                       : (Number(currentDutchPrice) / 1e18).toFixed(4)
+                    : protocolName === "Vickrey"
+                    ? (() => {
+                        const phase = getVickreyPhase(currentAuction);
+                        if (phase === "commit") {
+                          return "Commit Phase";
+                        } else if (phase === "reveal") {
+                          return "Reveal Phase";
+                        } else if (phase === "ended") {
+                          return currentAuction.winningBid
+                            ? (Number(currentAuction.winningBid) / 1e18).toFixed(4)
+                            : "No Winner";
+                        }
+                        return "Unknown";
+                      })()
                     : bids.length > 0
                     ? Math.max(...bids.map((b) => b.amount))
                     : currentAuction.startingBid
@@ -549,6 +596,11 @@ export function AuctionDetail({
                   {["Linear", "Exponential", "Logarithmic"].includes(
                     protocolName
                   ) && (currentAuction.isClaimed || Date.now() >= Number(currentAuction.deadline) * 1000)
+                    ? ""
+                    : protocolName === "Vickrey" && 
+                      (getVickreyPhase(currentAuction) === "commit" || 
+                       getVickreyPhase(currentAuction) === "reveal" ||
+                       (getVickreyPhase(currentAuction) === "ended" && !currentAuction.winningBid))
                     ? ""
                     : "ETH"}
                 </p>
@@ -580,21 +632,84 @@ export function AuctionDetail({
                     )}
                   </div>
                 )}
+
+                {protocolName === "Vickrey" && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    <div>
+                      Phase:{" "}
+                      {(() => {
+                        const phase = getVickreyPhase(currentAuction);
+                        switch (phase) {
+                          case "commit":
+                            return "Commit Phase - Submit sealed bids";
+                          case "reveal":
+                            return "Reveal Phase - Reveal your bids";
+                          case "ended":
+                            return "Auction Ended";
+                          default:
+                            return "Unknown";
+                        }
+                      })()}
+                    </div>
+                    {currentAuction.bidCommitEnd && (
+                      <div>
+                        Commit End:{" "}
+                        {new Date(Number(currentAuction.bidCommitEnd) * 1000).toLocaleString()}
+                      </div>
+                    )}
+                    {currentAuction.bidRevealEnd && (
+                      <div>
+                        Reveal End:{" "}
+                        {new Date(Number(currentAuction.bidRevealEnd) * 1000).toLocaleString()}
+                      </div>
+                    )}
+                    {getVickreyPhase(currentAuction) === "ended" && currentAuction.winner && 
+                     currentAuction.winner !== "0x0000000000000000000000000000000000000000" && (
+                      <div>
+                        Winner:{" "}
+                        {`${currentAuction.winner.substring(0, 6)}...${currentAuction.winner.substring(38)}`}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="text-right">
                 <p className="text-sm text-muted-foreground mb-1">
-                  Auction Status
+                  {protocolName === "Vickrey" 
+                    ? `${getVickreyPhase(currentAuction) === "commit" 
+                        ? "Commit Phase" 
+                        : getVickreyPhase(currentAuction) === "reveal" 
+                        ? "Reveal Phase" 
+                        : "Auction"} Status`
+                    : "Auction Status"}
                 </p>
                 <CountdownTimer
-                  endTime={Number(currentAuction.deadline) * 1000}
+                  endTime={
+                    protocolName === "Vickrey"
+                      ? (() => {
+                          const phase = getVickreyPhase(currentAuction);
+                          if (phase === "commit") {
+                            return Number(currentAuction.bidCommitEnd || 0) * 1000;
+                          } else if (phase === "reveal") {
+                            return Number(currentAuction.bidRevealEnd || 0) * 1000;
+                          } else {
+                            return Number(currentAuction.bidRevealEnd || 0) * 1000;
+                          }
+                        })()
+                      : Number(currentAuction.deadline) * 1000
+                  }
                   startTime={
                     currentAuction.startTime
                       ? Number(currentAuction.startTime)
                       : Date.now()
                   }
                   status={
-                    Date.now() < Number(currentAuction.deadline) * 1000
+                    protocolName === "Vickrey"
+                      ? getVickreyPhase(currentAuction) === "ended"
+                        ? "ended"
+                        : "active"
+                      : Date.now() < Number(currentAuction.deadline) * 1000
                       ? "active"
                       : "ended"
                   }
@@ -602,27 +717,59 @@ export function AuctionDetail({
               </div>
             </div>
 
-            {Date.now() < Number(currentAuction.deadline) * 1000 && (
-              <BidForm auction={currentAuction} onBidPlaced={handleBidPlaced} />
-            )}
+            {(() => {
+              if (protocolName === "Vickrey") {
+                const phase = getVickreyPhase(currentAuction);
+                return (phase === "commit" || phase === "reveal") && (
+                  <BidForm auction={currentAuction} onBidPlaced={handleBidPlaced} />
+                );
+              } else {
+                return Date.now() < Number(currentAuction.deadline) * 1000 && (
+                  <BidForm auction={currentAuction} onBidPlaced={handleBidPlaced} />
+                );
+              }
+            })()}
 
-            {Date.now() >= Number(currentAuction.deadline) * 1000 && (
-              <div className="bg-muted p-4 rounded-lg flex items-start">
-                <Info className="h-5 w-5 mr-3 mt-0.5 shrink-0" />
-                <div>
-                  <p className="font-medium">This auction has ended</p>
-                  {bids.length > 0 ? (
-                    <p className="text-muted-foreground">
-                      Final price: {Math.max(...bids.map((b) => b.amount))} ETH
-                    </p>
-                  ) : (
-                    <p className="text-muted-foreground">
-                      No bids were placed on this auction
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
+            {(() => {
+              if (protocolName === "Vickrey") {
+                const phase = getVickreyPhase(currentAuction);
+                return phase === "ended" && (
+                  <div className="bg-muted p-4 rounded-lg flex items-start">
+                    <Info className="h-5 w-5 mr-3 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-medium">This Vickrey auction has ended</p>
+                      {currentAuction.winningBid && Number(currentAuction.winningBid) > 0 ? (
+                        <p className="text-muted-foreground">
+                          Winning bid: {(Number(currentAuction.winningBid) / 1e18).toFixed(4)} ETH
+                        </p>
+                      ) : (
+                        <p className="text-muted-foreground">
+                          No valid bids were revealed for this auction
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              } else {
+                return Date.now() >= Number(currentAuction.deadline) * 1000 && (
+                  <div className="bg-muted p-4 rounded-lg flex items-start">
+                    <Info className="h-5 w-5 mr-3 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-medium">This auction has ended</p>
+                      {bids.length > 0 ? (
+                        <p className="text-muted-foreground">
+                          Final price: {Math.max(...bids.map((b) => b.amount))} ETH
+                        </p>
+                      ) : (
+                        <p className="text-muted-foreground">
+                          No bids were placed on this auction
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+            })()}
           </div>
 
           {/* Note: Dutch Auction Price Display removed - buy functionality is now integrated in BidForm */}
