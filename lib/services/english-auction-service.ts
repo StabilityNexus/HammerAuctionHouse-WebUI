@@ -4,6 +4,8 @@ import { wagmi_config } from "@/config";
 import { IAuctionService, EnglishAuctionParams } from "../auction-service";
 import { Bid } from "../mock-data";
 import { parseEther } from "ethers";
+import { generateCode } from "../storage";
+import { ProjectorIcon } from "lucide-react";
 
 export const ENGLISH_ABI = [
   {
@@ -681,7 +683,8 @@ export class EnglishAuctionService implements IAuctionService {
     }
 
     return {
-      id: auctionData[0],
+      protocol: "English",
+      id: generateCode("English",String(auctionData[0])),
       name: auctionData[1],
       description: auctionData[2],
       imgUrl: auctionData[3],

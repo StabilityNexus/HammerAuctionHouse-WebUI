@@ -3,6 +3,7 @@ import { readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
 import { IAuctionService, VickreyAuctionParams } from "../auction-service";
 import { Bid } from "../mock-data";
+import { generateCode } from "../storage";
 
 export const VICKREY_ABI = [
     {
@@ -486,7 +487,8 @@ export class VickreyAuctionService implements IAuctionService {
     }
 
     return {
-      id: auctionData[0],
+      protocol: "Vickrey",
+      id: generateCode("Vickrey", String(auctionData[0])),
       name: auctionData[1],
       description: auctionData[2],
       imgUrl: auctionData[3],
@@ -502,6 +504,12 @@ export class VickreyAuctionService implements IAuctionService {
       bidCommitEnd: auctionData[13],
       bidRevealEnd: auctionData[14],
       isClaimed: auctionData[15],
+      //Placeholders
+      startingBid: BigInt(0),
+      minBidDelta: BigInt(0),
+      highestBid: BigInt(0),
+      deadline: auctionData[14],
+      deadlineExtension: BigInt(0),
     };
   }
 
@@ -624,7 +632,7 @@ export class VickreyAuctionService implements IAuctionService {
           params.imgUrl,
           Number(params.auctionType),
           params.auctionedToken,
-          params.auctionedTokenIdOrAmount,
+          parseEther(String(params.auctionedTokenIdOrAmount)),
           params.biddingToken,
           Number(params.bidCommitDuration),
           Number(params.bidRevealDuration)

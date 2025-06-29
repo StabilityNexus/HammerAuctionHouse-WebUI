@@ -15,15 +15,10 @@ function _read() {
   return localStorage.getItem(STORAGE_KEY) || '';
 }
 
-function _generateCode(protocol: keyof typeof AuctionProtocol, id: string){
+export function generateCode(protocol: keyof typeof AuctionProtocol, id: string){
     // Generate a fixed-width code based on protocol and id
     // Example: "1000001" for AllPayAuction
     return `${AuctionProtocol[protocol]}${id.padStart(6, '0')}`;
-}
-
-// Export the function to be used by other components
-export function generateCode(protocol: keyof typeof AuctionProtocol, id: string){
-    return _generateCode(protocol, id);
 }
 
 function _write(raw: string) {
@@ -36,7 +31,7 @@ function _write(raw: string) {
 
 export function append(protocol: keyof typeof AuctionProtocol, id: string){
     const existing = _read();
-    const raw = _generateCode(protocol, id);
+    const raw = generateCode(protocol, id);
     const list = existing ? existing.split(',') : [];
     if (!list.includes(raw)) list.push(raw);
     const newRaw = list.join(',');
@@ -45,7 +40,7 @@ export function append(protocol: keyof typeof AuctionProtocol, id: string){
 
 export function remove(protocol: keyof typeof AuctionProtocol, id: string) {
     const existing = _read();
-    const raw = _generateCode(protocol, id);
+    const raw = generateCode(protocol, id);
     const newRaw = existing
         .split(',')
         .filter(code => code !== raw)
@@ -64,7 +59,7 @@ export function decodeCode(code: string){
 export function isPresent(protocol: keyof typeof AuctionProtocol, id: string){
     const raw = _read();
     if (!raw) return false;
-    const code = _generateCode(protocol, id);
+    const code = generateCode(protocol, id);
     return raw.split(',').includes(code);
 }
 

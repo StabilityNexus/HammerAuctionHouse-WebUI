@@ -15,38 +15,15 @@ export default function AuctionsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const publicClient = usePublicClient();
 
-
-
   const fetchAllPayAuctions = async () => {
     if (!publicClient) return [];
-    
     try {
       const allPayService = getAuctionService("AllPay");
       console.log("Fetching AllPay auctions...");
-      
       const currentBlock = await publicClient.getBlockNumber();
       const startBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
       const auctions = await allPayService.getAllAuctions(publicClient, startBlock, currentBlock);
-      
-      return auctions.map((auction: any, index: number) => ({
-        protocol: "AllPay" as AuctionType,
-        id: auction.id?.toString() || auction.Id?.toString() || index.toString(),
-        name: auction.name || "Unknown Auction",
-        description: auction.description || "No description available",
-        imgUrl: auction.imgUrl || "/placeholder.jpg",
-        auctioneer: auction.auctioneer || "0x0000000000000000000000000000000000000000",
-        auctionType: auction.auctionType?.toString() || "0",
-        auctionedToken: auction.auctionedToken || "0x0000000000000000000000000000000000000000",
-        auctionedTokenIdOrAmount: BigInt(auction.auctionedTokenIdOrAmount || 0),
-        biddingToken: auction.biddingToken || "0x0000000000000000000000000000000000000000",
-        startingBid: BigInt(auction.startingBid || 0),
-        minBidDelta: BigInt(auction.minBidDelta || 0),
-        highestBid: BigInt(auction.highestBid || 0),
-        winner: auction.winner || "0x0000000000000000000000000000000000000000",
-        deadline: BigInt(auction.deadline || Date.now() + 86400000),
-        deadlineExtension: BigInt(auction.deadlineExtension || 0),
-        isClaimed: auction.isClaimed || false,
-      }));
+      return auctions;
     } catch (error) {
       console.error("Error fetching AllPay auctions:", error);
       return [];
@@ -55,34 +32,13 @@ export default function AuctionsPage() {
 
   const fetchEnglishAuctions = async () => {
     if (!publicClient) return [];
-    
     try {
       const englishService = getAuctionService("English");
       console.log("Fetching English auctions...");
-      
       const currentBlock = await publicClient.getBlockNumber();
       const startBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
       const auctions = await englishService.getAllAuctions(publicClient, startBlock, currentBlock);
-      
-      return auctions.map((auction: any, index: number) => ({
-        protocol: "English" as AuctionType,
-        id: auction.id?.toString() || auction.Id?.toString() || index.toString(),
-        name: auction.name || "Unknown Auction",
-        description: auction.description || "No description available",
-        imgUrl: auction.imgUrl || "/placeholder.jpg",
-        auctioneer: auction.auctioneer || "0x0000000000000000000000000000000000000000",
-        auctionType: auction.auctionType?.toString() || "0",
-        auctionedToken: auction.auctionedToken || "0x0000000000000000000000000000000000000000",
-        auctionedTokenIdOrAmount: BigInt(auction.auctionedTokenIdOrAmount || 0),
-        biddingToken: auction.biddingToken || "0x0000000000000000000000000000000000000000",
-        startingBid: BigInt(auction.startingBid || 0),
-        minBidDelta: BigInt(auction.minBidDelta || 0),
-        highestBid: BigInt(auction.highestBid || 0),
-        winner: auction.winner || "0x0000000000000000000000000000000000000000",
-        deadline: BigInt(auction.deadline || Date.now() + 86400000),
-        deadlineExtension: BigInt(auction.deadlineExtension || 0),
-        isClaimed: auction.isClaimed || false,
-      }));
+      return auctions;
     } catch (error) {
       console.error("Error fetching English auctions:", error);
       return [];
@@ -91,38 +47,13 @@ export default function AuctionsPage() {
 
   const fetchLinearDutchAuctions = async () => {
     if (!publicClient) return [];
-    
     try {
       const linearDutchService = getAuctionService("Linear");
       console.log("Fetching Linear Dutch auctions...");
-      
       const currentBlock = await publicClient.getBlockNumber();
       const startBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
       const auctions = await linearDutchService.getAllAuctions(publicClient, startBlock, currentBlock);
-      
-      return auctions.map((auction: any, index: number) => ({
-        protocol: "Linear" as AuctionType,
-        id: auction.id?.toString() || auction.Id?.toString() || index.toString(),
-        name: auction.name || "Unknown Auction",
-        description: auction.description || "No description available",
-        imgUrl: auction.imgUrl || "/placeholder.jpg",
-        auctioneer: auction.auctioneer || "0x0000000000000000000000000000000000000000",
-        auctionType: auction.auctionType?.toString() || "0",
-        auctionedToken: auction.auctionedToken || "0x0000000000000000000000000000000000000000",
-        auctionedTokenIdOrAmount: BigInt(auction.auctionedTokenIdOrAmount || 0),
-        biddingToken: auction.biddingToken || "0x0000000000000000000000000000000000000000",
-        // For Dutch auctions, use startingPrice instead of startingBid
-        startingPrice: BigInt(auction.startingPrice || 0),
-        reservedPrice: BigInt(auction.reservedPrice || 0),
-        // Dutch auctions don't have traditional bids, but we'll set this for UI compatibility
-        highestBid: BigInt(0),
-        currentPrice: BigInt(auction.startingPrice || 0), // Will be updated with current price
-        availableFunds: BigInt(auction.availableFunds || 0),
-        winner: auction.winner || "0x0000000000000000000000000000000000000000",
-        deadline: BigInt(auction.deadline || Date.now() + 86400000),
-        duration: BigInt(auction.duration || 86400),
-        isClaimed: auction.isClaimed || false,
-      }));
+      return auctions;
     } catch (error) {
       console.error("Error fetching Linear Dutch auctions:", error);
       return [];
@@ -131,39 +62,13 @@ export default function AuctionsPage() {
 
   const fetchExponentialDutchAuctions = async () => {
     if (!publicClient) return [];
-    
     try {
       const exponentialDutchService = getAuctionService("Exponential");
       console.log("Fetching Exponential Dutch auctions...");
-      
       const currentBlock = await publicClient.getBlockNumber();
       const startBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
       const auctions = await exponentialDutchService.getAllAuctions(publicClient, startBlock, currentBlock);
-      
-      return auctions.map((auction: any, index: number) => ({
-        protocol: "Exponential" as AuctionType,
-        id: auction.id?.toString() || auction.Id?.toString() || index.toString(),
-        name: auction.name || "Unknown Auction",
-        description: auction.description || "No description available",
-        imgUrl: auction.imgUrl || "/placeholder.jpg",
-        auctioneer: auction.auctioneer || "0x0000000000000000000000000000000000000000",
-        auctionType: auction.auctionType?.toString() || "0",
-        auctionedToken: auction.auctionedToken || "0x0000000000000000000000000000000000000000",
-        auctionedTokenIdOrAmount: BigInt(auction.auctionedTokenIdOrAmount || 0),
-        biddingToken: auction.biddingToken || "0x0000000000000000000000000000000000000000",
-        // For Dutch auctions, use startingPrice instead of startingBid
-        startingPrice: BigInt(auction.startingPrice || 0),
-        reservedPrice: BigInt(auction.reservedPrice || 0),
-        decayFactor: BigInt(auction.decayFactor || 0),
-        // Dutch auctions don't have traditional bids, but we'll set this for UI compatibility
-        highestBid: BigInt(0),
-        currentPrice: BigInt(auction.startingPrice || 0), // Will be updated with current price
-        availableFunds: BigInt(auction.availableFunds || 0),
-        winner: auction.winner || "0x0000000000000000000000000000000000000000",
-        deadline: BigInt(auction.deadline || Date.now() + 86400000),
-        duration: BigInt(auction.duration || 86400),
-        isClaimed: auction.isClaimed || false,
-      }));
+      return auctions;
     } catch (error) {
       console.error("Error fetching Exponential Dutch auctions:", error);
       return [];
@@ -172,39 +77,14 @@ export default function AuctionsPage() {
 
   const fetchLogarithmicDutchAuctions = async () => {
     if (!publicClient) return [];
-    
     try {
       const logarithmicDutchService = getAuctionService("Logarithmic");
       console.log("Fetching Logarithmic Dutch auctions...");
-      
       const currentBlock = await publicClient.getBlockNumber();
       const startBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
       const auctions = await logarithmicDutchService.getAllAuctions(publicClient, startBlock, currentBlock);
       console.log("Fetched Logarithmic Dutch auctions:", auctions);
-      return auctions.map((auction: any, index: number) => ({
-        protocol: "Logarithmic" as AuctionType,
-        id: auction.id?.toString() || auction.Id?.toString() || index.toString(),
-        name: auction.name || "Unknown Auction",
-        description: auction.description || "No description available",
-        imgUrl: auction.imgUrl || "/placeholder.jpg",
-        auctioneer: auction.auctioneer || "0x0000000000000000000000000000000000000000",
-        auctionType: auction.auctionType?.toString() || "0",
-        auctionedToken: auction.auctionedToken || "0x0000000000000000000000000000000000000000",
-        auctionedTokenIdOrAmount: BigInt(auction.auctionedTokenIdOrAmount || 0),
-        biddingToken: auction.biddingToken || "0x0000000000000000000000000000000000000000",
-        // For Dutch auctions, use startingPrice instead of startingBid
-        startingPrice: BigInt(auction.startingPrice || 0),
-        reservedPrice: BigInt(auction.reservedPrice || 0),
-        decayFactor: BigInt(auction.decayFactor || 0),
-        // Dutch auctions don't have traditional bids, but we'll set this for UI compatibility
-        highestBid: BigInt(0),
-        currentPrice: BigInt(auction.startingPrice || 0), // Will be updated with current price
-        availableFunds: BigInt(auction.availableFunds || 0),
-        winner: auction.winner || "0x0000000000000000000000000000000000000000",
-        deadline: BigInt(auction.deadline || Date.now() + 86400000),
-        duration: BigInt(auction.duration || 86400),
-        isClaimed: auction.isClaimed || false,
-      }));
+      return auctions;
     } catch (error) {
       console.error("Error fetching Logarithmic Dutch auctions:", error);
       return [];
@@ -213,43 +93,14 @@ export default function AuctionsPage() {
 
   const fetchVickreyAuctions = async () => {
     if (!publicClient) return [];
-    
     try {
       const vickreyService = getAuctionService("Vickrey");
       console.log("Fetching Vickrey auctions...");
-      
       const currentBlock = await publicClient.getBlockNumber();
       const startBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
       const auctions = await vickreyService.getAllAuctions(publicClient, startBlock, currentBlock);
       console.log("Fetched Vickrey auctions:", auctions);
-      
-      return auctions.map((auction: any, index: number) => ({
-        protocol: "Vickrey" as AuctionType,
-        id: auction.id?.toString() || auction.Id?.toString() || index.toString(),
-        name: auction.name || "Unknown Auction",
-        description: auction.description || "No description available",
-        imgUrl: auction.imgUrl || "/placeholder.jpg",
-        auctioneer: auction.auctioneer || "0x0000000000000000000000000000000000000000",
-        auctionType: auction.auctionType?.toString() || "0",
-        auctionedToken: auction.auctionedToken || "0x0000000000000000000000000000000000000000",
-        auctionedTokenIdOrAmount: BigInt(auction.auctionedTokenIdOrAmount || 0),
-        biddingToken: auction.biddingToken || "0x0000000000000000000000000000000000000000",
-        // Vickrey auctions don't have starting bids, use winningBid if available
-        startingBid: BigInt(auction.winningBid || 0),
-        minBidDelta: BigInt(0), // Not applicable for Vickrey
-        highestBid: BigInt(auction.winningBid || 0),
-        winner: auction.winner || "0x0000000000000000000000000000000000000000",
-        // Vickrey uses bidRevealEnd as deadline
-        deadline: BigInt(auction.bidRevealEnd || Date.now() + 86400000),
-        deadlineExtension: BigInt(0), // Not applicable for Vickrey
-        // Custom Vickrey fields
-        bidCommitEnd: BigInt(auction.bidCommitEnd || Date.now() + 43200000), // 12 hours default
-        bidRevealEnd: BigInt(auction.bidRevealEnd || Date.now() + 86400000), // 24 hours default
-        startTime: BigInt(auction.startTime || Date.now()),
-        availableFunds: BigInt(auction.availableFunds || 0),
-        winningBid: BigInt(auction.winningBid || 0),
-        isClaimed: auction.isClaimed || false,
-      }));
+      return auctions;
     } catch (error) {
       console.error("Error fetching Vickrey auctions:", error);
       return [];
@@ -258,7 +109,6 @@ export default function AuctionsPage() {
 
   const fetchAllAuctions = async () => {
     if (!publicClient) return;
-    
     setIsLoading(true);
     try {
       const [allPayAuctions, englishAuctions, linearDutchAuctions, exponentialDutchAuctions, logarithmicDutchAuctions, vickreyAuctions] = await Promise.all([
@@ -269,7 +119,6 @@ export default function AuctionsPage() {
         fetchLogarithmicDutchAuctions(),
         fetchVickreyAuctions()
       ]);
-      
       setFetchedAuctions([...allPayAuctions, ...englishAuctions, ...linearDutchAuctions, ...exponentialDutchAuctions, ...logarithmicDutchAuctions, ...vickreyAuctions]);
     } catch (error) {
       console.error("Error fetching auctions:", error);
@@ -284,34 +133,25 @@ export default function AuctionsPage() {
     fetchAllAuctions().catch(console.error);
   }, [publicClient]);
 
-  // Combine mock data with fetched data for demo purposes
-  const allAuctions = [...fetchedAuctions];
-
   // Filter auctions based on search and filters
-  const filteredAuctions = allAuctions.filter((auction) => {
+  const filteredAuctions = fetchedAuctions.filter((auction) => {
     const matchesSearch =
       auction.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       auction.description.toLowerCase().includes(searchQuery.toLowerCase());
-
     const matchesType =
       selectedTypes.length === 0 || selectedTypes.includes(auction.protocol);
-
-    // Calculate status based on current time and deadline
     const now = Date.now();
     const deadline = Number(auction.deadline);
     const status = now < deadline ? "active" : "ended";
-    
     const matchesStatus =
       selectedStatus.length === 0 || selectedStatus.includes(status);
-
     return matchesSearch && matchesType && matchesStatus;
   });
-
+  console.log("Filtered Auctions:", filteredAuctions);
   return (
     <div className="container w-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto z-10">
         <h1 className="text-3xl font-bold mb-6">Browse Auctions</h1>
-
         <AuctionFilter
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -320,7 +160,6 @@ export default function AuctionsPage() {
           selectedStatus={selectedStatus}
           setSelectedStatus={setSelectedStatus}
         />
-
         <div className="mt-6">
           {isLoading ? (
             <div className="text-center py-10">

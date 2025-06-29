@@ -3,6 +3,7 @@ import { readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
 import { IAuctionService, DutchAuctionParams } from "../auction-service";
 import { Bid } from "../mock-data";
+import { generateCode } from "../storage";
 
 export const EXPONENTIAL_DUTCH_ABI = [
   {
@@ -375,7 +376,7 @@ export const EXPONENTIAL_DUTCH_ABI = [
 
 // Enhanced interface for Exponential Dutch Auction parameters
 export interface ExponentialDutchAuctionParams extends DutchAuctionParams {
-  decayFactor: bigint; // Exponential decay factor (scaled by 10^3)
+  decayFactor: bigint; // Exponential decay factor (scaled by 10^5)
 }
 
 // Exponential Dutch Auction Service Implementation
@@ -390,7 +391,8 @@ export class ExponentialDutchAuctionService implements IAuctionService {
 
 
     return {
-      id: auctionData[0],
+      protcol: "Exponential",
+      id: generateCode("Exponential", String(auctionData[0])),
       name: auctionData[1],
       description: auctionData[2],
       imgUrl: auctionData[3],
@@ -407,6 +409,8 @@ export class ExponentialDutchAuctionService implements IAuctionService {
       deadline: auctionData[14],
       duration: auctionData[15],
       isClaimed: auctionData[16],
+      currentPrice: BigInt(0), 
+      highestBid: BigInt(0)
     };
   }
 
@@ -508,7 +512,7 @@ export class ExponentialDutchAuctionService implements IAuctionService {
           params.imgUrl,
           Number(params.auctionType),
           params.auctionedToken,
-          params.auctionedTokenIdOrAmount,
+          parseEther(String(params.auctionedTokenIdOrAmount)),
           params.biddingToken,
           params.startingPrice,
           params.reservedPrice,

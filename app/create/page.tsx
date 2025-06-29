@@ -3,19 +3,23 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import {Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuctionCreationForm } from "@/components/auction/create-form";
 import { CreateAuctionSteps } from "@/components/auction/create-steps";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import {
+  useAccount,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+} from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { 
-  getAuctionService, 
-  EnglishAuctionParams, 
-  AllPayAuctionParams, 
-  DutchAuctionParams, 
+import {
+  getAuctionService,
+  EnglishAuctionParams,
+  AllPayAuctionParams,
+  DutchAuctionParams,
   VickreyAuctionParams,
-  parseBidAmount 
+  parseBidAmount,
 } from "@/lib/auction-service";
 import { ExponentialDutchAuctionParams } from "@/lib/services/exponential-dutch-auction-service";
 import { LogarithmicDutchAuctionParams } from "@/lib/services/logarithmic-dutch-auction-service";
@@ -28,10 +32,12 @@ function transformFormDataToParams(formData: any, auctionType: AuctionType) {
     name: formData.title,
     description: formData.description,
     imgUrl: formData.imageUrl || "/placeholder.jpg",
-    auctionType: BigInt(formData.auctionType === "NFT" ? 0 : 1), 
+    auctionType: BigInt(formData.auctionType === "NFT" ? 0 : 1),
     auctionedToken: formData.auctionedTokenAddress as Address,
     auctionedTokenIdOrAmount: BigInt(
-      formData.auctionType === "NFT" ? (formData.tokenId || "1") : (formData.tokenAmount || "100")
+      formData.auctionType === "NFT"
+        ? formData.tokenId || "1"
+        : formData.tokenAmount || "100"
     ),
     biddingToken: formData.biddingTokenAddress as Address,
   };
@@ -39,27 +45,37 @@ function transformFormDataToParams(formData: any, auctionType: AuctionType) {
   switch (auctionType) {
     case "English":
     case "AllPay": {
-      const duration = formData.duration 
-        ? BigInt(formData.duration) 
-        : getDurationInSeconds(formData.days || "3", formData.hours || "0", formData.minutes || "0");
-      
+      const duration = formData.duration
+        ? BigInt(formData.duration)
+        : getDurationInSeconds(
+            formData.days || "3",
+            formData.hours || "0",
+            formData.minutes || "0"
+          );
+
       return {
         ...baseParams,
         startingBid: parseBidAmount(formData.startPrice || "0.1"),
         minBidDelta: parseBidAmount(formData.minBidDelta || "0.01"),
         duration,
-        deadlineExtension: BigInt(parseInt(formData.deadlineExtension || "300")), // 5 minutes default
+        deadlineExtension: BigInt(
+          parseInt(formData.deadlineExtension || "300")
+        ), // 5 minutes default
       } as EnglishAuctionParams | AllPayAuctionParams;
     }
 
     case "Linear":
-    case "Exponential": 
+    case "Exponential":
     case "Logarithmic": {
-      const duration = formData.duration 
-        ? BigInt(formData.duration) 
-        : getDurationInSeconds(formData.days || "3", formData.hours || "0", formData.minutes || "0");
-      
-        const dutchParams: DutchAuctionParams = {
+      const duration = formData.duration
+        ? BigInt(formData.duration)
+        : getDurationInSeconds(
+            formData.days || "3",
+            formData.hours || "0",
+            formData.minutes || "0"
+          );
+
+      const dutchParams: DutchAuctionParams = {
         ...baseParams,
         startingPrice: parseBidAmount(formData.startPrice || "1.0"),
         reservedPrice: parseBidAmount(formData.reservePrice || "0.1"),
@@ -70,13 +86,17 @@ function transformFormDataToParams(formData: any, auctionType: AuctionType) {
       if (auctionType === "Exponential") {
         const exponentialParams: ExponentialDutchAuctionParams = {
           ...dutchParams,
-          decayFactor: BigInt(Math.floor(parseFloat(formData.decayFactor || "1.0") * 1e5)),
+          decayFactor: BigInt(
+            Math.floor(parseFloat(formData.decayFactor || "1.0") * 1e5)
+          ),
         };
         return exponentialParams;
       } else if (auctionType === "Logarithmic") {
         const logarithmicParams: LogarithmicDutchAuctionParams = {
           ...dutchParams,
-          decayFactor: BigInt(Math.floor(parseFloat(formData.decayFactor || "1.0") * 1e5)),
+          decayFactor: BigInt(
+            Math.floor(parseFloat(formData.decayFactor || "1.0") * 1e5)
+          ),
         };
         return logarithmicParams;
       }
@@ -85,19 +105,19 @@ function transformFormDataToParams(formData: any, auctionType: AuctionType) {
     }
 
     case "Vickrey": {
-      const commitDuration = formData.commitDuration 
+      const commitDuration = formData.commitDuration
         ? BigInt(formData.commitDuration)
         : getDurationInSeconds(
-            formData.commitDays || "1", 
-            formData.commitHours || "0", 
+            formData.commitDays || "1",
+            formData.commitHours || "0",
             formData.commitMinutes || "0"
           );
-      
-      const revealDuration = formData.revealDuration 
+
+      const revealDuration = formData.revealDuration
         ? BigInt(formData.revealDuration)
         : getDurationInSeconds(
-            formData.revealDays || "1", 
-            formData.revealHours || "0", 
+            formData.revealDays || "1",
+            formData.revealHours || "0",
             formData.revealMinutes || "0"
           );
 
@@ -117,14 +137,15 @@ const steps = [
   "Basic Information",
   "Auction Settings",
   "Token Setup",
-  "Review & Submit"
+  "Review & Submit",
 ];
 
 export default function CreateAuction() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({ //Unified form data structure
+  const [formData, setFormData] = useState({
+    //Unified form data structure
     title: "",
     description: "",
     imageUrl: "",
@@ -134,7 +155,7 @@ export default function CreateAuction() {
     reservePrice: "",
     duration: "3",
     days: "3",
-    hours: "0", 
+    hours: "0",
     minutes: "0",
     minBidDelta: "0.05",
     deadlineExtension: "300",
@@ -143,7 +164,7 @@ export default function CreateAuction() {
     commitDays: "1",
     commitHours: "0",
     commitMinutes: "0",
-    revealDays: "1", 
+    revealDays: "1",
     revealHours: "0",
     revealMinutes: "0",
     commitDuration: "",
@@ -156,16 +177,17 @@ export default function CreateAuction() {
     tokenId: "1",
     tokenAmount: "100",
   });
-  
+
   const router = useRouter();
   const { status, address } = useAccount();
   const { data: hash, isPending, writeContract } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-    hash,
-  });
-  
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
+
   const updateFormData = (data: Partial<typeof formData>) => {
-    setFormData(prev => ({ ...prev, ...data }));
+    setFormData((prev) => ({ ...prev, ...data }));
   };
 
   // Handle transaction confirmation
@@ -174,31 +196,31 @@ export default function CreateAuction() {
       console.log("Transaction confirmed!");
       setIsSubmitted(true);
       setIsSubmitting(false);
-      
+
       // Redirect after success
       setTimeout(() => {
         router.push("/dashboard");
       }, 2000);
     }
   }, [isConfirmed, router]);
-  
+
   const goToNextStep = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
       window.scrollTo(0, 0);
     }
   };
-  
+
   const goToPrevStep = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
       window.scrollTo(0, 0);
     }
   };
-  
+
   const handleSubmit = async () => {
     if (!address || !writeContract) return;
-    
+
     setIsSubmitting(true);
     try {
       // Map form auction type to our AuctionType
@@ -228,19 +250,18 @@ export default function CreateAuction() {
       }
 
       const auctionService = getAuctionService(auctionType);
-      
+
       // Prepare auction parameters based on type
       const params = transformFormDataToParams(formData, auctionType);
       console.log("Submitting auction with params:", params);
       await auctionService.createAuction(writeContract, params);
       console.log("Transaction submitted, waiting for confirmation...");
-      
     } catch (error) {
       console.error("Error creating auction:", error);
       setIsSubmitting(false);
     }
   };
-  
+
   if (!status || status !== "connected") {
     return (
       <div className="container py-12 px-4 flex flex-col items-center justify-center min-h-[70vh]">
@@ -249,12 +270,12 @@ export default function CreateAuction() {
           <p className="text-muted-foreground mb-8">
             You need to connect your wallet to create an auction on HAH.
           </p>
-          <ConnectButton/>
+          <ConnectButton />
         </div>
       </div>
     );
   }
-  
+
   if (isSubmitted) {
     return (
       <div className="container py-12 px-4 flex flex-col items-center justify-center min-h-[70vh]">
@@ -268,7 +289,8 @@ export default function CreateAuction() {
           </div>
           <h1 className="text-2xl font-bold mb-2">Auction Created!</h1>
           <p className="text-muted-foreground mb-6">
-            Your auction has been created successfully and is now live on the platform!
+            Your auction has been created successfully and is now live on the
+            platform!
           </p>
           <Button asChild>
             <a href="/dashboard">Go to Dashboard</a>
@@ -287,9 +309,9 @@ export default function CreateAuction() {
             Set up your auction parameters and publish it to the blockchain.
           </p>
         </div>
-        
+
         <CreateAuctionSteps currentStep={currentStep} steps={steps} />
-        
+
         <div className="bg-card border rounded-xl p-6 mt-8">
           <AuctionCreationForm
             currentStep={currentStep}

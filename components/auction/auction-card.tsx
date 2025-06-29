@@ -10,7 +10,13 @@ import { Auction } from "@/lib/mock-data";
 import { formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { remove, append, loadWishlist, isPresent, generateCode } from "@/lib/storage";
+import {
+  remove,
+  append,
+  loadWishlist,
+  isPresent,
+  generateCode,
+} from "@/lib/storage";
 import { useAccount } from "wagmi";
 import { etherUnits, formatEther } from "viem";
 
@@ -23,7 +29,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
   const [isWatched, setIsWatched] = useState(false);
 
   useEffect(() => {
-    setIsWatched(!!address && isPresent(auction.protocol,auction.id));
+    setIsWatched(!!address && isPresent(auction.protocol, auction.id));
   }, [address, auction]);
 
   let status = "";
@@ -32,17 +38,12 @@ export function AuctionCard({ auction }: AuctionCardProps) {
   } else {
     status = "ended";
   }
-  console.log("Auction status:", auction);
-  // Calculate current price (highest bid or starting bid)
-  const currentPrice = auction.highestBid ? Number(formatEther(auction.highestBid)) : 
-                       auction.startingBid ? Number(formatEther(auction.startingBid)) : 0;
-  console.log("Current price:", auction.highestBid, "ETH");
 
   // Determine auction status text and color
   let statusConfig = {
-    text: "Upcoming",
-    bgColor: "bg-blue-500",
-    textColor: "text-blue-500",
+    text: "Ended",
+    bgColor: "bg-gray-500",
+    textColor: "text-gray-500",
     bgOpacity: "bg-opacity-10",
   };
 
@@ -51,13 +52,6 @@ export function AuctionCard({ auction }: AuctionCardProps) {
       text: "Active",
       bgColor: "bg-green-500",
       textColor: "text-green-500",
-      bgOpacity: "bg-opacity-10",
-    };
-  } else if (status === "ended") {
-    statusConfig = {
-      text: "Ended",
-      bgColor: "bg-gray-500",
-      textColor: "text-gray-500",
       bgOpacity: "bg-opacity-10",
     };
   }
@@ -78,7 +72,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
   };
 
   // Generate encoded auction ID for URL
-  const encodedAuctionId = generateCode(auction.protocol, auction.id);
+  const encodedAuctionId = auction.id;
 
   return (
     <motion.div
@@ -136,26 +130,27 @@ export function AuctionCard({ auction }: AuctionCardProps) {
 
           <div className="mt-2 flex justify-between items-baseline">
             <div>
-              <p className="text-muted-foreground text-sm">Current bid</p>
-              <p className="font-medium text-lg">{currentPrice.toFixed(4)} ETH</p>
+              <p className="text-muted-foreground text-sm">Auctioned Item</p>
+              <p className="font-medium text-lg">
+                {Number(formatEther(auction.auctionedTokenIdOrAmount)).toFixed(4)} ETH
+              </p>
             </div>
 
             <div className="flex items-center text-sm text-muted-foreground gap-1">
               <Clock className="h-3.5 w-3.5" />
-              {status === "upcoming" ? (
-                <span>
-                  Starts{" "}
-                  {formatDistanceToNow(Number(auction.deadline) * 1000, { addSuffix: true })}
-                </span>
-              ) : status === "active" ? (
+              {status === "active" ? (
                 <span>
                   Ends{" "}
-                  {formatDistanceToNow(Number(auction.deadline) * 1000, { addSuffix: true })}
+                  {formatDistanceToNow(Number(auction.deadline) * 1000, {
+                    addSuffix: true,
+                  })}
                 </span>
               ) : (
                 <span>
                   Ended{" "}
-                  {formatDistanceToNow(Number(auction.deadline) * 1000, { addSuffix: true })}
+                  {formatDistanceToNow(Number(auction.deadline) * 1000, {
+                    addSuffix: true,
+                  })}
                 </span>
               )}
             </div>
@@ -163,9 +158,10 @@ export function AuctionCard({ auction }: AuctionCardProps) {
 
           <div className="mt-3 pt-3 border-t text-sm text-muted-foreground truncate">
             Created by{" "}
-            {`${auction.auctioneer.substring(0, 6)}...${auction.auctioneer.substring(
-              38
-            )}`}
+            {`${auction.auctioneer.substring(
+              0,
+              6
+            )}...${auction.auctioneer.substring(38)}`}
           </div>
         </div>
       </Link>

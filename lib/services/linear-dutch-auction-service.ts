@@ -3,6 +3,8 @@ import { readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
 import { IAuctionService, DutchAuctionParams } from "../auction-service";
 import { Bid } from "../mock-data";
+import { generateCode } from "../storage";
+import { bigint } from "zod";
 
 export const LINEAR_DUTCH_ABI = [
   {
@@ -342,7 +344,8 @@ export class LinearDutchAuctionService implements IAuctionService {
     }
 
     return {
-      id: auctionData[0],
+      protocol: "Linear",
+      id: generateCode("Linear",String(auctionData[0])),
       name: auctionData[1],
       description: auctionData[2],
       imgUrl: auctionData[3],
@@ -358,6 +361,9 @@ export class LinearDutchAuctionService implements IAuctionService {
       deadline: auctionData[13],
       duration: auctionData[14],
       isClaimed: auctionData[15],
+      //Placeholders
+      currentPrice: BigInt(0),
+      higheshtBid: BigInt(0) 
     };
   }
 
@@ -458,7 +464,7 @@ export class LinearDutchAuctionService implements IAuctionService {
           params.imgUrl,
           Number(params.auctionType),
           params.auctionedToken,
-          params.auctionedTokenIdOrAmount,
+          parseEther(String(params.auctionedTokenIdOrAmount)),
           params.biddingToken,
           params.startingPrice,
           params.reservedPrice,

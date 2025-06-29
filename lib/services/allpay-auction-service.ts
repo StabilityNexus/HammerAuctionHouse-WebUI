@@ -5,6 +5,7 @@ import { IAuctionService, AllPayAuctionParams } from "../auction-service";
 import { Bid } from "../mock-data";
 import { parseEther } from "ethers";
 import { string } from "zod";
+import { generateCode } from "../storage";
 
 // AllPay Auction ABI - based on the smart contract
 export const ALLPAY_ABI = [
@@ -469,7 +470,8 @@ export class AllPayAuctionService implements IAuctionService {
     }
 
     return {
-      id: auctionData[0],
+      protocol: "AllPay",
+      id: generateCode("AllPay",String(auctionData[0])),
       name: auctionData[1],
       description: auctionData[2],
       imgUrl: auctionData[3],
@@ -542,7 +544,7 @@ export class AllPayAuctionService implements IAuctionService {
           params.imgUrl,
           Number(params.auctionType),
           params.auctionedToken,
-          parseEther(String(params.auctionedTokenIdOrAmount)),
+          parseEther(String(params.auctionedTokenIdOrAmount)), //TODO::not in case of nfts
           params.biddingToken,
           params.startingBid,
           params.minBidDelta,
