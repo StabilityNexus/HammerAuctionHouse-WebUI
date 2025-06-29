@@ -103,11 +103,11 @@ export function Step4Form({
             <>
               <div className="text-muted-foreground">Commit Period</div>
               <div className="font-medium">
-                {formatDuration(formData.commitDuration)}
+                {formatDuration(Number(formData.commitDuration))}
               </div>
               <div className="text-muted-foreground">Reveal Period</div>
               <div className="font-medium">
-                {formatDuration(formData.revealDuration)}
+                {formatDuration(Number(formData.revealDuration))}
               </div>
             </>
           ) : null}

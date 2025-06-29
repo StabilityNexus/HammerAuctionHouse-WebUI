@@ -24,19 +24,17 @@ import { getAuctionService } from "@/lib/auction-service";
 import { Address } from "viem";
 import { VickreyCommitForm } from "./vickrey-commit-form";
 import { VickreyRevealForm } from "./vickrey-reveal-form";
+import { decode } from "@/lib/storage";
 
 interface BidFormProps {
   auction: Auction;
-  onBidPlaced: (bid: Bid) => void;
 }
 
-export function BidForm({ auction, onBidPlaced }: BidFormProps) {
+export function BidForm({ auction }: BidFormProps) {
   const { isConnected, address } = useAccount();
   const [bidAmount, setBidAmount] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [currentPrice, setCurrentPrice] = useState<bigint>(BigInt(0));
-  
   const { 
     writeContract, 
     data: hash,
@@ -52,6 +50,8 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
     hash,
   });
 
+  const auctionId=decode(auction.id).id;
+
   // Check if this is a reverse Dutch auction (Linear, Exponential, Logarithmic)
   const isReverseDutchAuction = ["Linear", "Exponential", "Logarithmic"].includes(auction.protocol);
   const isVickreyAuction = auction.protocol === "Vickrey";
@@ -59,7 +59,7 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
   const reservePrice = auction.reservedPrice ? Number(auction.reservedPrice) / 1e18 : 0;
   const currentBid = auction.highestBid ? Number(auction.highestBid) / 1e18 : 0;
   const minDelta = auction.minBidDelta ? Number(auction.minBidDelta) / 1e18 : 0.1;
-  const minBidAmount = isReverseDutchAuction ? reservePrice : currentBid + minDelta;
+  const minBidAmount = isReverseDutchAuction ? reservePrice : currentBid? currentBid + minDelta : auction.startingBid? Number(auction.startingBid) / 1e18: 0;
   
   const isValidBid = isReverseDutchAuction ? true : (!isNaN(parseFloat(bidAmount)) && parseFloat(bidAmount) >= minBidAmount);
 
@@ -91,8 +91,7 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
         try {
           const auctionService = getAuctionService(auction.protocol);
           if (auctionService.getCurrentPrice) {
-            const price = await auctionService.getCurrentPrice(BigInt(auction.id));
-            setCurrentPrice(price);
+            const price = await auctionService.getCurrentPrice(BigInt(auctionId));
             setBidAmount((Number(price) / 1e18).toFixed(4));
           }
         } catch (error) {
@@ -120,16 +119,7 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
   useEffect(() => {
     if (isConfirmed && hash) {
       console.log("Transaction confirmed:", hash);
-      
-      const newBid: Bid = {
-        id: uuidv4(),
-        auctionId: auction.id,
-        bidder: address || "",
-        amount: parseFloat(bidAmount),
-        timestamp: Date.now(),
-      };
 
-      onBidPlaced(newBid);
       setShowSuccess(true);
       setIsSubmitting(false);
       
@@ -137,7 +127,7 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
         setShowSuccess(false);
       }, 3000);
     }
-  }, [isConfirmed, hash, auction.id, address, bidAmount, onBidPlaced]);
+  }, [isConfirmed, hash, auctionId, address, bidAmount]);
 
   // Handle transaction errors
   useEffect(() => {
@@ -146,6 +136,8 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
       setIsSubmitting(false);
     }
   }, [writeError, confirmError]);
+
+  console.log("bid amount",bidAmount);
 
   const handleSubmit = async () => {
     if (!isValidBid || !isConnected || !address || isSubmitting) return;
@@ -158,18 +150,18 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
     setIsSubmitting(true);
     try {
       const auctionService = getAuctionService(auction.protocol);
-
       if (isReverseDutchAuction) {
         // For reverse Dutch auctions, call withdrawItem to purchase at current price
+        //TODO: Add sending of bidding token address also
         await auctionService.withdrawItem(
           writeContract,
-          BigInt(auction.id)
+          BigInt(auctionId)
         );
       } else {
         // For other auction types, place a bid
         await auctionService.placeBid(
           writeContract,
-          BigInt(auction.id),
+          BigInt(auctionId),
           BigInt(Math.floor(parseFloat(bidAmount) * 1e18)),
           auction.biddingToken as Address,
           BigInt(auction.auctionType || 0)
@@ -205,21 +197,21 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
   if (isVickreyAuction) {
     const handleVickreySuccess = () => {
       // Refresh auction data or show success message
+      //TODO: Remove this redundant code
       const newBid: Bid = {
         id: uuidv4(),
-        auctionId: auction.id,
+        auctionId: auctionId,
         bidder: address || "",
         amount: 0, // Hidden for Vickrey
         timestamp: Date.now(),
       };
-      onBidPlaced(newBid);
     };
 
     return (
       <div className="mt-4 space-y-4">
         {vickreyPhase === "commit" && (
           <>
-            <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+            {/* <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
               <div className="flex items-start gap-3">
                 <Info className="h-4 w-4 text-blue-600 mt-0.5" />
                 <div>
@@ -231,7 +223,7 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
                   </p>
                 </div>
               </div>
-            </div>
+            </div> */}
             <VickreyCommitForm 
               auction={auction}
               onCommitPlaced={handleVickreySuccess}
@@ -241,21 +233,21 @@ export function BidForm({ auction, onBidPlaced }: BidFormProps) {
 
         {vickreyPhase === "reveal" && (
           <>
-            <div className="bg-orange-50 dark:bg-orange-950/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+            <div className="bg-50 p-4 rounded-lg border">
               <div className="flex items-start gap-3">
-                <Info className="h-4 w-4 text-orange-600 mt-0.5" />
+                <Info className="h-4 w-4" />
                 <div>
-                  <p className="text-orange-800 dark:text-orange-200 text-sm font-medium">
+                  <p className="text-sm font-medium">
                     Reveal Phase Active
                   </p>
-                  <p className="text-orange-700 dark:text-orange-300 text-xs mt-1">
+                  <p className="text-xs mt-1">
                     Reveal your previously committed bid to be eligible for winning.
                   </p>
                 </div>
               </div>
             </div>
             <VickreyRevealForm 
-              auctionId={BigInt(auction.id)}
+              auctionId={BigInt(auctionId)}
               onRevealSuccess={handleVickreySuccess}
             />
           </>

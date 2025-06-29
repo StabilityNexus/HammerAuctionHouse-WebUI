@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Auction } from "@/lib/mock-data";
 import { Info, Lock, Hash } from "lucide-react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import {
+  useAccount,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+} from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { VickreyAuctionService } from "@/lib/services/vickrey-auction-service";
 import { toast } from "sonner";
@@ -22,41 +25,47 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { decode } from "@/lib/storage";
 
 interface VickreyCommitFormProps {
   auction: Auction;
   onCommitPlaced: () => void;
 }
 
-export function VickreyCommitForm({ auction, onCommitPlaced }: VickreyCommitFormProps) {
+export function VickreyCommitForm({
+  auction,
+  onCommitPlaced,
+}: VickreyCommitFormProps) {
   const { isConnected, address } = useAccount();
   const [bidAmount, setBidAmount] = useState<string>("");
   const [salt, setSalt] = useState<string>("");
   const [commitment, setCommitment] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const { 
-    writeContract, 
+  const auctionId = decode(auction.id).id;
+
+  const {
+    writeContract,
     data: hash,
     isPending,
-    error: writeError 
+    error: writeError,
   } = useWriteContract();
-  
-  const { 
-    isLoading: isConfirming, 
+
+  const {
+    isLoading: isConfirming,
     isSuccess: isConfirmed,
-    error: confirmError
+    error: confirmError,
   } = useWaitForTransactionReceipt({
     hash,
   });
 
   const isValidBid = !isNaN(parseFloat(bidAmount)) && parseFloat(bidAmount) > 0;
   const isValidSalt = salt.length >= 8; // Minimum salt length
-  
+
   // Generate random salt
   const generateRandomSalt = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
+    const chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
     for (let i = 0; i < 16; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
@@ -72,7 +81,10 @@ export function VickreyCommitForm({ auction, onCommitPlaced }: VickreyCommitForm
 
     try {
       const bidAmountWei = BigInt(Math.floor(parseFloat(bidAmount) * 1e18));
-      const commitmentHash = VickreyAuctionService.generateCommitment(bidAmountWei, salt);
+      const commitmentHash = VickreyAuctionService.generateCommitment(
+        bidAmountWei,
+        salt
+      );
       setCommitment(commitmentHash);
       toast.success("Commitment generated! You can now submit your bid.");
     } catch (error) {
@@ -95,7 +107,7 @@ export function VickreyCommitForm({ auction, onCommitPlaced }: VickreyCommitForm
     // Check if auction is in commit phase
     const now = Date.now();
     const commitEndTime = Number(auction.bidCommitEnd) * 1000;
-    
+
     if (now >= commitEndTime) {
       toast.error("Commit phase has ended");
       return;
@@ -104,21 +116,30 @@ export function VickreyCommitForm({ auction, onCommitPlaced }: VickreyCommitForm
     setIsSubmitting(true);
     try {
       const vickreyService = new VickreyAuctionService();
-      await vickreyService.commitBid(writeContract, BigInt(auction.id), commitment as `0x${string}`);
-      
+      await vickreyService.commitBid(
+        writeContract,
+        BigInt(auctionId),
+        commitment as `0x${string}`
+      );
+
       // Store commitment details locally for reveal phase
       const commitmentData = {
         auctionId: auction.id,
         bidAmount,
         salt,
         commitment,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
-      
-      const existingCommitments = JSON.parse(localStorage.getItem('vickreyCommitments') || '[]');
+
+      const existingCommitments = JSON.parse(
+        localStorage.getItem("vickreyCommitments") || "[]"
+      );
       existingCommitments.push(commitmentData);
-      localStorage.setItem('vickreyCommitments', JSON.stringify(existingCommitments));
-      
+      localStorage.setItem(
+        "vickreyCommitments",
+        JSON.stringify(existingCommitments)
+      );
+
       toast.success("Commitment submitted successfully!");
       onCommitPlaced();
     } catch (error) {
@@ -140,28 +161,25 @@ export function VickreyCommitForm({ auction, onCommitPlaced }: VickreyCommitForm
 
   return (
     <div className="space-y-4">
-      <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+      <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
         <div className="flex items-start gap-2">
-          <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="space-y-2 text-sm">
-            <p className="font-medium text-blue-900 dark:text-blue-100">
-              Commit Phase - Sealed Bid Auction
+          <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
+          <div className="space-y-2 text-sm ">
+            <p className="font-medium">Commit Phase - Sealed Bid Auction</p>
+            <p>
+              In Vickrey auctions, you commit to a sealed bid during the commit
+              phase. Your actual bid amount is hidden until the reveal phase.
             </p>
-            <p className="text-blue-700 dark:text-blue-300">
-              In Vickrey auctions, you commit to a sealed bid during the commit phase. 
-              Your actual bid amount is hidden until the reveal phase.
+            <p>
+              <strong>Important:</strong> Save your bid amount and salt securely
+              - you'll need them to reveal your bid later!
             </p>
-            <p className="text-blue-700 dark:text-blue-300">
-              <strong>Important:</strong> Save your bid amount and salt securely - you'll need them to reveal your bid later!
-            </p>
-            <p className="text-blue-700 dark:text-blue-300">
-              Commit fee: 0.001 ETH (refunded upon reveal)
-            </p>
+            <p>Commit fee: 0.001 ETH (refunded upon reveal)</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="bidAmount">Bid Amount (ETH)</Label>
           <Input
@@ -196,6 +214,8 @@ export function VickreyCommitForm({ auction, onCommitPlaced }: VickreyCommitForm
         </div>
       </div>
 
+      {/* 0x8524f93cd74f78c680c7acab2a90b1d91001e48eec8f7f4e91bdd7dfdb3b0998 */}
+
       {commitment && (
         <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
@@ -222,10 +242,14 @@ export function VickreyCommitForm({ auction, onCommitPlaced }: VickreyCommitForm
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button
-              disabled={!commitment || isSubmitting || isPending || isConfirming}
+              disabled={
+                !commitment || isSubmitting || isPending || isConfirming
+              }
               className="flex-1"
             >
-              {isSubmitting || isPending || isConfirming ? "Submitting..." : "Submit Commitment"}
+              {isSubmitting || isPending || isConfirming
+                ? "Submitting..."
+                : "Submit Commitment"}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -233,14 +257,17 @@ export function VickreyCommitForm({ auction, onCommitPlaced }: VickreyCommitForm
               <AlertDialogTitle>Confirm Bid Commitment</AlertDialogTitle>
               <AlertDialogDescription className="space-y-2">
                 <p>
-                  You are about to commit to a sealed bid of <strong>{bidAmount} ETH</strong>.
+                  You are about to commit to a sealed bid of{" "}
+                  <strong>{bidAmount} ETH</strong>.
                 </p>
                 <p className="text-amber-600 dark:text-amber-400">
-                  <strong>Important:</strong> Make sure to save your bid amount ({bidAmount} ETH) and salt ({salt}) 
-                  securely. You will need these exact values to reveal your bid later!
+                  <strong>Important:</strong> Make sure to save your bid amount
+                  ({bidAmount} ETH) and salt ({salt}) securely. You will need
+                  these exact values to reveal your bid later!
                 </p>
                 <p>
-                  A commitment fee of 0.001 ETH will be charged and refunded when you reveal your bid.
+                  A commitment fee of 0.001 ETH will be charged and refunded
+                  when you reveal your bid.
                 </p>
               </AlertDialogDescription>
             </AlertDialogHeader>

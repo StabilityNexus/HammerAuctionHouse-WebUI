@@ -56,6 +56,10 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
     }
   }, [address, auctionId]);
 
+  // NQ2jfKugP6ZrtvPm
+  //10
+
+
   const validateReveal = async (): Promise<boolean> => {
     if (!bidAmount || !salt) {
       setError("Both bid amount and salt are required");
@@ -70,7 +74,6 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
     console.log("Validating reveal with bid amount:", bidAmount, "and salt:", salt);
 
     try {
-      const vickreyService = new VickreyAuctionService();
       const bidAmountWei = BigInt(Math.floor(parseFloat(bidAmount) * 1e18));
       const generatedHash = VickreyAuctionService.generateCommitment(bidAmountWei, salt);
       console.log("Generated commitment hash:", generatedHash);
@@ -162,7 +165,7 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Eye className="w-5 h-5" />

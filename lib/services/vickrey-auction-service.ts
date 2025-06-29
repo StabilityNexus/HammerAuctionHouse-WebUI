@@ -1,4 +1,4 @@
-import { Address, erc20Abi, erc721Abi, keccak256, encodePacked, parseEther } from "viem";
+import { Address, erc20Abi, erc721Abi, keccak256, encodePacked, parseEther, parseAbiItem } from "viem";
 import { readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
 import { IAuctionService, VickreyAuctionParams } from "../auction-service";
@@ -6,479 +6,479 @@ import { Bid } from "../mock-data";
 import { generateCode } from "../storage";
 
 export const VICKREY_ABI = [
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "token",
-          "type": "address"
-        }
-      ],
-      "name": "SafeERC20FailedOperation",
-      "type": "error"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "Id",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "description",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "imgUrl",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "auctioneer",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "enum Auction.AuctionType",
-          "name": "auctionType",
-          "type": "uint8"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "auctionedToken",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "auctionedTokenIdOrAmount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "biddingToken",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "bidCommitEnd",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "bidRevealEnd",
-          "type": "uint256"
-        }
-      ],
-      "name": "AuctionCreated",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "auctionId",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "bidder",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "bidAmount",
-          "type": "uint256"
-        }
-      ],
-      "name": "bidPlaced",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "auctionId",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amountWithdrawn",
-          "type": "uint256"
-        }
-      ],
-      "name": "fundsWithdrawn",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "auctionId",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "withdrawer",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "auctionedTokenAddress",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "auctionedTokenIdOrAmount",
-          "type": "uint256"
-        }
-      ],
-      "name": "itemWithdrawn",
-      "type": "event"
-    },
-    {
-      "inputs": [],
-      "name": "auctionCounter",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "auctions",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "id",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "description",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "imgUrl",
-          "type": "string"
-        },
-        {
-          "internalType": "address",
-          "name": "auctioneer",
-          "type": "address"
-        },
-        {
-          "internalType": "enum Auction.AuctionType",
-          "name": "auctionType",
-          "type": "uint8"
-        },
-        {
-          "internalType": "address",
-          "name": "auctionedToken",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "auctionedTokenIdOrAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "biddingToken",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "availableFunds",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "winningBid",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "winner",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "startTime",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "bidCommitEnd",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "bidRevealEnd",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bool",
-          "name": "isClaimed",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "bids",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "auctionId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "commitment",
-          "type": "bytes32"
-        }
-      ],
-      "name": "commitBid",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "commitments",
-      "outputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "description",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "imgUrl",
-          "type": "string"
-        },
-        {
-          "internalType": "enum Auction.AuctionType",
-          "name": "auctionType",
-          "type": "uint8"
-        },
-        {
-          "internalType": "address",
-          "name": "auctionedToken",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "auctionedTokenIdOrAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "biddingToken",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "bidCommitDuration",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "bidRevealDuration",
-          "type": "uint256"
-        }
-      ],
-      "name": "createAuction",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes",
-          "name": "",
-          "type": "bytes"
-        }
-      ],
-      "name": "onERC721Received",
-      "outputs": [
-        {
-          "internalType": "bytes4",
-          "name": "",
-          "type": "bytes4"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "auctionId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "bidAmount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "bytes32",
-          "name": "salt",
-          "type": "bytes32"
-        }
-      ],
-      "name": "revealBid",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "auctionId",
-          "type": "uint256"
-        }
-      ],
-      "name": "withdrawFunds",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "auctionId",
-          "type": "uint256"
-        }
-      ],
-      "name": "withdrawItem",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    }
-  ] as const;
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "SafeERC20FailedOperation",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "Id",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "description",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "imgUrl",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "auctioneer",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum Auction.AuctionType",
+        "name": "auctionType",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "auctionedToken",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "auctionedTokenIdOrAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "biddingToken",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bidCommitEnd",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bidRevealEnd",
+        "type": "uint256"
+      }
+    ],
+    "name": "AuctionCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "bidder",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bidAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "bidPlaced",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountWithdrawn",
+        "type": "uint256"
+      }
+    ],
+    "name": "fundsWithdrawn",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "withdrawer",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "auctionedTokenAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "auctionedTokenIdOrAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "itemWithdrawn",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "auctionCounter",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "auctions",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "description",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "imgUrl",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "auctioneer",
+        "type": "address"
+      },
+      {
+        "internalType": "enum Auction.AuctionType",
+        "name": "auctionType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "address",
+        "name": "auctionedToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "auctionedTokenIdOrAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "biddingToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "availableFunds",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "winningBid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "winner",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "startTime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "bidCommitEnd",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "bidRevealEnd",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "isClaimed",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "bids",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "commitment",
+        "type": "bytes32"
+      }
+    ],
+    "name": "commitBid",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "commitments",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "description",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "imgUrl",
+        "type": "string"
+      },
+      {
+        "internalType": "enum Auction.AuctionType",
+        "name": "auctionType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "address",
+        "name": "auctionedToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "auctionedTokenIdOrAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "biddingToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "bidCommitDuration",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "bidRevealDuration",
+        "type": "uint256"
+      }
+    ],
+    "name": "createAuction",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "name": "onERC721Received",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "bidAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "salt",
+        "type": "bytes32"
+      }
+    ],
+    "name": "revealBid",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdrawFunds",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdrawItem",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+] as const;
 
 // Vickrey Auction Service Implementation
 export class VickreyAuctionService implements IAuctionService {
-  contractAddress: Address = "0x19fcfb4c99cB7313e7c24dBD5114180Fd104B2A8";
+  contractAddress: Address = "0x1e2f03A962759C02c18201B0d1D7d4524692c096";
 
   private mapAuctionData(auctionData: any): any {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 16) {
@@ -595,7 +595,7 @@ export class VickreyAuctionService implements IAuctionService {
 
       const results = await readContracts(wagmi_config, { contracts });
       console.log("Raw Vickrey contract results:", results);
-      
+
       const mappedAuctions = results
         .filter((result: any) => !result.error && result.result)
         .map((result: any) => this.mapAuctionData(result.result))
@@ -663,7 +663,7 @@ export class VickreyAuctionService implements IAuctionService {
   // Reveal bid with original bid amount and salt
   async revealBid(writeContract: any, auctionId: bigint, bidAmount: bigint, salt: string): Promise<void> {
     try {
-      const biddingToken=(await this.getAuction(auctionId)).biddingToken
+      const biddingToken = (await this.getAuction(auctionId)).biddingToken
       const saltBytes = keccak256(encodePacked(['string'], [salt]));
       await this.approveToken(
         writeContract,
@@ -792,28 +792,32 @@ export class VickreyAuctionService implements IAuctionService {
     startBlock: bigint,
     endBlock: bigint
   ): Promise<Bid[]> {
-    // For Vickrey auctions, bid history is more complex due to sealed bids
-    // During commit phase, no bids are visible
-    // During reveal phase, only revealed bids are visible
-    return [];
-  }
-
-  // Helper method to check auction phase
-  async getAuctionPhase(auctionId: bigint): Promise<'commit' | 'reveal' | 'ended'> {
     try {
-      const auction = await this.getAuction(auctionId);
-      const now = Math.floor(Date.now() / 1000);
-      
-      if (now < Number(auction.bidCommitEnd)) {
-        return 'commit';
-      } else if (now < Number(auction.bidRevealEnd)) {
-        return 'reveal';
-      } else {
-        return 'ended';
-      }
+      const logs = await client.getLogs({
+        address: this.contractAddress,
+        event: parseAbiItem(
+          'event bidRevealed(uint256 indexed auctionId, address bidder, uint256 bidAmount)'
+        ),
+        args: { auctionId },
+        fromBlock: startBlock,
+        toBlock: endBlock,
+      });
+      console.log("Fetched bid history logs:", logs);
+
+      const bids = await Promise.all(logs.map(async (log: any, index: number) => {
+        const block = await client.getBlock({ blockNumber: log.blockNumber });
+        return {
+          id: `${auctionId}-${index}`,
+          auctionId: auctionId.toString(),
+          bidder: log.args.bidder,
+          amount: Number(log.args.bidAmount) / 1e18, // Convert from wei to ETH
+          timestamp: Number(block.timestamp) * 1e3
+        };
+      }));
+      return bids;
     } catch (error) {
-      console.error("Error getting auction phase:", error);
-      return 'ended';
+      console.error("Error fetching bid history:", error);
+      throw error;
     }
   }
 

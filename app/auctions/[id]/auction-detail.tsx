@@ -20,23 +20,25 @@ import {
   useAccount,
   useWriteContract,
 } from "wagmi";
-import { decodeCode } from "@/lib/storage";
+import { decode } from "@/lib/storage";
 import { toast } from "sonner";
 import { DutchAuctionPrice } from "@/components/auction/dutch-auction-price";
+import { AllPayDetail } from "@/components/auction/auction-detail-ui/AllPayDetail";
+import { EnglishDetail } from "@/components/auction/auction-detail-ui/EnglishDetail";
+import { LinearDetail } from "@/components/auction/auction-detail-ui/LinearDetail";
+import { ExponentialDetail } from "@/components/auction/auction-detail-ui/ExponentialDetail";
+import { LogarithmicDetail } from "@/components/auction/auction-detail-ui/LogarithmicDetail";
+import { VickreyDetail } from "@/components/auction/auction-detail-ui/VickreyDetail";
 
 interface AuctionDetailProps {
-  auction: Auction | undefined;
-  encodedAuctionId: string;
+  protocol: AuctionType;
+  id: bigint;
 }
 
-export function AuctionDetail({
-  auction,
-  encodedAuctionId,
-}: AuctionDetailProps) {
-  const [currentAuction, setCurrentAuction] = useState(auction);
+export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
+  const [currentAuction, setCurrentAuction] = useState<Auction | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingBids, setIsLoadingBids] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isWithdrawingFunds, setIsWithdrawingFunds] = useState(false);
   const [isWithdrawingItem, setIsWithdrawingItem] = useState(false);
@@ -47,41 +49,13 @@ export function AuctionDetail({
   const { address: userAddress, isConnected } = useAccount();
   const { writeContract } = useWriteContract();
 
-  // Decode the auction ID to get protocol and auction ID
-  const decodedData = decodeCode(encodedAuctionId);
-  const protocolNumber = decodedData.protocol;
-  const auctionId = decodedData.id;
-
-  // Map protocol numbers to protocol names
-  const getProtocolName = (protocolNum: string): AuctionType => {
-    switch (protocolNum) {
-      case "1":
-        return "AllPay";
-      case "2":
-        return "English";
-      case "3":
-        return "Linear";
-      case "4":
-        return "Logarithmic";
-      case "5":
-        return "Exponential";
-      case "6":
-        return "Vickrey";
-      default:
-        return "AllPay"; // fallback
-    }
-  };
-
-  const protocolName = getProtocolName(protocolNumber);
-
-  // Helper function to determine Vickrey auction phase
   const getVickreyPhase = (auction: Auction) => {
     if (auction.protocol !== "Vickrey") return null;
-    
+
     const now = BigInt(Date.now());
-    const commitEnd = Number(auction.bidCommitEnd)*1000 || BigInt(0);
-    const revealEnd = Number(auction.bidRevealEnd)*1000 || BigInt(0);
-    
+    const commitEnd = Number(auction.bidCommitEnd) * 1000 || BigInt(0);
+    const revealEnd = Number(auction.bidRevealEnd) * 1000 || BigInt(0);
+
     if (now < commitEnd) {
       return "commit";
     } else if (now < revealEnd) {
@@ -91,181 +65,94 @@ export function AuctionDetail({
     }
   };
 
-  // Fetch bids from contract using the appropriate service
-  const fetchBidsFromContract = useCallback(async () => {
-    if (!publicClient || !auctionId || !currentAuction) return;
-
-    setIsLoadingBids(true);
-    try {
-      console.log(`Fetching ${protocolName} auction bids for ID:`, auctionId);
-      const auctionService = getAuctionService(protocolName);
-
-      // Get current block number for event fetching
-      const currentBlock = await publicClient.getBlockNumber();
-      const fromBlock =
-        currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
-
-      // Fetch bid history from blockchain events
-      const bidHistory = await auctionService.getBidHistory(
-        publicClient,
-        BigInt(auctionId),
-        fromBlock,
-        currentBlock
-      );
-
-      console.log("Fetched bid history:", bidHistory);
-      setBids(bidHistory);
-    } catch (err) {
-      console.error(`Error fetching ${protocolName} auction bids:`, err);
-      // Fallback to mock data if contract fetch fails
-      setBids(getBidsForAuction(auctionId));
-    } finally {
-      setIsLoadingBids(false);
-    }
-  }, [publicClient, auctionId, protocolName, currentAuction]);
-
   // Fetch auction from contract using the appropriate service
   const fetchAuctionFromContract = async () => {
-    if (!publicClient || !auctionId) return;
+    if (!publicClient || !id) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      console.log(`Fetching ${protocolName} auction with ID:`, auctionId);
-      const auctionService = getAuctionService(protocolName);
-      const auctionData = await auctionService.getAuction(BigInt(auctionId));
+      console.log(`Fetching ${protocol} auction with ID:`, id);
+      const auctionService = getAuctionService(protocol);
+      const auctionData = await auctionService.getAuction(BigInt(id));
+      setCurrentAuction(auctionData);
+      console.log("Formatted auction data:", auctionData);
 
-      if (auctionData) {
-        // console.log("Fetched auction data:", auctionData);
-        // Convert contract data to our Auction interface format
-        const formattedAuction: Auction = {
-          protocol: protocolName,
-          id: auctionData.id?.toString() || auctionId,
-          name: auctionData.name || "Unknown Auction",
-          description: auctionData.description || "No description available",
-          imgUrl: auctionData.imgUrl || "/placeholder.jpg",
-          auctioneer:
-            auctionData.auctioneer ||
-            "0x0000000000000000000000000000000000000000",
-          auctionType: auctionData.auctionType?.toString() || "0",
-          auctionedToken:
-            auctionData.auctionedToken ||
-            "0x0000000000000000000000000000000000000000",
-          auctionedTokenIdOrAmount: BigInt(
-            auctionData.auctionedTokenIdOrAmount || 0
-          ),
-          biddingToken:
-            auctionData.biddingToken ||
-            "0x0000000000000000000000000000000000000000",
-          // Handle different auction types - Dutch auctions use startingPrice, others use startingBid
-          startingBid: ["Linear", "Exponential", "Logarithmic"].includes(
-            protocolName
-          )
-            ? BigInt(auctionData.startingPrice || 0)
-            : BigInt(auctionData.startingBid || 0),
-          minBidDelta: BigInt(auctionData.minBidDelta || 0),
-          highestBid: BigInt(auctionData.highestBid || 0),
-          reservedPrice: BigInt(auctionData.reservedPrice || 0),
-          startingPrice: BigInt(auctionData.startingPrice || 0), // For Dutch auctions
-          decayFactor: BigInt(auctionData.decayFactor || 0), // For Exponential/Logarithmic Dutch auctions
-          winner:
-            auctionData.winner || "0x0000000000000000000000000000000000000000",
-          deadline: BigInt(auctionData.deadline || Date.now() + 86400000),
-          deadlineExtension: BigInt(auctionData.deadlineExtension || 0),
-          duration: BigInt(auctionData.duration || 86400),
-          isClaimed: auctionData.isClaimed || false,
-          availableFunds: BigInt(auctionData.availableFunds || 0),
-          // Vickrey-specific fields
-          ...(protocolName === "Vickrey" && {
-            bidCommitEnd: BigInt(auctionData.bidCommitEnd || Date.now() + 86400000),
-            bidRevealEnd: BigInt(auctionData.bidRevealEnd || Date.now() + 172800000),
-            startTime: BigInt(auctionData.startTime || Date.now()),
-            winningBid: BigInt(auctionData.winningBid || 0),
-          }),
-        };
+      // if (auctionData) {
+      //   const formattedAuction: Auction = {
+      //     protocol: protocol,
+      //     id: auctionData.id?.toString() || id,
+      //     name: auctionData.name || "Unknown Auction",
+      //     description: auctionData.description || "No description available",
+      //     imgUrl: auctionData.imgUrl || "/placeholder.jpg",
+      //     auctioneer:
+      //       auctionData.auctioneer ||
+      //       "0x0000000000000000000000000000000000000000",
+      //     auctionType: auctionData.auctionType?.toString() || "0",
+      //     auctionedToken:
+      //       auctionData.auctionedToken ||
+      //       "0x0000000000000000000000000000000000000000",
+      //     auctionedTokenIdOrAmount: BigInt(
+      //       auctionData.auctionedTokenIdOrAmount || 0
+      //     ),
+      //     biddingToken:
+      //       auctionData.biddingToken ||
+      //       "0x0000000000000000000000000000000000000000",
+      //     // Handle different auction types - Dutch auctions use startingPrice, others use startingBid
+      //     startingBid: ["Linear", "Exponential", "Logarithmic"].includes(
+      //       protocol
+      //     )
+      //       ? BigInt(auctionData.startingPrice || 0)
+      //       : BigInt(auctionData.startingBid || 0),
+      //     minBidDelta: BigInt(auctionData.minBidDelta || 0),
+      //     highestBid: BigInt(auctionData.highestBid || 0),
+      //     reservedPrice: BigInt(auctionData.reservedPrice || 0),
+      //     startingPrice: BigInt(auctionData.startingPrice || 0), // For Dutch auctions
+      //     decayFactor: BigInt(auctionData.decayFactor || 0), // For Exponential/Logarithmic Dutch auctions
+      //     winner:
+      //       auctionData.winner || "0x0000000000000000000000000000000000000000",
+      //     deadline: BigInt(auctionData.deadline || Date.now() + 86400000),
+      //     deadlineExtension: BigInt(auctionData.deadlineExtension || 0),
+      //     duration: BigInt(auctionData.duration || 86400),
+      //     isClaimed: auctionData.isClaimed || false,
+      //     availableFunds: BigInt(auctionData.availableFunds || 0),
+      //     // Vickrey-specific fields
+      //     ...(protocol === "Vickrey" && {
+      //       bidCommitEnd: BigInt(
+      //         auctionData.bidCommitEnd || Date.now() + 86400000
+      //       ),
+      //       bidRevealEnd: BigInt(
+      //         auctionData.bidRevealEnd || Date.now() + 172800000
+      //       ),
+      //       startTime: BigInt(auctionData.startTime || Date.now()),
+      //       winningBid: BigInt(auctionData.winningBid || 0),
+      //     }),
+      //   };
 
-        setCurrentAuction(formattedAuction);
-        console.log("Formatted auction data:", formattedAuction);
+      //   // For Dutch auctions, initialize current price with starting price
+      //   if (["Linear", "Exponential", "Logarithmic"].includes(protocol)) {
+      //     if (Number(formattedAuction.deadline) * 1000 < Date.now()) {
+      //       setCurrentDutchPrice(BigInt(0));
+      //     } else {
+      //       setCurrentDutchPrice(BigInt(auctionData.startingPrice || 0));
+      //     }
+      //   }
 
-        // For Dutch auctions, initialize current price with starting price
-        if (["Linear", "Exponential", "Logarithmic"].includes(protocolName)) {
-          if (Number(formattedAuction.deadline) * 1000 < Date.now()) {
-            setCurrentDutchPrice(BigInt(0));
-          } else {
-            setCurrentDutchPrice(BigInt(auctionData.startingPrice || 0));
-          }
-        }
-
-        // Fetch bids after setting auction data
-        // setTimeout(() => fetchBidsFromContract(), 100);
-      }
+      //   // Fetch bids after setting auction data
+      //   // setTimeout(() => fetchBidsFromContract(), 100);
+      // }
     } catch (err) {
-      console.error(
-        `Error fetching ${protocolName} auction from contract:`,
-        err
-      );
-      setError(`Failed to fetch ${protocolName} auction data from blockchain`);
-      // Keep using fallback auction if available and fetch mock bids
-      if (currentAuction) {
-        setBids(getBidsForAuction(currentAuction.id));
-      }
+      console.error(`Error fetching ${protocol} auction from contract:`, err);
+      setError(`Failed to fetch ${protocol} auction data from blockchain`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fetch current price for Dutch auctions
-  const fetchCurrentPrice = useCallback(async () => {
-    if (
-      !currentAuction ||
-      !["Linear", "Exponential", "Logarithmic"].includes(protocolName)
-    ) {
-      return;
-    }
-
-    // Don't fetch price if auction is claimed or has ended - set to 0 instead
-    if (currentAuction.isClaimed || Date.now() >= Number(currentAuction.deadline) * 1000) {
-      setCurrentDutchPrice(BigInt(0));
-      return;
-    }
-
-    try {
-      const auctionService = getAuctionService(protocolName);
-      if (auctionService.getCurrentPrice) {
-        const price = await auctionService.getCurrentPrice(BigInt(auctionId));
-        console.log(`Current price for ${protocolName} auction ${auctionId}:`, price);
-        setCurrentDutchPrice(price);
-      }
-    } catch (err) {
-      console.error("Error fetching current price:", err);
-      // Set to 0 on error as well
-      setCurrentDutchPrice(BigInt(0));
-    }
-  }, [currentAuction, protocolName, auctionId]);
-
   useEffect(() => {
-    if (auction) {
-      setBids(getBidsForAuction(auction.id));
-    }
-  }, [auction]);
-
-  useEffect(() => {
-    // Try to fetch from contract first, fallback to provided auction
     fetchAuctionFromContract();
-  }, [publicClient, auctionId]);
-
-  // Refetch bids when block number changes (new transactions)
-  useEffect(() => {
-    if (currentAuction && publicClient && blockNumber) {
-      fetchBidsFromContract();
-    }
-  }, [fetchBidsFromContract]);
-
-  // Fetch current price once on auction or protocol change
-  useEffect(() => {
-    fetchCurrentPrice();
-  }, [fetchCurrentPrice]);
+  }, [publicClient, id]);
 
   // Handle Dutch auction purchase (for Dutch auctions, this replaces bidding)
   const handleDutchPurchase = useCallback(async () => {
@@ -274,7 +161,7 @@ export function AuctionDetail({
       return;
     }
 
-    if (!["Linear", "Exponential", "Logarithmic"].includes(protocolName)) {
+    if (!["Linear", "Exponential", "Logarithmic"].includes(protocol)) {
       toast.error("This action is only available for Dutch auctions");
       return;
     }
@@ -286,54 +173,42 @@ export function AuctionDetail({
     }
 
     try {
-      const auctionService = getAuctionService(protocolName);
-      await auctionService.withdrawItem(writeContract, BigInt(auctionId));
+      const auctionService = getAuctionService(protocol);
+      await auctionService.withdrawItem(writeContract, BigInt(id));
       toast.success("Purchase transaction submitted!");
     } catch (error) {
       console.error("Error purchasing Dutch auction item:", error);
       toast.error("Failed to purchase item");
     }
-  }, [
-    currentAuction,
-    userAddress,
-    isConnected,
-    protocolName,
-    auctionId,
-    writeContract,
-  ]);
+  }, [currentAuction, userAddress, isConnected, protocol, id, writeContract]);
 
-  // Callback to refetch bids after successful bid placement
-  const handleBidPlaced = useCallback(
-    async (newBid: Bid) => {
-      // Add the new bid optimistically for immediate UI feedback
-      setBids((prevBids) => [newBid, ...prevBids]);
+  // // Callback to refetch bids after successful bid placement
+  // const handleBidPlaced = useCallback(
+  //   async (newBid: Bid) => {
+  //     // Add the new bid optimistically for immediate UI feedback
+  //     setBids((prevBids) => [newBid, ...prevBids]);
 
-      // Refetch from blockchain after a short delay to get the real data
-      setTimeout(() => {
-        fetchBidsFromContract();
-      }, 2000);
-    },
-    [fetchBidsFromContract]
-  );
+  //     // Refetch from blockchain after a short delay to get the real data
+  //     setTimeout(() => {
+  //       fetchBidsFromContract();
+  //     }, 2000);
+  //   },
+  //   [fetchBidsFromContract]
+  // );
 
-  // Handle funds withdrawal (for auctioneer)
   const handleWithdrawFunds = useCallback(async () => {
     if (!currentAuction || !userAddress || !isConnected) {
       toast.error("Please connect your wallet");
       return;
     }
-
     if (userAddress.toLowerCase() !== currentAuction.auctioneer.toLowerCase()) {
       toast.error("Only the auctioneer can withdraw funds");
       return;
     }
-
     try {
       setIsWithdrawingFunds(true);
-      const auctionService = getAuctionService(protocolName);
-
-      await auctionService.withdrawFunds(writeContract, BigInt(auctionId));
-
+      const auctionService = getAuctionService(protocol);
+      await auctionService.withdrawFunds(writeContract, BigInt(id));
       toast.success("Withdrawal transaction submitted!");
     } catch (error) {
       console.error("Error withdrawing funds:", error);
@@ -341,31 +216,19 @@ export function AuctionDetail({
     } finally {
       setIsWithdrawingFunds(false);
     }
-  }, [
-    currentAuction,
-    userAddress,
-    isConnected,
-    protocolName,
-    auctionId,
-    writeContract,
-  ]);
+  }, [currentAuction, userAddress, isConnected, protocol, id, writeContract]);
 
-  // Handle item withdrawal (for winner)
   const handleWithdrawItem = useCallback(async () => {
     if (!currentAuction || !userAddress || !isConnected) {
       toast.error("Please connect your wallet");
       return;
     }
-
     const auctionEnded = Date.now() >= Number(currentAuction.deadline) * 1000;
     if (!auctionEnded) {
       toast.error("Auction must end before withdrawing item");
       return;
     }
-
-    // In AllPay auctions, the winner is the highest bidder
     const highestBidder = currentAuction?.winner;
-
     if (
       !highestBidder ||
       userAddress.toLowerCase() !== highestBidder.toLowerCase()
@@ -373,13 +236,10 @@ export function AuctionDetail({
       toast.error("Only the winner can withdraw the item");
       return;
     }
-
     try {
       setIsWithdrawingItem(true);
-      const auctionService = getAuctionService(protocolName);
-
-      await auctionService.withdrawItem(writeContract, BigInt(auctionId));
-
+      const auctionService = getAuctionService(protocol);
+      await auctionService.withdrawItem(writeContract, BigInt(id));
       toast.success("Item withdrawal transaction submitted!");
     } catch (error) {
       console.error("Error withdrawing item:", error);
@@ -391,8 +251,8 @@ export function AuctionDetail({
     currentAuction,
     userAddress,
     isConnected,
-    protocolName,
-    auctionId,
+    protocol,
+    id,
     writeContract,
     bids,
   ]);
@@ -409,8 +269,6 @@ export function AuctionDetail({
       </div>
     );
   }
-
-  // console.log("Current auction data:", currentAuction);
 
   if (!currentAuction) {
     return (
@@ -467,7 +325,7 @@ export function AuctionDetail({
             <div className="absolute bottom-4 right-4">
               <Badge
                 status={
-                  protocolName === "Vickrey"
+                  protocol === "Vickrey"
                     ? getVickreyPhase(currentAuction) === "ended"
                       ? "ended"
                       : "active"
@@ -537,7 +395,46 @@ export function AuctionDetail({
           )}
         </div>
         {/* Right column - Auction details */}
-        <motion.div
+        {protocol === "AllPay" && (
+          <AllPayDetail
+            currentAuction={currentAuction}
+            publicClient={publicClient}
+          />
+        )}
+
+        {protocol === "English" && (
+          <EnglishDetail
+            currentAuction={currentAuction}
+            publicClient={publicClient}
+          />
+        )}
+
+        {protocol === "Vickrey" && (
+          <VickreyDetail
+            currentAuction={currentAuction}
+            publicClient={publicClient}
+          />
+        )}
+
+        {protocol === "Linear" && (
+          <LinearDetail
+            currentAuction={currentAuction}
+          />
+        )}
+
+        {protocol === "Exponential" && (
+          <ExponentialDetail
+            currentAuction={currentAuction}
+          />
+        )}
+
+        {protocol === "Logarithmic" && (
+          <LogarithmicDetail
+            currentAuction={currentAuction}
+          />
+        )}
+
+        {/* <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -555,26 +452,22 @@ export function AuctionDetail({
             <div className="flex justify-between mb-4">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">
-                  {["Linear", "Exponential", "Logarithmic"].includes(
-                    protocolName
-                  )
+                  {["Linear", "Exponential", "Logarithmic"].includes(protocol)
                     ? "Current Price (Dutch Auction)"
-                    : protocolName === "Vickrey"
+                    : protocol === "Vickrey"
                     ? getVickreyPhase(currentAuction) === "ended"
                       ? "Winning Bid"
                       : "Vickrey Auction"
                     : "Current Price"}
                 </p>
                 <p className="text-3xl font-bold">
-                  {["Linear", "Exponential", "Logarithmic"].includes(
-                    protocolName
-                  )
+                  {["Linear", "Exponential", "Logarithmic"].includes(protocol)
                     ? currentAuction.isClaimed
                       ? "Sold"
                       : Date.now() >= Number(currentAuction.deadline) * 1000
                       ? "Auction Ended"
                       : (Number(currentDutchPrice) / 1e18).toFixed(4)
-                    : protocolName === "Vickrey"
+                    : protocol === "Vickrey"
                     ? (() => {
                         const phase = getVickreyPhase(currentAuction);
                         if (phase === "commit") {
@@ -583,7 +476,9 @@ export function AuctionDetail({
                           return "Reveal Phase";
                         } else if (phase === "ended") {
                           return currentAuction.winningBid
-                            ? (Number(currentAuction.winningBid) / 1e18).toFixed(4)
+                            ? (
+                                Number(currentAuction.winningBid) / 1e18
+                              ).toFixed(4)
                             : "No Winner";
                         }
                         return "Unknown";
@@ -594,18 +489,21 @@ export function AuctionDetail({
                     ? Number(currentAuction.startingBid) / 1e18
                     : 0}{" "}
                   {["Linear", "Exponential", "Logarithmic"].includes(
-                    protocolName
-                  ) && (currentAuction.isClaimed || Date.now() >= Number(currentAuction.deadline) * 1000)
+                    protocol
+                  ) &&
+                  (currentAuction.isClaimed ||
+                    Date.now() >= Number(currentAuction.deadline) * 1000)
                     ? ""
-                    : protocolName === "Vickrey" && 
-                      (getVickreyPhase(currentAuction) === "commit" || 
-                       getVickreyPhase(currentAuction) === "reveal" ||
-                       (getVickreyPhase(currentAuction) === "ended" && !currentAuction.winningBid))
+                    : protocol === "Vickrey" &&
+                      (getVickreyPhase(currentAuction) === "commit" ||
+                        getVickreyPhase(currentAuction) === "reveal" ||
+                        (getVickreyPhase(currentAuction) === "ended" &&
+                          !currentAuction.winningBid))
                     ? ""
                     : "ETH"}
                 </p>
                 {["Linear", "Exponential", "Logarithmic"].includes(
-                  protocolName
+                  protocol
                 ) && (
                   <div className="mt-2 text-sm text-muted-foreground">
                     <div>
@@ -624,16 +522,19 @@ export function AuctionDetail({
                         : 0}{" "}
                       ETH
                     </div>
-                    {protocolName === "Exponential" && currentAuction.decayFactor && (
-                      <div>
-                        Decay Factor:{" "}
-                        {(Number(currentAuction.decayFactor) / 1e3).toFixed(3)}
-                      </div>
-                    )}
+                    {protocol === "Exponential" &&
+                      currentAuction.decayFactor && (
+                        <div>
+                          Decay Factor:{" "}
+                          {(Number(currentAuction.decayFactor) / 1e3).toFixed(
+                            3
+                          )}
+                        </div>
+                      )}
                   </div>
                 )}
 
-                {protocolName === "Vickrey" && (
+                {protocol === "Vickrey" && (
                   <div className="mt-2 text-sm text-muted-foreground">
                     <div>
                       Phase:{" "}
@@ -654,47 +555,64 @@ export function AuctionDetail({
                     {currentAuction.bidCommitEnd && (
                       <div>
                         Commit End:{" "}
-                        {new Date(Number(currentAuction.bidCommitEnd) * 1000).toLocaleString()}
+                        {new Date(
+                          Number(currentAuction.bidCommitEnd) * 1000
+                        ).toLocaleString()}
                       </div>
                     )}
                     {currentAuction.bidRevealEnd && (
                       <div>
                         Reveal End:{" "}
-                        {new Date(Number(currentAuction.bidRevealEnd) * 1000).toLocaleString()}
+                        {new Date(
+                          Number(currentAuction.bidRevealEnd) * 1000
+                        ).toLocaleString()}
                       </div>
                     )}
-                    {getVickreyPhase(currentAuction) === "ended" && currentAuction.winner && 
-                     currentAuction.winner !== "0x0000000000000000000000000000000000000000" && (
-                      <div>
-                        Winner:{" "}
-                        {`${currentAuction.winner.substring(0, 6)}...${currentAuction.winner.substring(38)}`}
-                      </div>
-                    )}
+                    {getVickreyPhase(currentAuction) === "ended" &&
+                      currentAuction.winner &&
+                      currentAuction.winner !==
+                        "0x0000000000000000000000000000000000000000" && (
+                        <div>
+                          Winner:{" "}
+                          {`${currentAuction.winner.substring(
+                            0,
+                            6
+                          )}...${currentAuction.winner.substring(38)}`}
+                        </div>
+                      )}
                   </div>
                 )}
               </div>
 
               <div className="text-right">
                 <p className="text-sm text-muted-foreground mb-1">
-                  {protocolName === "Vickrey" 
-                    ? `${getVickreyPhase(currentAuction) === "commit" 
-                        ? "Commit Phase" 
-                        : getVickreyPhase(currentAuction) === "reveal" 
-                        ? "Reveal Phase" 
-                        : "Auction"} Status`
+                  {protocol === "Vickrey"
+                    ? `${
+                        getVickreyPhase(currentAuction) === "commit"
+                          ? "Commit Phase"
+                          : getVickreyPhase(currentAuction) === "reveal"
+                          ? "Reveal Phase"
+                          : "Auction"
+                      } Status`
                     : "Auction Status"}
                 </p>
                 <CountdownTimer
                   endTime={
-                    protocolName === "Vickrey"
+                    protocol === "Vickrey"
                       ? (() => {
                           const phase = getVickreyPhase(currentAuction);
                           if (phase === "commit") {
-                            return Number(currentAuction.bidCommitEnd || 0) * 1000;
+                            return (
+                              Number(currentAuction.bidCommitEnd || 0) * 1000
+                            );
                           } else if (phase === "reveal") {
-                            return Number(currentAuction.bidRevealEnd || 0) * 1000;
+                            return (
+                              Number(currentAuction.bidRevealEnd || 0) * 1000
+                            );
                           } else {
-                            return Number(currentAuction.bidRevealEnd || 0) * 1000;
+                            return (
+                              Number(currentAuction.bidRevealEnd || 0) * 1000
+                            );
                           }
                         })()
                       : Number(currentAuction.deadline) * 1000
@@ -705,7 +623,7 @@ export function AuctionDetail({
                       : Date.now()
                   }
                   status={
-                    protocolName === "Vickrey"
+                    protocol === "Vickrey"
                       ? getVickreyPhase(currentAuction) === "ended"
                         ? "ended"
                         : "active"
@@ -718,61 +636,82 @@ export function AuctionDetail({
             </div>
 
             {(() => {
-              if (protocolName === "Vickrey") {
+              if (protocol === "Vickrey") {
                 const phase = getVickreyPhase(currentAuction);
-                return (phase === "commit" || phase === "reveal") && (
-                  <BidForm auction={currentAuction} onBidPlaced={handleBidPlaced} />
+                return (
+                  (phase === "commit" || phase === "reveal") && (
+                    <BidForm
+                      auction={currentAuction}
+                      onBidPlaced={handleBidPlaced}
+                    />
+                  )
                 );
               } else {
-                return Date.now() < Number(currentAuction.deadline) * 1000 && (
-                  <BidForm auction={currentAuction} onBidPlaced={handleBidPlaced} />
+                return (
+                  Date.now() < Number(currentAuction.deadline) * 1000 && (
+                    <BidForm
+                      auction={currentAuction}
+                      onBidPlaced={handleBidPlaced}
+                    />
+                  )
                 );
               }
             })()}
 
             {(() => {
-              if (protocolName === "Vickrey") {
+              if (protocol === "Vickrey") {
                 const phase = getVickreyPhase(currentAuction);
-                return phase === "ended" && (
-                  <div className="bg-muted p-4 rounded-lg flex items-start">
-                    <Info className="h-5 w-5 mr-3 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="font-medium">This Vickrey auction has ended</p>
-                      {currentAuction.winningBid && Number(currentAuction.winningBid) > 0 ? (
-                        <p className="text-muted-foreground">
-                          Winning bid: {(Number(currentAuction.winningBid) / 1e18).toFixed(4)} ETH
+                return (
+                  phase === "ended" && (
+                    <div className="bg-muted p-4 rounded-lg flex items-start">
+                      <Info className="h-5 w-5 mr-3 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="font-medium">
+                          This Vickrey auction has ended
                         </p>
-                      ) : (
-                        <p className="text-muted-foreground">
-                          No valid bids were revealed for this auction
-                        </p>
-                      )}
+                        {currentAuction.winningBid &&
+                        Number(currentAuction.winningBid) > 0 ? (
+                          <p className="text-muted-foreground">
+                            Winning bid:{" "}
+                            {(Number(currentAuction.winningBid) / 1e18).toFixed(
+                              4
+                            )}{" "}
+                            ETH
+                          </p>
+                        ) : (
+                          <p className="text-muted-foreground">
+                            No valid bids were revealed for this auction
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )
                 );
               } else {
-                return Date.now() >= Number(currentAuction.deadline) * 1000 && (
-                  <div className="bg-muted p-4 rounded-lg flex items-start">
-                    <Info className="h-5 w-5 mr-3 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="font-medium">This auction has ended</p>
-                      {bids.length > 0 ? (
-                        <p className="text-muted-foreground">
-                          Final price: {Math.max(...bids.map((b) => b.amount))} ETH
-                        </p>
-                      ) : (
-                        <p className="text-muted-foreground">
-                          No bids were placed on this auction
-                        </p>
-                      )}
+                return (
+                  Date.now() >= Number(currentAuction.deadline) * 1000 && (
+                    <div className="bg-muted p-4 rounded-lg flex items-start">
+                      <Info className="h-5 w-5 mr-3 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="font-medium">This auction has ended</p>
+                        {bids.length > 0 ? (
+                          <p className="text-muted-foreground">
+                            Final price:{" "}
+                            {Math.max(...bids.map((b) => b.amount))} ETH
+                          </p>
+                        ) : (
+                          <p className="text-muted-foreground">
+                            No bids were placed on this auction
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )
                 );
               }
             })()}
           </div>
 
-          {/* Note: Dutch Auction Price Display removed - buy functionality is now integrated in BidForm */}
 
           {(bids.length > 0 || isLoadingBids) && (
             <div className="mb-6">
@@ -817,7 +756,7 @@ export function AuctionDetail({
               )}
             </TabsContent>
           </Tabs>
-        </motion.div>
+        </motion.div> */}
       </div>
     </div>
   );

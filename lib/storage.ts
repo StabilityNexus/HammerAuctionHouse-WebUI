@@ -48,12 +48,13 @@ export function remove(protocol: keyof typeof AuctionProtocol, id: string) {
     _write(newRaw);
 }
 
-export function decodeCode(code: string){
-    // Decode a fixed-width code into protocol and id
-    type ValueOf<T> = T[keyof T];
-    const protocol = Object.values(AuctionProtocol).find(p => p === code.slice(0, 1)) as ValueOf<typeof AuctionProtocol>;
-    const id = code.slice(1);
-    return { protocol , id };
+export function decode(code: string) {
+  // Decode a fixed-width code into auction name and id
+  const protocolValue = code.slice(0, 1);
+  // Find the enum key (auction name) for this protocol value
+  const protocolName = (Object.entries(AuctionProtocol).find(([, val]) => val === protocolValue)?.[0]) as keyof typeof AuctionProtocol;
+  const id = code.slice(1);
+  return { protocol: protocolName, id };
 }
 
 export function isPresent(protocol: keyof typeof AuctionProtocol, id: string){
