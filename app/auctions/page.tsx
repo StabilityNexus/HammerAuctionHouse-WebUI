@@ -122,7 +122,7 @@ export default function AuctionsPage() {
       setFetchedAuctions([...allPayAuctions, ...englishAuctions, ...linearDutchAuctions, ...exponentialDutchAuctions, ...logarithmicDutchAuctions, ...vickreyAuctions]);
     } catch (error) {
       console.error("Error fetching auctions:", error);
-      setFetchedAuctions(mockAuctions);
+      // setFetchedAuctions(mockAuctions);
     } finally {
       setIsLoading(false);
     }

@@ -1,4 +1,4 @@
-import { getAuctionById, mockAuctions } from "@/lib/mock-data";
+import { mockAuctions } from "@/lib/mock-data";
 import { AuctionDetail } from "./auction-detail";
 import { decode } from "@/lib/storage";
 

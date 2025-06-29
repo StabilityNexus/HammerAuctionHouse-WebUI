@@ -42,15 +42,14 @@ export function AuctionFilter({
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const auctionTypes: { value: AuctionType; label: string }[] = [
     { value: "English", label: "English" },
-    { value: "Linear", label: "Linear Dutch" },
-    { value: "Exponential", label: "Exponential Dutch" },
-    { value: "Logarithmic", label: "Logarithmic Dutch" },
-    { value: "AllPay", label: "All-Pay" },
+    { value: "Linear", label: "Linear" },
+    { value: "Exponential", label: "Exponential" },
+    { value: "Logarithmic", label: "Logarithmic" },
+    { value: "AllPay", label: "AllPay" },
     { value: "Vickrey", label: "Vickrey" },
   ];
-
+  
   const statusOptions = [
-    { value: "upcoming", label: "Upcoming" },
     { value: "active", label: "Active" },
     { value: "ended", label: "Ended" },
   ];

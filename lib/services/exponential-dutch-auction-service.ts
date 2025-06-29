@@ -391,7 +391,7 @@ export class ExponentialDutchAuctionService implements IAuctionService {
 
 
     return {
-      protcol: "Exponential",
+      protocol: "Exponential",
       id: generateCode("Exponential", String(auctionData[0])),
       name: auctionData[1],
       description: auctionData[2],
