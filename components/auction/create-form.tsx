@@ -13,6 +13,8 @@ interface AuctionCreationFormProps {
   goToPrevStep: () => void;
   handleFinalSubmit: () => void;
   isSubmitting?: boolean;
+  isPending?: boolean;
+  isConfirming?: boolean;
 }
 
 export function AuctionCreationForm({
@@ -23,6 +25,8 @@ export function AuctionCreationForm({
   goToPrevStep,
   handleFinalSubmit,
   isSubmitting = false,
+  isPending = false,
+  isConfirming = false,
 }: AuctionCreationFormProps) {
   return (
     <TooltipProvider>
@@ -70,6 +74,8 @@ export function AuctionCreationForm({
               goToPrevStep={goToPrevStep}
               handleFinalSubmit={handleFinalSubmit}
               isSubmitting={isSubmitting}
+              isPending={isPending}
+              isConfirming={isConfirming}
             />
           )}
         </motion.div>

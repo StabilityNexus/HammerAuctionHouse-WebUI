@@ -11,6 +11,8 @@ interface Step4Form {
   updateFormData: (data: any) => void;
   handleFinalSubmit: () => void;
   isSubmitting?: boolean;
+  isPending?: boolean;
+  isConfirming?: boolean;
 }
 
 export function Step4Form({
@@ -20,6 +22,8 @@ export function Step4Form({
   goToPrevStep,
   goToNextStep,
   isSubmitting,
+  isPending,
+  isConfirming,
   handleFinalSubmit,
 }: Step4Form) {
   const auctionType = formData.type;
@@ -156,10 +160,13 @@ export function Step4Form({
 
         <Button
           onClick={handleFinalSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isPending || isConfirming}
           type="button"
         >
-          {isSubmitting ? "Creating..." : "Create Auction"}
+          {isPending && "Confirm in Wallet..."}
+          {isConfirming && "Confirming Transaction..."}
+          {!isPending && !isConfirming && isSubmitting && "Creating..."}
+          {!isPending && !isConfirming && !isSubmitting && "Create Auction"}
         </Button>
       </div>
     </div>

@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuctionCreationForm } from "@/components/auction/create-form";
 import { CreateAuctionSteps } from "@/components/auction/create-steps";
-import { useAccount, useWriteContract } from "wagmi";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { 
   getAuctionService, 
@@ -159,11 +159,28 @@ export default function CreateAuction() {
   
   const router = useRouter();
   const { status, address } = useAccount();
-  const { data: hash,isPending,writeContract } = useWriteContract();
+  const { data: hash, isPending, writeContract } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  });
   
   const updateFormData = (data: Partial<typeof formData>) => {
     setFormData(prev => ({ ...prev, ...data }));
   };
+
+  // Handle transaction confirmation
+  useEffect(() => {
+    if (isConfirmed) {
+      console.log("Transaction confirmed!");
+      setIsSubmitted(true);
+      setIsSubmitting(false);
+      
+      // Redirect after success
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 2000);
+    }
+  }, [isConfirmed, router]);
   
   const goToNextStep = () => {
     if (currentStep < steps.length - 1) {
@@ -216,19 +233,10 @@ export default function CreateAuction() {
       const params = transformFormDataToParams(formData, auctionType);
       console.log("Submitting auction with params:", params);
       await auctionService.createAuction(writeContract, params);
-      while(isPending){
-        console.log("Waiting for transaction to be confirmed...");
-      }
-      setIsSubmitted(true);
-      
-      // Redirect after success
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 2000);
+      console.log("Transaction submitted, waiting for confirmation...");
       
     } catch (error) {
       console.error("Error creating auction:", error);
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -291,6 +299,8 @@ export default function CreateAuction() {
             goToPrevStep={goToPrevStep}
             handleFinalSubmit={handleSubmit}
             isSubmitting={isSubmitting}
+            isPending={isPending}
+            isConfirming={isConfirming}
           />
         </div>
       </div>
