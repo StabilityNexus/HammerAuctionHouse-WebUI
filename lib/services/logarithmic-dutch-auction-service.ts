@@ -439,7 +439,7 @@ export const LOGARITHMIC_DUTCH_ABI =[
 
 // Enhanced interface for Logarithmic Dutch Auction parameters
 export interface LogarithmicDutchAuctionParams extends DutchAuctionParams {
-  decayFactor: bigint; // Logarithmic decay factor (scaled by 10^3)
+  decayFactor: bigint; // Logarithmic decay factor (scaled by 10^5)
 }
 
 // Logarithmic Dutch Auction Service Implementation

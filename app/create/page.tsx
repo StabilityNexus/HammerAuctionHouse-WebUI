@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import {Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuctionCreationForm } from "@/components/auction/create-form";
 import { CreateAuctionSteps } from "@/components/auction/create-steps";
@@ -21,28 +21,19 @@ import { ExponentialDutchAuctionParams } from "@/lib/services/exponential-dutch-
 import { LogarithmicDutchAuctionParams } from "@/lib/services/logarithmic-dutch-auction-service";
 import { AuctionType } from "@/lib/mock-data";
 import { Address } from "viem";
+import { getDurationInSeconds } from "@/lib/utils";
 
-// Transform form data to auction service parameters
 function transformFormDataToParams(formData: any, auctionType: AuctionType) {
-  // Common base parameters for all auction types
   const baseParams = {
     name: formData.title,
     description: formData.description,
     imgUrl: formData.imageUrl || "/placeholder.jpg",
-    auctionType: BigInt(formData.auctionType === "NFT" ? 0 : 1), // Fixed field name
+    auctionType: BigInt(formData.auctionType === "NFT" ? 0 : 1), 
     auctionedToken: formData.auctionedTokenAddress as Address,
     auctionedTokenIdOrAmount: BigInt(
       formData.auctionType === "NFT" ? (formData.tokenId || "1") : (formData.tokenAmount || "100")
     ),
     biddingToken: formData.biddingTokenAddress as Address,
-  };
-
-  // Helper function to convert duration from days/hours/minutes to seconds
-  const getDurationInSeconds = (days: string, hours: string, minutes: string): bigint => {
-    const d = parseInt(days || "0");
-    const h = parseInt(hours || "0");
-    const m = parseInt(minutes || "0");
-    return BigInt(d * 86400 + h * 3600 + m * 60);
   };
 
   switch (auctionType) {
@@ -68,15 +59,14 @@ function transformFormDataToParams(formData: any, auctionType: AuctionType) {
         ? BigInt(formData.duration) 
         : getDurationInSeconds(formData.days || "3", formData.hours || "0", formData.minutes || "0");
       
-      // Base Dutch auction parameters
-      const dutchParams: DutchAuctionParams = {
+        const dutchParams: DutchAuctionParams = {
         ...baseParams,
         startingPrice: parseBidAmount(formData.startPrice || "1.0"),
         reservedPrice: parseBidAmount(formData.reservePrice || "0.1"),
         duration,
       };
 
-      // Add decay factor for exponential/logarithmic (scaled by 10^3 for precision)
+      // Add decay factor for exponential/logarithmic (scaled by 10^5 for precision)
       if (auctionType === "Exponential") {
         const exponentialParams: ExponentialDutchAuctionParams = {
           ...dutchParams,
@@ -134,7 +124,7 @@ export default function CreateAuction() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState({ //Unified form data structure
     title: "",
     description: "",
     imageUrl: "",
@@ -169,7 +159,7 @@ export default function CreateAuction() {
   
   const router = useRouter();
   const { status, address } = useAccount();
-  const { writeContract } = useWriteContract();
+  const { data: hash,isPending,writeContract } = useWriteContract();
   
   const updateFormData = (data: Partial<typeof formData>) => {
     setFormData(prev => ({ ...prev, ...data }));
@@ -226,7 +216,9 @@ export default function CreateAuction() {
       const params = transformFormDataToParams(formData, auctionType);
       console.log("Submitting auction with params:", params);
       await auctionService.createAuction(writeContract, params);
-      
+      while(isPending){
+        console.log("Waiting for transaction to be confirmed...");
+      }
       setIsSubmitted(true);
       
       // Redirect after success
@@ -236,13 +228,11 @@ export default function CreateAuction() {
       
     } catch (error) {
       console.error("Error creating auction:", error);
-      // Handle error (you might want to show a toast notification)
     } finally {
       setIsSubmitting(false);
     }
   };
   
-  // If not connected, show connect prompt
   if (!status || status !== "connected") {
     return (
       <div className="container py-12 px-4 flex flex-col items-center justify-center min-h-[70vh]">
@@ -270,7 +260,7 @@ export default function CreateAuction() {
           </div>
           <h1 className="text-2xl font-bold mb-2">Auction Created!</h1>
           <p className="text-muted-foreground mb-6">
-            Your auction has been created successfully and is now live on the platform.
+            Your auction has been created successfully and is now live on the platform!
           </p>
           <Button asChild>
             <a href="/dashboard">Go to Dashboard</a>
@@ -301,7 +291,6 @@ export default function CreateAuction() {
             goToPrevStep={goToPrevStep}
             handleFinalSubmit={handleSubmit}
             isSubmitting={isSubmitting}
-            totalSteps={steps.length}
           />
         </div>
       </div>

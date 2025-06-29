@@ -655,8 +655,15 @@ export class VickreyAuctionService implements IAuctionService {
   // Reveal bid with original bid amount and salt
   async revealBid(writeContract: any, auctionId: bigint, bidAmount: bigint, salt: string): Promise<void> {
     try {
+      const biddingToken=(await this.getAuction(auctionId)).biddingToken
       const saltBytes = keccak256(encodePacked(['string'], [salt]));
-      
+      await this.approveToken(
+        writeContract,
+        biddingToken,
+        this.contractAddress,
+        bidAmount,
+        false // Vickrey uses ERC20 for bidding
+      )
       await writeContract({
         address: this.contractAddress,
         abi: VICKREY_ABI,

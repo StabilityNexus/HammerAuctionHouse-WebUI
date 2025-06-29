@@ -252,3 +252,7 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
 //TODOS:
 //1. Look into vickrey auction service and add it's new functions in IAuctionService Interface
 //2. Look into validation logic and remove local storage for now
+
+
+// kYQM08YNjGiabkjc
+// 0x85733efed3cd6040b0db9a338cfbb820b7ffba4ed1bb0fd5434932fa8ec06a27
