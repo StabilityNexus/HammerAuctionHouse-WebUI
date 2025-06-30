@@ -152,7 +152,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
       <div className="container py-12 px-4 text-center">
         <h1 className="text-2xl font-bold mb-4">Auction Not Found</h1>
         <p className="text-muted-foreground mb-6">
-          The auction you're looking for doesn't exist or has been removed.
+          The auction you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
         <Button asChild>
           <Link href="/auctions">Back to Auctions</Link>

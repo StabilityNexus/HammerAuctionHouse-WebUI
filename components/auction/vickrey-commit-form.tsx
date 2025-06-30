@@ -173,7 +173,7 @@ export function VickreyCommitForm({
             </p>
             <p>
               <strong>Important:</strong> Save your bid amount and salt securely
-              - you'll need them to reveal your bid later!
+              - you&apos;ll need them to reveal your bid later!
             </p>
             <p>Commit fee: 0.001 ETH (refunded upon reveal)</p>
           </div>

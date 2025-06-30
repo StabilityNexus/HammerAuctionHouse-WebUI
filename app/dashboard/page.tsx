@@ -21,20 +21,6 @@ export default function Dashboard() {
   const [biddedAuctions, setBiddedAuctions] = useState<Auction[]>([]);
   const [watchedAuctions, setWatchedAuctions] = useState<Auction[]>([]);
   
-  if (!isConnected) {
-    return (
-      <div className="container py-12 px-4 flex flex-col items-center justify-center min-h-[70vh]">
-        <div className="max-w-md w-full bg-card border rounded-xl p-8 text-center flex flex-col items-center">
-          <h1 className="text-2xl font-bold mb-6">Connect Wallet</h1>
-          <p className="text-muted-foreground mb-8">
-            Connect your wallet to view your dashboard.
-          </p>
-          <ConnectButton/>
-        </div>
-      </div>
-    );
-  }
-  
   // In a real app, we would fetch this data from the blockchain
   // For demo purposes, we'll use mock data
   const fetchCreatedAuctions = async () =>{
@@ -84,13 +70,29 @@ export default function Dashboard() {
       console.error("Error fetching watched auctions:", error);
     }
   }
+
   useEffect(() => {
-    fetchCreatedAuctions().catch(console.error);
-    fetchBiddedAuctions().catch(console.error);
-    fetchWatchedAuctions().catch(console.error);
-  }, [address]);
+    if (isConnected && address) {
+      fetchCreatedAuctions().catch(console.error);
+      fetchBiddedAuctions().catch(console.error);
+      fetchWatchedAuctions().catch(console.error);
+    }
+  }, [address, isConnected]);
 
-
+  if (!isConnected) {
+    return (
+      <div className="container py-12 px-4 flex flex-col items-center justify-center min-h-[70vh]">
+        <div className="max-w-md w-full bg-card border rounded-xl p-8 text-center flex flex-col items-center">
+          <h1 className="text-2xl font-bold mb-6">Connect Wallet</h1>
+          <p className="text-muted-foreground mb-8">
+            Connect your wallet to view your dashboard.
+          </p>
+          <ConnectButton/>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="container py-8 px-4 w-screen">
 
@@ -129,7 +131,7 @@ export default function Dashboard() {
             <div className="bg-muted/30 p-4 rounded-lg mb-6">
               <h2 className="font-semibold mb-1">Your Created Auctions</h2>
               <p className="text-sm text-muted-foreground">
-                Manage and track all auctions you've created.
+                Manage and track all auctions you&apos;ve created.
               </p>
             </div>
             
@@ -155,7 +157,7 @@ export default function Dashboard() {
             <div className="bg-muted/30 p-4 rounded-lg mb-6">
               <h2 className="font-semibold mb-1">Your Active Bids</h2>
               <p className="text-sm text-muted-foreground">
-                Track auctions where you've placed bids.
+                Track auctions where you&apos;ve placed bids.
               </p>
             </div>
             
@@ -165,7 +167,7 @@ export default function Dashboard() {
               <div className="text-center py-12 border rounded-lg bg-muted/20">
                 <h3 className="text-lg font-medium mb-2">No active bids</h3>
                 <p className="text-muted-foreground mb-6">
-                  You haven't placed any bids yet. Explore auctions to start bidding.
+                  You haven&apos;t placed any bids yet. Explore auctions to start bidding.
                 </p>
                 <Button asChild variant="outline">
                   <Link href="/auctions">Browse Auctions</Link>
@@ -178,7 +180,7 @@ export default function Dashboard() {
             <div className="bg-muted/30 p-4 rounded-lg mb-6">
               <h2 className="font-semibold mb-1">Your Watchlist</h2>
               <p className="text-sm text-muted-foreground">
-                Auctions you're keeping an eye on.
+                Auctions you&apos;re keeping an eye on.
               </p>
             </div>
             
