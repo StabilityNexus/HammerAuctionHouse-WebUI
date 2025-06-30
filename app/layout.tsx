@@ -9,9 +9,12 @@ import { Providers } from "../components/providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "HammerChain Auctions | Web3 Auction Platform",
+  title: "Hammer Auction House",
   description:
     "Premium decentralized auction platform for NFTs and digital assets",
+  icons: {
+    icon: "/logo.svg",
+  },
 };
 
 export default function RootLayout({
