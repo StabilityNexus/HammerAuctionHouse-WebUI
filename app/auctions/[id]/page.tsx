@@ -8,7 +8,7 @@ export function generateStaticParams() {
   }));
 }
 
-export default async function AuctionPage({ params }: { params: { id: string } }) {
+export default async function AuctionPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const auctionId = resolvedParams.id;
   const {protocol, id} = decode(auctionId);
