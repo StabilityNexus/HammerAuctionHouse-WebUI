@@ -26,6 +26,8 @@ import { LogarithmicDutchAuctionParams } from "@/lib/services/logarithmic-dutch-
 import { AuctionType } from "@/lib/mock-data";
 import { Address } from "viem";
 import { getDurationInSeconds } from "@/lib/utils";
+import { append, decode } from "@/lib/storage";
+import { get } from "lodash";
 
 function transformFormDataToParams(formData: any, auctionType: AuctionType) {
   const baseParams = {
@@ -193,14 +195,47 @@ export default function CreateAuction() {
   // Handle transaction confirmation
   useEffect(() => {
     if (isConfirmed) {
-      console.log("Transaction confirmed!");
-      setIsSubmitted(true);
-      setIsSubmitting(false);
+      (async () => {
+        console.log("Transaction confirmed!");
+        
+        let auctionType: AuctionType;
+        switch (formData.type) {
+          case "all-pay":
+            auctionType = "AllPay";
+            break;
+          case "english":
+            auctionType = "English";
+            break;
+          case "dutch":
+            // Map to specific Dutch auction type based on subtype
+            if (formData.subtype === "exponential") {
+              auctionType = "Exponential";
+            } else if (formData.subtype === "logarithmic") {
+              auctionType = "Logarithmic";
+            } else {
+              auctionType = "Linear";
+            }
+            break;
+          case "vickrey":
+            auctionType = "Vickrey";
+            break;
+          default:
+            auctionType = "English";
+        }
 
-      // Redirect after success
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 2000);
+        const auctionService = getAuctionService(auctionType);
+        const lastAuction = await auctionService.getLastNAuctions(1);
+        const auctionId = lastAuction.length > 0 ? decode(lastAuction[0].id).id : "";
+        if(lastAuction.length > 0 && lastAuction[0].auctioneer === address){
+          append("CreatedAuctions",lastAuction[0].protocol,auctionId)
+        }
+        setIsSubmitted(true);
+        setIsSubmitting(false);
+        // Redirect after success
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 2000);
+      })();
     }
   }, [isConfirmed, router]);
 

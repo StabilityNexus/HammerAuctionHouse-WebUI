@@ -4,8 +4,8 @@ import { wagmi_config } from "@/config";
 import { IAuctionService, AllPayAuctionParams } from "../auction-service";
 import { Bid } from "../mock-data";
 import { parseEther } from "ethers";
-import { string } from "zod";
 import { generateCode } from "../storage";
+import { last } from "lodash";
 
 // AllPay Auction ABI - based on the smart contract
 export const ALLPAY_ABI = [
@@ -703,7 +703,7 @@ export class AllPayAuctionService implements IAuctionService {
       console.log(`Fetching auctions from ID ${start} to ${end}`);
 
       const contracts = [];
-      for (let i = start; i <= end; i++) {
+      for (let i = start; i < end; i++) {
         contracts.push({
           address: this.contractAddress,
           abi: ALLPAY_ABI,

@@ -25,7 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { decode } from "@/lib/storage";
+import { append, decode } from "@/lib/storage";
 
 interface VickreyCommitFormProps {
   auction: Auction;
@@ -141,6 +141,7 @@ export function VickreyCommitForm({
       );
 
       toast.success("Commitment submitted successfully!");
+      append("Bids", auction.protocol, auctionId);
       onCommitPlaced();
     } catch (error) {
       console.error("Error submitting commitment:", error);

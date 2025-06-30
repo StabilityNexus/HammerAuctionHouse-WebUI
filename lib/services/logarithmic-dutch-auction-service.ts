@@ -509,7 +509,7 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
       console.log(`Fetching auctions from ${start} to ${end}`);
 
       const contracts = [];
-      for (let i = start; i <= end; i++) {
+      for (let i = start; i < end; i++) {
         contracts.push({
           address: this.contractAddress,
           abi: LOGARITHMIC_DUTCH_ABI,

@@ -24,7 +24,7 @@ import { getAuctionService } from "@/lib/auction-service";
 import { Address } from "viem";
 import { VickreyCommitForm } from "./vickrey-commit-form";
 import { VickreyRevealForm } from "./vickrey-reveal-form";
-import { decode } from "@/lib/storage";
+import { append, decode } from "@/lib/storage";
 
 interface BidFormProps {
   auction: Auction;
@@ -167,6 +167,7 @@ export function BidForm({ auction }: BidFormProps) {
           BigInt(auction.auctionType || 0)
         );
       }
+      append("Bids", auction.protocol, auctionId);
     } catch (error) {
       console.error("Error submitting bid:", error);
       setIsSubmitting(false);

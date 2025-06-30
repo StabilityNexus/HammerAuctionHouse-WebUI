@@ -441,7 +441,7 @@ export class ExponentialDutchAuctionService implements IAuctionService {
       const end = counter;
 
       const contracts = [];
-      for (let i = start; i <= end; i++) {
+      for (let i = start; i < end; i++) {
         contracts.push({
           address: this.contractAddress,
           abi: EXPONENTIAL_DUTCH_ABI,

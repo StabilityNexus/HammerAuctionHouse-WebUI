@@ -1,5 +1,4 @@
 
-const STORAGE_KEY = 'hahWishlist'
 enum AuctionProtocol {
     AllPay = '1',
     English = '2',
@@ -8,11 +7,16 @@ enum AuctionProtocol {
     Exponential = '5',
     Vickrey = '6',
 }
+enum Storage{
+    WishList = 'Wishlist',
+    CreatedAuctions = 'CreatedAuctions',
+    Bids = 'Bids',
+}
 
 
 // Read raw string (comma‑separated fixed codes) from localStorage
-function _read() {
-  return localStorage.getItem(STORAGE_KEY) || '';
+function _read(storage: keyof typeof Storage) {
+  return localStorage.getItem(Storage[storage]) || '';
 }
 
 export function generateCode(protocol: keyof typeof AuctionProtocol, id: string){
@@ -21,31 +25,31 @@ export function generateCode(protocol: keyof typeof AuctionProtocol, id: string)
     return `${AuctionProtocol[protocol]}${id.padStart(6, '0')}`;
 }
 
-function _write(raw: string) {
+function _write(storage: keyof typeof Storage,raw: string) {
   try {
-    localStorage.setItem(STORAGE_KEY, raw)
+    localStorage.setItem(Storage[storage], raw)
   } catch {
     console.error('Failed to save wishlist to localStorage:', raw);
   }
 }
 
-export function append(protocol: keyof typeof AuctionProtocol, id: string){
-    const existing = _read();
+export function append(storage: keyof typeof Storage,protocol: keyof typeof AuctionProtocol, id: string){
+    const existing = _read(storage);
     const raw = generateCode(protocol, id);
     const list = existing ? existing.split(',') : [];
     if (!list.includes(raw)) list.push(raw);
     const newRaw = list.join(',');
-    _write(newRaw);
+    _write(storage,newRaw);
 }
 
-export function remove(protocol: keyof typeof AuctionProtocol, id: string) {
-    const existing = _read();
+export function remove(storage: keyof typeof Storage,protocol: keyof typeof AuctionProtocol, id: string) {
+    const existing = _read(storage);
     const raw = generateCode(protocol, id);
     const newRaw = existing
         .split(',')
         .filter(code => code !== raw)
         .join(',');
-    _write(newRaw);
+    _write(storage,newRaw);
 }
 
 export function decode(code: string) {
@@ -57,8 +61,8 @@ export function decode(code: string) {
   return { protocol: protocolName, id };
 }
 
-export function isPresent(protocol: keyof typeof AuctionProtocol, id: string){
-    const raw = _read();
+export function isPresent(storage: keyof typeof Storage,protocol: keyof typeof AuctionProtocol, id: string){
+    const raw = _read(storage);
     if (!raw) return false;
     const code = generateCode(protocol, id);
     return raw.split(',').includes(code);
@@ -66,8 +70,8 @@ export function isPresent(protocol: keyof typeof AuctionProtocol, id: string){
 
 
 // Read into array of codes
-export function loadWishlist() {
-  const raw = _read()
+export function loadList(storage: keyof typeof Storage) {
+  const raw = _read(storage)
   if (!raw) return []
   return raw.split(',').filter(code => code.length > 0)
 }

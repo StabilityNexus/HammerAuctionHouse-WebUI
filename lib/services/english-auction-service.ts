@@ -496,7 +496,7 @@ export class EnglishAuctionService implements IAuctionService {
       console.log(`Fetching auctions from ID ${start} to ${end}`);
 
       const contracts = [];
-      for (let i = start; i <= end; i++) {
+      for (let i = start; i < end; i++) {
         contracts.push({
           address: this.contractAddress,
           abi: ENGLISH_ABI,

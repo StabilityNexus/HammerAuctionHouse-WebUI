@@ -13,9 +13,10 @@ import { cn } from "@/lib/utils";
 import {
   remove,
   append,
-  loadWishlist,
+  loadList,
   isPresent,
   generateCode,
+  decode,
 } from "@/lib/storage";
 import { useAccount } from "wagmi";
 import { etherUnits, formatEther } from "viem";
@@ -27,9 +28,9 @@ interface AuctionCardProps {
 export function AuctionCard({ auction }: AuctionCardProps) {
   const { isConnected, address } = useAccount();
   const [isWatched, setIsWatched] = useState(false);
-
+  const auctionId = decode(auction.id).id;
   useEffect(() => {
-    setIsWatched(!!address && isPresent(auction.protocol, auction.id));
+    setIsWatched(!!address && isPresent("WishList",auction.protocol, auctionId));
   }, [address, auction]);
 
   let status = "";
@@ -61,12 +62,12 @@ export function AuctionCard({ auction }: AuctionCardProps) {
     e.stopPropagation();
     if (!isConnected) return;
     if (isWatched) {
-      remove(auction.protocol, auction.id);
-      console.log("Removed from watchlist:", auction.id);
-      console.log("Current watchlist:", loadWishlist());
+      remove("WishList",auction.protocol, auctionId);
+      console.log("Removed from watchlist:", auctionId);
+      console.log("Current watchlist:", loadList("WishList"));
     } else {
-      append(auction.protocol, auction.id);
-      console.log("Added to watchlist:", auction.id);
+      append("WishList",auction.protocol, auctionId);
+      console.log("Added to watchlist:", auctionId);
     }
     setIsWatched(!isWatched);
   };

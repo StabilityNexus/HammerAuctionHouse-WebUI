@@ -584,7 +584,7 @@ export class VickreyAuctionService implements IAuctionService {
       console.log(`Fetching Vickrey auctions from ${start} to ${end}`);
 
       const contracts = [];
-      for (let i = start; i <= end; i++) {
+      for (let i = start; i < end; i++) {
         contracts.push({
           address: this.contractAddress,
           abi: VICKREY_ABI,
