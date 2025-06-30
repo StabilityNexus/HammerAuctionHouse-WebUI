@@ -5,9 +5,7 @@ import { IAuctionService, AllPayAuctionParams } from "../auction-service";
 import { Bid } from "../mock-data";
 import { parseEther } from "ethers";
 import { generateCode } from "../storage";
-import { last } from "lodash";
 
-// AllPay Auction ABI - based on the smart contract
 export const ALLPAY_ABI = [
   {
     "inputs": [
@@ -460,9 +458,8 @@ export const ALLPAY_ABI = [
 ] as const;
 
 export class AllPayAuctionService implements IAuctionService {
-  contractAddress: Address = "0x6e9EFdB9943261C9cc0dCe6fa67769ABF513DE27";
+  contractAddress: Address = "0x4E3a05c4F5A53b7977CCaD23Ccd7Dc617FE79CA6";
 
-  // Helper function to map contract array result to JSON object
   private mapAuctionData(auctionData: any): any {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 17) {
       console.warn("Invalid auction data:", auctionData);
@@ -522,7 +519,6 @@ export class AllPayAuctionService implements IAuctionService {
 
   async createAuction(writeContract: any, params: AllPayAuctionParams): Promise<void> {
     try {
-      // First approve the token to be auctioned
       await this.approveToken(
         writeContract,
         params.auctionedToken,
@@ -530,10 +526,6 @@ export class AllPayAuctionService implements IAuctionService {
         parseEther(String(params.auctionedTokenIdOrAmount)),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
-
-      console.log("AllPay auction parameters:", params);
-
-      // Create the auction
       await writeContract({
         address: this.contractAddress,
         abi: ALLPAY_ABI,
@@ -563,7 +555,6 @@ export class AllPayAuctionService implements IAuctionService {
     auctionId: bigint,
     bidAmount: bigint,
     biddingTokenAddress: Address,
-    auctionType: bigint
   ): Promise<void> {
     try {
       await this.approveToken(
@@ -572,12 +563,7 @@ export class AllPayAuctionService implements IAuctionService {
         this.contractAddress,
         bidAmount,
         false // 0 = NFT, 1 = ERC20
-      )
-      // Note: Token approval should be handled separately in a real implementation
-      // For now, we'll just attempt to place the bid directly
-      console.log("Placing AllPay bid:", { auctionId, bidAmount });
-
-      // Place the bid using wagmi's writeContract
+      );
       writeContract({
         address: this.contractAddress,
         abi: ALLPAY_ABI,
@@ -630,41 +616,14 @@ export class AllPayAuctionService implements IAuctionService {
           }
         ]
       });
-
       const auctionData = data[0].result;
       const mappedAuction = this.mapAuctionData(auctionData);
-
       if (!mappedAuction) {
         throw new Error(`Invalid auction data for ID ${auctionId}`);
       }
-
       return mappedAuction;
     } catch (error) {
       console.error("Error fetching auction data:", error);
-      throw error;
-    }
-  }
-
-  async getBidders(
-    client: any,
-    auctionId: bigint,
-    startBlock: bigint,
-    endBlock: bigint
-  ): Promise<any[]> {
-    try {
-      const logs = await client.getLogs({
-        address: this.contractAddress,
-        event: parseAbiItem(
-          'event bidPlaced(uint256 indexed auctionId, address bidder, uint256 bidAmount)'
-        ),
-        args: { auctionId },
-        fromBlock: startBlock,
-        toBlock: endBlock,
-      });
-      console.log("Fetched bidder logs:", logs);
-      return logs.map((log: any) => log.args);
-    } catch (error) {
-      console.error("Error fetching bidders:", error);
       throw error;
     }
   }
@@ -690,18 +649,12 @@ export class AllPayAuctionService implements IAuctionService {
   async getLastNAuctions(n: number = 10): Promise<any[]> {
     try {
       const counter = await this.getAuctionCounter();
-      console.log(`Auction counter: ${counter}`);
-
       if (counter === BigInt(0)) {
         console.log("No auctions found - counter is 0");
         return [];
       }
-
       const start = counter > BigInt(n) ? counter - BigInt(n) : BigInt(0);
       const end = counter;
-
-      console.log(`Fetching auctions from ID ${start} to ${end}`);
-
       const contracts = [];
       for (let i = start; i < end; i++) {
         contracts.push({
@@ -711,18 +664,12 @@ export class AllPayAuctionService implements IAuctionService {
           args: [i]
         });
       }
-
       const results = await readContracts(wagmi_config, { contracts });
-      console.log("Raw auction results:", results);
-
-      // Map array results to JSON objects with proper field names
       const mappedAuctions = results
         .filter((result: any) => !result.error && result.result)
         .map((result: any) => this.mapAuctionData(result.result))
         .filter((auction: any) => auction !== null) // Remove null entries
         .reverse(); // Show newest first
-
-      console.log("Mapped auction objects:", mappedAuctions);
       return mappedAuctions;
     } catch (error) {
       console.error("Error fetching last N auctions:", error);
@@ -732,22 +679,8 @@ export class AllPayAuctionService implements IAuctionService {
 
   async getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]> {
     try {
-      // Try counter-based approach first
       const auctions = await this.getLastNAuctions(50); // Get last 50 auctions
-      if (auctions.length > 0) {
-        return auctions;
-      }
-
-      // Fallback to event-based approach
-      const logs = await client.getLogs({
-        address: this.contractAddress,
-        event: parseAbiItem(
-          'event AuctionCreated(uint256 indexed Id,string name,string description,string imgUrl,address auctioneer,uint8 auctionType,address auctionedToken,uint256 auctionedTokenIdOrAmount,address biddingToken,uint256 startingBid,uint256 minBidDelta,uint256 deadline,uint256 deadlineExtension)'
-        ),
-        fromBlock: startBlock,
-        toBlock: endBlock,
-      });
-      return logs.map((log: any) => log.args);
+      return auctions;
     } catch (error) {
       console.error("Error fetching all auctions:", error);
       throw error;
@@ -770,42 +703,19 @@ export class AllPayAuctionService implements IAuctionService {
         fromBlock: startBlock,
         toBlock: endBlock,
       });
-      console.log("Fetched bid history logs:", logs);
-
       const bids = await Promise.all(logs.map(async (log: any, index: number) => {
         const block = await client.getBlock({ blockNumber: log.blockNumber });
         return {
           id: `${auctionId}-${index}`,
           auctionId: auctionId.toString(),
           bidder: log.args.bidder,
-          amount: Number(log.args.bidAmount) / 1e18, // Convert from wei to ETH
+          amount: Number(log.args.bidAmount) / 1e18, 
           timestamp: Number(block.timestamp)*1e3
         };
       }));
       return bids;
-
-
     } catch (error) {
       console.error("Error fetching bid history:", error);
-      throw error;
-    }
-  }
-
-  async getUserBidAmount(auctionId: bigint, userAddress: Address): Promise<bigint> {
-    try {
-      const data = await readContracts(wagmi_config, {
-        contracts: [
-          {
-            address: this.contractAddress,
-            abi: ALLPAY_ABI,
-            functionName: 'bids',
-            args: [auctionId, userAddress]
-          }
-        ]
-      });
-      return data[0].result as bigint;
-    } catch (error) {
-      console.error("Error fetching user bid amount:", error);
       throw error;
     }
   }

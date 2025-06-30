@@ -21,13 +21,13 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
       value: auction.protocol.charAt(0).toUpperCase() + auction.protocol.slice(1),
       tooltip: getAuctionTypeDescription(auction.protocol),
     },
-    {
+    { //TODO: Check case when single bid is made
       label: auction.protocol.toLowerCase().includes("dutch") ? "Initial Price" : "Start Price",
       value: `${auction.startingBid ? Number(auction.startingBid) / 1e18 : 0} ETH`,
     },
     {
       label: "End Time",
-      value: format(Number(auction.deadline), "PPp"),
+      value: format(Number(auction.deadline)*1000, "PPp"),
     }
   ];
   
@@ -77,14 +77,6 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
       tooltip: "In AllPay auctions, every bidder must pay their bid amount, regardless of winning",
     });
   }
-  
-  // if (auction.protocol === "dutch" && auction.decayFactor) {
-  //   infoItems.push({
-  //     label: "Decay Factor",
-  //     value: auction.decayFactor.toString(),
-  //     tooltip: "The rate at which the price decreases over time until a bid is placed or reserve price is reached",
-  //   });
-  // }
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

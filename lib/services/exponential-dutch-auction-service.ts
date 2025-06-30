@@ -374,21 +374,18 @@ export const EXPONENTIAL_DUTCH_ABI = [
   }
 ] as const;
 
-// Enhanced interface for Exponential Dutch Auction parameters
 export interface ExponentialDutchAuctionParams extends DutchAuctionParams {
   decayFactor: bigint; // Exponential decay factor (scaled by 10^5)
 }
 
-// Exponential Dutch Auction Service Implementation
 export class ExponentialDutchAuctionService implements IAuctionService {
-  contractAddress: Address = "0xB3F916c2f40aeF1Ed158E5fc99CE402a0a871311";
+  contractAddress: Address = "0xA093851ad8c014d6301B1dC28E81B5458E7CbbB0";
 
   private mapAuctionData(auctionData: any): any {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 17) {
       console.warn("Invalid auction data:", auctionData);
       return null;
     }
-
 
     return {
       protocol: "Exponential",
@@ -436,10 +433,8 @@ export class ExponentialDutchAuctionService implements IAuctionService {
     try {
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) return [];
-
       const start = counter > BigInt(n) ? counter - BigInt(n) : BigInt(0);
       const end = counter;
-
       const contracts = [];
       for (let i = start; i < end; i++) {
         contracts.push({
@@ -449,16 +444,12 @@ export class ExponentialDutchAuctionService implements IAuctionService {
           args: [i]
         });
       }
-
       const results = await readContracts(wagmi_config, { contracts });
-      console.log("Fetched auction data for last N auctions:", results);
       const mappedAuctions = results
         .filter((result: any) => !result.error && result.result)
         .map((result: any) => this.mapAuctionData(result.result))
-        .filter((auction: any) => auction !== null) // Remove null entries
-        .reverse(); // Show newest first
-
-      console.log("Mapped auction objects are:", mappedAuctions);
+        .filter((auction: any) => auction !== null) 
+        .reverse();
       return mappedAuctions;
     } catch (error) {
       console.error("Error fetching last N auctions:", error);
@@ -478,11 +469,9 @@ export class ExponentialDutchAuctionService implements IAuctionService {
           }
         ]
       });
-
       if (data[0].error) {
         throw new Error('Failed to get current price from contract');
       }
-
       return data[0].result as bigint;
     } catch (error) {
       console.error("Error fetching current price:", error);
@@ -492,7 +481,6 @@ export class ExponentialDutchAuctionService implements IAuctionService {
 
   async createAuction(writeContract: any, params: ExponentialDutchAuctionParams): Promise<void> {
     try {
-      // First approve the token to be auctioned
       await this.approveToken(
         writeContract,
         params.auctionedToken,
@@ -500,8 +488,6 @@ export class ExponentialDutchAuctionService implements IAuctionService {
         parseEther(String(params.auctionedTokenIdOrAmount)),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
-
-      console.log("Creating Exponential Dutch auction:", params);
       await writeContract({
         address: this.contractAddress,
         abi: EXPONENTIAL_DUTCH_ABI,
@@ -526,7 +512,6 @@ export class ExponentialDutchAuctionService implements IAuctionService {
     }
   }
 
-  // In Exponential Dutch Auction, there's no placeBid - buyers directly purchase at current price
   async placeBid(
     writeContract: any,
     auctionId: bigint,
@@ -550,18 +535,13 @@ export class ExponentialDutchAuctionService implements IAuctionService {
       throw error;
     }
   }
-
+//TODO: Pass bidding token as well
   async withdrawItem(writeContract: any, auctionId: bigint): Promise<void> {
     try {
-      // Get current price to ensure we send the correct amount
       const currentPrice = await this.getCurrentPrice(auctionId);
-
-      // Get auction details to check if it's an NFT or ERC20 auction
       const auctionData = await this.getAuction(auctionId);
       const isNFT = auctionData.auctionType === BigInt(0); // auctionType === 0 means NFT
       const biddingToken = auctionData.biddingToken as Address; // biddingToken address from auction data
-
-      // Approve the bidding token transfer if it's an ERC20 auction
       await this.approveToken(
         writeContract,
         biddingToken,
@@ -569,14 +549,11 @@ export class ExponentialDutchAuctionService implements IAuctionService {
         currentPrice,
         false
       );
-
-      // Execute the withdrawal (purchase)
       await writeContract({
         address: this.contractAddress as `0x${string}`,
         abi: EXPONENTIAL_DUTCH_ABI,
         functionName: "withdrawItem",
         args: [auctionId],
-        value: isNFT ? currentPrice : BigInt(0) // Send ETH if it's an NFT auction
       });
     } catch (error) {
       console.error("Error withdrawing item:", error);
@@ -612,11 +589,9 @@ export class ExponentialDutchAuctionService implements IAuctionService {
       });
       const auctionData = data[0].result;
       const mappedAuction = this.mapAuctionData(auctionData);
-
       if (!mappedAuction) {
         throw new Error(`Invalid auction data for ID ${auctionId}`);
       }
-
       return mappedAuction;
     } catch (error) {
       console.error("Error fetching auction data:", error);
@@ -624,21 +599,10 @@ export class ExponentialDutchAuctionService implements IAuctionService {
     }
   }
 
-  async getBidders(client: any, auctionId: bigint, startBlock: bigint, endBlock: bigint): Promise<any[]> {
-    // Exponential Dutch auction doesn't have bidders - only direct purchases
-    return [];
-  }
-
   async getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]> {
     try {
-      // Try counter-based approach first
       const auctions = await this.getLastNAuctions(50); // Get last 50 auctions
-      if (auctions.length > 0) {
-        return auctions;
-      }
-
-      // Fallback to empty array if no auctions found
-      return [];
+      return auctions;
     } catch (error) {
       console.error("Error fetching all auctions:", error);
       throw error;
@@ -655,6 +619,3 @@ export class ExponentialDutchAuctionService implements IAuctionService {
     return [];
   }
 }
-
-
-// TODO:Price functionality checking of reverse dutch auctions

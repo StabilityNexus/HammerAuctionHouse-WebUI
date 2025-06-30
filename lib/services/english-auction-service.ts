@@ -458,10 +458,8 @@ export const ENGLISH_ABI = [
   }
 ] as const;
 
-// Placeholder implementation for English Auction Service
 export class EnglishAuctionService implements IAuctionService {
-  contractAddress: Address = "0x34a084157dC3f3F1B23000b4F677f3f054681B98";
-
+  contractAddress: Address = "0x30562E1d406FF878e1ceCbDe12322f971F916a7E";
   async getAuctionCounter(): Promise<bigint> {
     try {
       const data = await readContracts(wagmi_config, {
@@ -483,18 +481,12 @@ export class EnglishAuctionService implements IAuctionService {
   async getLastNAuctions(n: number = 10): Promise<any[]> {
     try {
       const counter = await this.getAuctionCounter();
-      console.log(`Auction counter: ${counter}`);
-
       if (counter === BigInt(0)) {
         console.log("No auctions found - counter is 0");
         return [];
       }
-
       const start = counter > BigInt(n) ? counter - BigInt(n) : BigInt(0);
       const end = counter;
-
-      console.log(`Fetching auctions from ID ${start} to ${end}`);
-
       const contracts = [];
       for (let i = start; i < end; i++) {
         contracts.push({
@@ -504,18 +496,13 @@ export class EnglishAuctionService implements IAuctionService {
           args: [i]
         });
       }
-
       const results = await readContracts(wagmi_config, { contracts });
-      console.log("Raw auction results:", results);
-
-      // Map array results to JSON objects with proper field names
       const mappedAuctions = results
         .filter((result: any) => !result.error && result.result)
         .map((result: any) => this.mapAuctionData(result.result))
         .filter((auction: any) => auction !== null) // Remove null entries
         .reverse(); // Show newest first
 
-      console.log("Mapped auction objects:", mappedAuctions);
       return mappedAuctions;
     } catch (error) {
       console.error("Error fetching last N auctions:", error);
@@ -554,7 +541,6 @@ export class EnglishAuctionService implements IAuctionService {
 
   async createAuction(writeContract: any, params: EnglishAuctionParams): Promise<void> {
     try {
-      // First approve the token to be auctioned
       await this.approveToken(
         writeContract,
         params.auctionedToken,
@@ -562,10 +548,6 @@ export class EnglishAuctionService implements IAuctionService {
         parseEther(String(params.auctionedTokenIdOrAmount)),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
-
-      console.log("English auction parameters:", params);
-
-      // Create the auction
       await writeContract({
         address: this.contractAddress,
         abi: ENGLISH_ABI,
@@ -595,7 +577,6 @@ export class EnglishAuctionService implements IAuctionService {
     auctionId: bigint,
     bidAmount: bigint,
     biddingTokenAddress: Address,
-    auctionType: bigint
   ): Promise<void> {
     try {
       await this.approveToken(
@@ -605,9 +586,6 @@ export class EnglishAuctionService implements IAuctionService {
         bidAmount,
         false // 0 = NFT, 1 = ERC20
       )
-      console.log("Placing English bid:", { auctionId, bidAmount });
-
-      // Place the bid using wagmi's writeContract
       writeContract({
         address: this.contractAddress,
         abi: ENGLISH_ABI,
@@ -660,14 +638,11 @@ export class EnglishAuctionService implements IAuctionService {
           }
         ]
       });
-
       const auctionData = data[0].result;
       const mappedAuction = this.mapAuctionData(auctionData);
-
       if (!mappedAuction) {
         throw new Error(`Invalid auction data for ID ${auctionId}`);
       }
-
       return mappedAuction;
     } catch (error) {
       console.error("Error fetching auction data:", error);
@@ -675,13 +650,11 @@ export class EnglishAuctionService implements IAuctionService {
     }
   }
 
-  // Helper function to map contract array result to JSON object
   private mapAuctionData(auctionData: any): any {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 17) {
       console.warn("Invalid auction data:", auctionData);
       return null;
     }
-
     return {
       protocol: "English",
       id: generateCode("English",String(auctionData[0])),
@@ -704,48 +677,10 @@ export class EnglishAuctionService implements IAuctionService {
     };
   }
 
-  async getBidders(
-    client: any,
-    auctionId: bigint,
-    startBlock: bigint,
-    endBlock: bigint
-  ): Promise<any[]> {
-    try {
-      const logs = await client.getLogs({
-        address: this.contractAddress,
-        event: parseAbiItem(
-          'event bidPlaced(uint256 indexed auctionId, address bidder, uint256 bidAmount)'
-        ),
-        args: { auctionId },
-        fromBlock: startBlock,
-        toBlock: endBlock,
-      });
-      console.log("Fetched bidder logs:", logs);
-      return logs.map((log: any) => log.args);
-    } catch (error) {
-      console.error("Error fetching bidders:", error);
-      throw error;
-    }
-  }
-
   async getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]> {
     try {
-      // Try counter-based approach first
       const auctions = await this.getLastNAuctions(50); // Get last 50 auctions
-      if (auctions.length > 0) {
-        return auctions;
-      }
-
-      // Fallback to event-based approach
-      const logs = await client.getLogs({
-        address: this.contractAddress,
-        event: parseAbiItem(
-          'event AuctionCreated(uint256 indexed Id,string name,string description,string imgUrl,address auctioneer,uint8 auctionType,address auctionedToken,uint256 auctionedTokenIdOrAmount,address biddingToken,uint256 startingBid,uint256 minBidDelta,uint256 deadline,uint256 deadlineExtension)'
-        ),
-        fromBlock: startBlock,
-        toBlock: endBlock,
-      });
-      return logs.map((log: any) => log.args);
+      return auctions;
     } catch (error) {
       console.error("Error fetching all auctions:", error);
       throw error;
@@ -768,20 +703,17 @@ export class EnglishAuctionService implements IAuctionService {
         fromBlock: startBlock,
         toBlock: endBlock,
       });
-      console.log("Fetched bid history logs:", logs);
-
       const bids = await Promise.all(logs.map(async (log: any, index: number) => {
         const block = await client.getBlock({ blockNumber: log.blockNumber });
         return {
           id: `${auctionId}-${index}`,
           auctionId: auctionId.toString(),
           bidder: log.args.bidder,
-          amount: Number(log.args.bidAmount) / 1e18, // Convert from wei to ETH
+          amount: Number(log.args.bidAmount) / 1e18, 
           timestamp: Number(block.timestamp)*1e3
         };
       }));
       return bids;
-
     } catch (error) {
       console.error("Error fetching bid history:", error);
       throw error;

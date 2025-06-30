@@ -4,7 +4,6 @@ import { wagmi_config } from "@/config";
 import { IAuctionService, DutchAuctionParams } from "../auction-service";
 import { Bid } from "../mock-data";
 import { generateCode } from "../storage";
-import { bigint } from "zod";
 
 export const LINEAR_DUTCH_ABI = [
   {
@@ -333,9 +332,8 @@ export const LINEAR_DUTCH_ABI = [
   }
 ] as const;
 
-// Placeholder implementation for Linear Dutch Auction Service
 export class LinearDutchAuctionService implements IAuctionService {
-  contractAddress: Address = "0x83a7c45b47a1909dA8BD7CBB7Be4326c56BAF090";
+  contractAddress: Address = "0xA6BD412DaeE7367F21c5eD36883b5731FD351B8B";
 
   private mapAuctionData(auctionData: any): any {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 16) {
@@ -389,10 +387,8 @@ export class LinearDutchAuctionService implements IAuctionService {
     try {
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) return [];
-
       const start = counter > BigInt(n) ? counter - BigInt(n) : BigInt(0);
       const end = counter;
-
       const contracts = [];
       for (let i = start; i < end; i++) {
         contracts.push({
@@ -402,16 +398,12 @@ export class LinearDutchAuctionService implements IAuctionService {
           args: [i]
         });
       }
-
       const results = await readContracts(wagmi_config, { contracts });
-      console.log("Fetched auction data for last N auctions:", results);
       const mappedAuctions = results
         .filter((result: any) => !result.error && result.result)
         .map((result: any) => this.mapAuctionData(result.result))
         .filter((auction: any) => auction !== null) // Remove null entries
         .reverse(); // Show newest first
-
-      console.log("Mapped auction objects are:", mappedAuctions);
       return mappedAuctions;
     } catch (error) {
       console.error("Error fetching last N auctions:", error);
@@ -431,11 +423,9 @@ export class LinearDutchAuctionService implements IAuctionService {
           }
         ]
       });
-
       if (data[0].error) {
         throw new Error('Failed to get current price from contract');
       }
-
       return data[0].result as bigint;
     } catch (error) {
       console.error("Error fetching current price:", error);
@@ -445,7 +435,6 @@ export class LinearDutchAuctionService implements IAuctionService {
 
   async createAuction(writeContract: any, params: DutchAuctionParams): Promise<void> {
     try {
-      // First approve the token to be auctioned
       await this.approveToken(
         writeContract,
         params.auctionedToken,
@@ -453,7 +442,6 @@ export class LinearDutchAuctionService implements IAuctionService {
         parseEther(String(params.auctionedTokenIdOrAmount)),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
-      console.log("Creating Linear Dutch auction:", params);
       await writeContract({
         address: this.contractAddress,
         abi: LINEAR_DUTCH_ABI,
@@ -504,15 +492,10 @@ export class LinearDutchAuctionService implements IAuctionService {
 
   async withdrawItem(writeContract: any, auctionId: bigint): Promise<void> {
     try {
-      // Get current price to ensure we send the correct amount
       const currentPrice = await this.getCurrentPrice(auctionId);
-
-      // Get auction details to check if it's an NFT or ERC20 auction
       const auctionData = await this.getAuction(auctionId);
       const isNFT = auctionData[5] === BigInt(0); // auctionType === 0 means NFT
       const biddingToken = auctionData[7] as Address; // biddingToken address from auction data
-
-      // Approve the bidding token transfer if it's an ERC20 auction
       await this.approveToken(
         writeContract,
         biddingToken,
@@ -520,8 +503,6 @@ export class LinearDutchAuctionService implements IAuctionService {
         currentPrice,
         false
       );
-
-      // Execute the withdrawal (purchase)
       await writeContract({
         address: this.contractAddress as `0x${string}`,
         abi: LINEAR_DUTCH_ABI,
@@ -563,36 +544,20 @@ export class LinearDutchAuctionService implements IAuctionService {
       });
       const auctionData = data[0].result;
       const mappedAuction = this.mapAuctionData(auctionData);
-
       if (!mappedAuction) {
         throw new Error(`Invalid auction data for ID ${auctionId}`);
       }
-
       return mappedAuction;
-      // return data[0].result;
     } catch (error) {
       console.error("Error fetching auction data:", error);
       throw error;
     }
   }
 
-  async getBidders(client: any, auctionId: bigint, startBlock: bigint, endBlock: bigint): Promise<any[]> {
-    // Linear Dutch auction doesn't have bidders - only direct purchases
-    return [];
-  }
-
   async getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]> {
     try {
-      // Try counter-based approach first
       const auctions = await this.getLastNAuctions(50); // Get last 50 auctions
-      // console.log("Fetched auctions:", auctions);
-      if (auctions.length > 0) {
-        return auctions;
-      }
-      // return auctions;
-
-      // Fallback to throwing error since this service is not fully implemented
-      throw new Error("Linear Dutch auction service event-based fetching not yet implemented");
+      return auctions;
     } catch (error) {
       console.error("Error fetching all auctions:", error);
       throw error;
@@ -605,7 +570,6 @@ export class LinearDutchAuctionService implements IAuctionService {
     startBlock: bigint,
     endBlock: bigint
   ): Promise<Bid[]> {
-    // Linear Dutch auction doesn't have bid history - only purchases
     return [];
   }
 }

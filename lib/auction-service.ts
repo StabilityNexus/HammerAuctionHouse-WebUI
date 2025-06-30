@@ -48,12 +48,12 @@ export type AuctionParams =
 
 // Auction contract addresses
 export const AUCTION_CONTRACTS: Record<AuctionType, Address> = {
-  English: "0x34a084157dC3f3F1B23000b4F677f3f054681B98",
-  AllPay: "0x6e9EFdB9943261C9cc0dCe6fa67769ABF513DE27",
-  Exponential: "0xB3F916c2f40aeF1Ed158E5fc99CE402a0a871311", 
-  Linear: "0x83a7c45b47a1909dA8BD7CBB7Be4326c56BAF090", 
-  Logarithmic: "0x9C9E785501d6A9EEdA181c52653d7729E5E5d7DE",
-  Vickrey: "0x1e2f03A962759C02c18201B0d1D7d4524692c096",
+  English: "0x30562E1d406FF878e1ceCbDe12322f971F916a7E",
+  AllPay: "0x4E3a05c4F5A53b7977CCaD23Ccd7Dc617FE79CA6",
+  Exponential: "0xA093851ad8c014d6301B1dC28E81B5458E7CbbB0", 
+  Linear: "0xA6BD412DaeE7367F21c5eD36883b5731FD351B8B", 
+  Logarithmic: "0x205718CC1D6279aecB410e9E2FAA841ddc60c2fD",
+  Vickrey: "0x56587c523FdAeE847463F93D58Cfd2e8023dee54",
 };
 
 // Abstract auction service interface
@@ -64,7 +64,6 @@ export interface IAuctionService {
   withdrawFunds(writeContract: any, auctionId: bigint): Promise<void>;
   withdrawItem(writeContract: any, auctionId: bigint): Promise<void>;
   getAuction(auctionId: bigint): Promise<any>;
-  getBidders(client: any, auctionId: bigint, startBlock: bigint, endBlock: bigint): Promise<any[]>;
   getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]>;
   getBidHistory(client: any, auctionId: bigint, startBlock: bigint, endBlock: bigint): Promise<Bid[]>;
   

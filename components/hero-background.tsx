@@ -31,10 +31,10 @@ export function HeroBackground() {
       constructor() {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 5 + 1;
+        this.size = Math.random() * 8 + 3; // Increased from 5 + 1
         this.speedX = Math.random() * 2 - 1;
         this.speedY = Math.random() * 2 - 1;
-        this.opacity = Math.random() * 0.5 + 0.1;
+        this.opacity = Math.random() * 0.6 + 0.4; // Increased from 0.5 + 0.1
         this.hue = Math.random() * 60 + 200; // Blue to purple hues
       }
 
@@ -51,7 +51,7 @@ export function HeroBackground() {
       }
 
       draw() {
-        ctx.fillStyle = `hsla(${this.hue}, 70%, 60%, ${this.opacity})`;
+        ctx.fillStyle = `hsla(${this.hue}, 80%, 70%, ${this.opacity})`; // Increased saturation and lightness
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fill();
@@ -72,8 +72,8 @@ export function HeroBackground() {
           
           if (distance < maxDist) {
             const opacity = 1 - distance / maxDist;
-            ctx.strokeStyle = `rgba(150, 150, 255, ${opacity * 0.2})`;
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = `rgba(150, 150, 255, ${opacity * 0.6})`; // Increased from 0.2
+            ctx.lineWidth = 1; // Increased from 1
             ctx.beginPath();
             ctx.moveTo(particles[a].x, particles[a].y);
             ctx.lineTo(particles[b].x, particles[b].y);

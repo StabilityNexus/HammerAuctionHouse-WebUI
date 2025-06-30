@@ -438,14 +438,12 @@ export const LOGARITHMIC_DUTCH_ABI =[
     }
   ] as const;
 
-// Enhanced interface for Logarithmic Dutch Auction parameters
 export interface LogarithmicDutchAuctionParams extends DutchAuctionParams {
   decayFactor: bigint; // Logarithmic decay factor (scaled by 10^5)
 }
 
-// Logarithmic Dutch Auction Service Implementation
 export class LogarithmicDutchAuctionService implements IAuctionService {
-  contractAddress: Address = "0x9C9E785501d6A9EEdA181c52653d7729E5E5d7DE";
+  contractAddress: Address = "0x205718CC1D6279aecB410e9E2FAA841ddc60c2fD";
 
   private mapAuctionData(auctionData: any): any {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 18) {
@@ -500,14 +498,9 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
   async getLastNAuctions(n: number = 10): Promise<any[]> {
     try {
       const counter = await this.getAuctionCounter();
-      console.log("Auction counter:", counter);
       if (counter === BigInt(0)) return [];
-
       const start = counter > BigInt(n) ? counter - BigInt(n) + BigInt(0) : BigInt(0);
       const end = counter;
-
-      console.log(`Fetching auctions from ${start} to ${end}`);
-
       const contracts = [];
       for (let i = start; i < end; i++) {
         contracts.push({
@@ -517,17 +510,12 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
           args: [i]
         });
       }
-
       const results = await readContracts(wagmi_config, { contracts });
-      console.log("Raw contract results:", results);
-      
       const mappedAuctions = results
         .filter((result: any) => !result.error && result.result)
         .map((result: any) => this.mapAuctionData(result.result))
         .filter((auction: any) => auction !== null) // Remove null entries
         .reverse(); // Show newest first
-
-      console.log("Mapped auction objects are:", mappedAuctions);
       return mappedAuctions;
     } catch (error) {
       console.error("Error fetching last N auctions:", error);
@@ -535,7 +523,6 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
     }
   }
 
-  // Helper method for token approval
   private async approveToken(
     writeContract: any,
     tokenAddress: Address,
@@ -545,7 +532,6 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
   ): Promise<void> {
     try {
       if (isNFT) {
-        // For NFTs, use approve function
         await writeContract({
           address: tokenAddress,
           abi: erc721Abi,
@@ -553,7 +539,6 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
           args: [spender, amountOrId],
         });
       } else {
-        // For ERC20 tokens, use approve function with amount
         await writeContract({
           address: tokenAddress,
           abi: erc20Abi,
@@ -579,11 +564,9 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
           }
         ]
       });
-
       if (data[0].error) {
         throw new Error('Failed to get current price from contract');
       }
-
       return data[0].result as bigint;
     } catch (error) {
       console.error("Error fetching current price:", error);
@@ -593,7 +576,6 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
 
   async createAuction(writeContract: any, params: LogarithmicDutchAuctionParams): Promise<void> {
     try {
-      // First approve the token to be auctioned
       await this.approveToken(
         writeContract,
         params.auctionedToken,
@@ -601,8 +583,6 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
         parseEther(String(params.auctionedTokenIdOrAmount)),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
-
-      console.log("Creating Logarithmic Dutch auction:", params);
       await writeContract({
         address: this.contractAddress,
         abi: LOGARITHMIC_DUTCH_ABI,
@@ -627,7 +607,6 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
     }
   }
 
-  // In Logarithmic Dutch Auction, there's no placeBid - buyers directly purchase at current price
   async placeBid(
     writeContract: any,
     auctionId: bigint,
@@ -654,15 +633,10 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
 
   async withdrawItem(writeContract: any, auctionId: bigint): Promise<void> {
     try {
-      // Get current price to ensure we send the correct amount
       const currentPrice = await this.getCurrentPrice(auctionId);
-
-      // Get auction details to check if it's an NFT or ERC20 auction
       const auctionData = await this.getAuction(auctionId);
       const isNFT = auctionData.auctionType === BigInt(0); // auctionType === 0 means NFT
       const biddingToken = auctionData.biddingToken as Address; // biddingToken address from auction data
-
-      // Approve the bidding token transfer if it's an ERC20 auction
       await this.approveToken(
         writeContract,
         biddingToken,
@@ -670,8 +644,6 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
         currentPrice,
         false
       );
-
-      // Execute the withdrawal (purchase)
       await writeContract({
         address: this.contractAddress as `0x${string}`,
         abi: LOGARITHMIC_DUTCH_ABI,
@@ -699,11 +671,9 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
       });
       const auctionData = data[0].result;
       const mappedAuction = this.mapAuctionData(auctionData);
-
       if (!mappedAuction) {
         throw new Error(`Invalid auction data for ID ${auctionId}`);
       }
-
       return mappedAuction;
     } catch (error) {
       console.error("Error fetching auction data:", error);
@@ -718,14 +688,8 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
 
   async getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]> {
     try {
-      // Try counter-based approach first
       const auctions = await this.getLastNAuctions(50); // Get last 50 auctions
-      if (auctions.length > 0) {
-        return auctions;
-      }
-
-      // Fallback to empty array if no auctions found
-      return [];
+      return auctions;
     } catch (error) {
       console.error("Error fetching all auctions:", error);
       throw error;
@@ -744,4 +708,3 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
 }
 
 
-// TODO:Price functionality checking of reverse dutch auctions
