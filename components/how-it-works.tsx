@@ -96,6 +96,11 @@ function StepCard({ icon, title, description, tooltip, delay = 0 }: StepCardProp
   );
 }
 
+/**
+ * Renders the "How It Works" section, visually outlining the auction process for both auctioneers and bidders with animated step cards.
+ *
+ * Displays two parallel flows—one for auctioneers and one for bidders—each with a sequence of steps, icons, descriptions, and optional tooltips. Animations are triggered as the section enters the viewport.
+ */
 export function HowItWorksSection() {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
@@ -154,7 +159,7 @@ export function HowItWorksSection() {
         >
           <h2 className="text-3xl font-bold mb-4">How It Works</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Whether you're selling or bidding, Hammer Auction House makes it easy to participate
+            Whether you&apos;re selling or bidding, Hammer Auction House makes it easy to participate
             in secure, transparent blockchain auctions.
           </p>
         </motion.div>

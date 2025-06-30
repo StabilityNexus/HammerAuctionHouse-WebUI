@@ -130,13 +130,18 @@ function AlertDialogAction({
   )
 }
 
+/**
+ * Renders a cancel button for the alert dialog with outlined styling.
+ *
+ * Forwards all props to the underlying primitive and merges additional class names.
+ */
 function AlertDialogCancel({
   className,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
   return (
     <AlertDialogPrimitive.Cancel
-      className={cn(buttonVariants({ variant: "outline-solid" }), className)}
+      className={cn(buttonVariants({ variant: "outline" }), className)}
       {...props}
     />
   )

@@ -31,6 +31,11 @@ interface AuctionFilterProps {
   setSelectedStatus: (status: string[]) => void;
 }
 
+/**
+ * Renders a responsive filter and search UI for auction listings, allowing users to filter by search query, auction type, and status.
+ *
+ * Provides controls for entering a search term, selecting multiple auction types and statuses, and clearing filters. The filter UI adapts for desktop (popover) and mobile (sheet) layouts, and displays active filters as removable badges.
+ */
 export function AuctionFilter({
   searchQuery,
   setSearchQuery,
@@ -41,14 +46,15 @@ export function AuctionFilter({
 }: AuctionFilterProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const auctionTypes: { value: AuctionType; label: string }[] = [
-    { value: "english", label: "English" },
-    { value: "dutch", label: "Dutch" },
-    { value: "all-pay", label: "All-Pay" },
-    { value: "vickrey", label: "Vickrey" },
+    { value: "English", label: "English" },
+    { value: "Linear", label: "Linear" },
+    { value: "Exponential", label: "Exponential" },
+    { value: "Logarithmic", label: "Logarithmic" },
+    { value: "AllPay", label: "AllPay" },
+    { value: "Vickrey", label: "Vickrey" },
   ];
-
+  
   const statusOptions = [
-    { value: "upcoming", label: "Upcoming" },
     { value: "active", label: "Active" },
     { value: "ended", label: "Ended" },
   ];

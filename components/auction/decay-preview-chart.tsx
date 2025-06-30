@@ -28,6 +28,19 @@ interface DecayPreviewChartProps {
   decayType: "linear" | "exponential" | "logarithmic";
 }
 
+/**
+ * Renders an interactive chart previewing price decay over time for an auction, based on the selected decay type and parameters.
+ *
+ * Displays a single decay curve (linear, exponential, or logarithmic) according to the provided auction settings. If required parameters are missing, shows a prompt to configure auction parameters.
+ *
+ * @param startPrice - The initial price at the start of the auction.
+ * @param reservedPrice - The minimum price floor for the auction.
+ * @param duration - The total duration of the auction in seconds.
+ * @param decayFactor - The factor controlling the speed of price decay.
+ * @param decayType - The type of decay curve to display ("linear", "exponential", or "logarithmic").
+ *
+ * @returns A React component displaying the price decay chart or a configuration prompt.
+ */
 export function DecayPreviewChart({
   startPrice,
   reservedPrice,
@@ -58,7 +71,7 @@ export function DecayPreviewChart({
     const steps = 50;
     const safeReserve = reservedPrice || 0;
     console.log(decayFactor)
-    decayFactor= (decayFactor * 1.0) / 1000.0
+    decayFactor= (decayFactor * 1.0);
     console.log(decayFactor)
 
     for (let i = 0; i <= steps; i++) {
