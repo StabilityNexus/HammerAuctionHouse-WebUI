@@ -18,44 +18,73 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
   const infoItems = [
     {
       label: "Auction Type",
-      value: auction.type.charAt(0).toUpperCase() + auction.type.slice(1),
-      tooltip: getAuctionTypeDescription(auction.type),
+      value: auction.protocol.charAt(0).toUpperCase() + auction.protocol.slice(1),
+      tooltip: getAuctionTypeDescription(auction.protocol),
     },
     {
-      label: "Start Price",
-      value: `${auction.startPrice} ETH`,
-    },
-    {
-      label: "Reserve Price",
-      value: auction.reservePrice ? `${auction.reservePrice} ETH` : "None",
-      tooltip: "The minimum price that must be met for the auction to be successful",
-    },
-    {
-      label: "Start Time",
-      value: format(auction.startTime, "PPp"),
+      label: auction.protocol.toLowerCase().includes("dutch") ? "Initial Price" : "Start Price",
+      value: `${auction.startingBid ? Number(auction.startingBid) / 1e18 : 0} ETH`,
     },
     {
       label: "End Time",
-      value: format(auction.endTime, "PPp"),
+      value: format(Number(auction.deadline), "PPp"),
     }
   ];
   
+  // Add Dutch auction specific information
+  if (auction.protocol.toLowerCase().includes("dutch")) {
+    infoItems.push({
+      label: "Reserve Price",
+      value: `${auction.reservedPrice ? Number(auction.reservedPrice) / 1e18 : 0} ETH`,
+      tooltip: "The minimum price at which the item can be sold",
+    });
+    
+    // Add decay type and factor for non-linear Dutch auctions
+    if (auction.protocol !== "Linear") {
+      infoItems.push({
+        label: "Decay Type",
+        value: auction.protocol,
+        tooltip: "The mathematical function used to calculate price decay over time",
+      });
+      
+      if (auction.decayFactor) {
+        infoItems.push({
+          label: "Decay Factor",
+          value: auction.protocol === "Exponential" 
+            ? (Number(auction.decayFactor) / 1e5).toFixed(5)
+            : auction.decayFactor.toString(),
+          tooltip: auction.protocol === "Exponential" 
+            ? "The exponential decay rate factor (scaled by 10^5). Higher values mean faster price decay."
+            : "The rate at which the price decreases over time until someone buys or reserve price is reached",
+        });
+      }
+    }
+  }
+  
   // Add auction-type specific parameters
-  if (auction.type === "english" && auction.minBidDelta) {
+  if ((auction.protocol === "English" || auction.protocol === "AllPay") && auction.minBidDelta) {
     infoItems.push({
       label: "Minimum Bid Increment",
-      value: `${auction.minBidDelta} ETH`,
+      value: `${Number(auction.minBidDelta) / 1e18} ETH`,
       tooltip: "The minimum amount by which each new bid must exceed the current highest bid",
     });
   }
-  
-  if (auction.type === "dutch" && auction.decayFactor) {
+
+  if (auction.protocol === "AllPay") {
     infoItems.push({
-      label: "Decay Factor",
-      value: auction.decayFactor.toString(),
-      tooltip: "The rate at which the price decreases over time until a bid is placed or reserve price is reached",
+      label: "Payment Model",
+      value: "All bidders pay",
+      tooltip: "In AllPay auctions, every bidder must pay their bid amount, regardless of winning",
     });
   }
+  
+  // if (auction.protocol === "dutch" && auction.decayFactor) {
+  //   infoItems.push({
+  //     label: "Decay Factor",
+  //     value: auction.decayFactor.toString(),
+  //     tooltip: "The rate at which the price decreases over time until a bid is placed or reserve price is reached",
+  //   });
+  // }
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -85,13 +114,17 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
 
 function getAuctionTypeDescription(type: string): string {
   switch (type) {
-    case "english":
+    case "English":
       return "English auctions start at a minimum price and increase as bidders compete. The highest bid wins when the auction ends.";
-    case "dutch":
-      return "Dutch auctions start at a high price that gradually decreases until a bidder accepts the price.";
-    case "all-pay":
+    case "Linear":
+      return "Linear Dutch auctions start at a high price that decreases linearly over time until a bidder accepts the current price.";
+    case "Exponential":
+      return "Exponential Dutch auctions start at a high price that decreases exponentially over time using a decay factor. Price drops faster initially, then slows down.";
+    case "Logarithmic":
+      return "Logarithmic Dutch auctions start at a high price that decreases logarithmically over time. Price drops slowly initially, then faster later.";
+    case "AllPay":
       return "All-pay auctions require all participants to pay their bids regardless of whether they win.";
-    case "vickrey":
+    case "Vickrey":
       return "Vickrey (second-price sealed-bid) auctions have hidden bids where the highest bidder wins but pays the second-highest price.";
     default:
       return "";

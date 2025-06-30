@@ -6,8 +6,10 @@ import { motion } from "framer-motion";
 import { Hammer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
-import { ConnectButton } from "@/components/ui/wallet-button";
+// import { ConnectButton } from "@/components/ui/wallet-button";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { cn } from "@/lib/utils";
+import { useWriteContract, usePublicClient } from "wagmi";
 
 const navItems = [
   { name: "Home", path: "/" },
@@ -17,20 +19,21 @@ const navItems = [
 ];
 
 export function Navbar() {
+  const publicClient = usePublicClient({ chainId: 63 });
   const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-center w-screen border-b bg-background/80 backdrop-blur-md">
       <div className="container w-full flex h-17 items-center justify-between">
         <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2">
-              <img
+          <Link href="/" className="flex items-center gap-2">
+            <img
               src="/logo.svg"
               alt="Hammer Auction House Logo"
               className="h-15 w-15 object-contain dark:invert"
-              />
-              {/* <span className="text-lg font-bold text-foreground">Hammer Auction House</span> */}
-            </Link>
+            />
+            {/* <span className="text-lg font-bold text-foreground">Hammer Auction House</span> */}
+          </Link>
           <nav className="hidden md:flex items-center space-x-4">
             {navItems.map((item) => (
               <Link
@@ -54,9 +57,9 @@ export function Navbar() {
             ))}
           </nav>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          <ConnectButton />
+          <ConnectButton accountStatus={"address"} showBalance={false} />
           <ModeToggle />
           <Button
             size="sm"

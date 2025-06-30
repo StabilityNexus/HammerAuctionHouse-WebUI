@@ -58,7 +58,7 @@ export function DecayPreviewChart({
     const steps = 50;
     const safeReserve = reservedPrice || 0;
     console.log(decayFactor)
-    decayFactor= (decayFactor * 1.0) / 1000.0
+    decayFactor= (decayFactor * 1.0);
     console.log(decayFactor)
 
     for (let i = 0; i <= steps; i++) {
