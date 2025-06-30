@@ -9,8 +9,6 @@ export function generateStaticParams() {
 }
 
 export default async function AuctionPage({ params }: { params: { id: string } }) {
-  // For now, still use mock data as fallback, but the AuctionDetail component
-  // will decode the encoded ID and fetch the real auction data using the appropriate auction service
   const resolvedParams = await params;
   const auctionId = resolvedParams.id;
   const {protocol, id} = decode(auctionId);
