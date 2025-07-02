@@ -95,8 +95,8 @@ export function EnglishDetail({
             <p className="text-3xl font-bold">
               {Number(
                 formatEther(currentAuction.auctionedTokenIdOrAmount)
-              ).toFixed(4)}
-              {" ETH"}
+              ).toFixed(4)}{" "}
+              {currentAuction.auctionedTokenName || "ETH"}
             </p>
           </div>
 
@@ -126,7 +126,7 @@ export function EnglishDetail({
                 <p className="text-muted-foreground">
                   Final price:{" "}
                   {Number(formatEther(currentAuction.highestBid!)).toFixed(4)}{" "}
-                  ETH
+                  {currentAuction.biddingTokenName || "ETH"}
                 </p>
               ) : (
                 <p className="text-muted-foreground">

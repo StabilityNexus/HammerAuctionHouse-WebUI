@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionGrid } from "@/components/auction/auction-grid";
-import { getUserAuctions, getUserBids, getUserWatchlist, mockAuctions, getBidsForAuction, getTotalAmountPaid, Auction } from "@/lib/mock-data";
+import { getUserBids, getUserWatchlist, Auction } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { User, PlusCircle, DollarSign, Gavel, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { useAccount } from "wagmi";
+import { useAccount, usePublicClient } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { decode, loadList } from "@/lib/storage";
 import { getAuctionService } from "@/lib/auction-service";
@@ -20,16 +20,15 @@ export default function Dashboard() {
   const [createdAuctions, setCreatedAuctions] = useState<Auction[]>([]);
   const [biddedAuctions, setBiddedAuctions] = useState<Auction[]>([]);
   const [watchedAuctions, setWatchedAuctions] = useState<Auction[]>([]);
+  const publicClient = usePublicClient();
   
-  // In a real app, we would fetch this data from the blockchain
-  // For demo purposes, we'll use mock data
   const fetchCreatedAuctions = async () =>{
     try {
       const auctions = loadList("CreatedAuctions");
       const fetchedAuctions = await Promise.all(
         auctions.map(async (auctionData) => {
           const service = getAuctionService(decode(auctionData).protocol);
-          const auction = await service.getAuction(BigInt(decode(auctionData).id));
+          const auction = await service.getAuction(BigInt(decode(auctionData).id),publicClient);
           return auction;
         })
       );      
@@ -45,7 +44,7 @@ export default function Dashboard() {
       const fetchedAuctions = await Promise.all(
         auctions.map(async (auctionData) => {
           const service = getAuctionService(decode(auctionData).protocol);
-          const auction = await service.getAuction(BigInt(decode(auctionData).id));
+          const auction = await service.getAuction(BigInt(decode(auctionData).id),publicClient);
           return auction;
         })
       );      
@@ -61,7 +60,7 @@ export default function Dashboard() {
       const fetchedAuctions = await Promise.all(
         auctions.map(async (auctionData) => {
           const service = getAuctionService(decode(auctionData).protocol);
-          const auction = await service.getAuction(BigInt(decode(auctionData).id));
+          const auction = await service.getAuction(BigInt(decode(auctionData).id),publicClient);
           return auction;
         })
       );      

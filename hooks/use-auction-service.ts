@@ -42,7 +42,7 @@ export function useAuctionService(auctionType: AuctionType) {
     setError(null);
     
     try {
-      const auction = await service.getAuction(auctionId);
+      const auction = await service.getAuction(auctionId,publicClient);
       return auction;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch auction');

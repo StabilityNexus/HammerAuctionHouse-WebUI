@@ -63,7 +63,7 @@ export interface IAuctionService {
   placeBid(writeContract: any, auctionId: bigint, bidAmount: bigint, tokenAddress: Address, auctionType: bigint): Promise<void>;
   withdrawFunds(writeContract: any, auctionId: bigint): Promise<void>;
   withdrawItem(writeContract: any, auctionId: bigint): Promise<void>;
-  getAuction(auctionId: bigint): Promise<any>;
+  getAuction(auctionId: bigint,client: any): Promise<any>;
   getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]>;
   getBidHistory(client: any, auctionId: bigint, startBlock: bigint, endBlock: bigint): Promise<Bid[]>;
   
@@ -143,4 +143,28 @@ export function isAuctionActive(auction: Auction): boolean {
 export function isAuctionEnded(auction: Auction): boolean {
   const now = BigInt(Date.now());
   return now >= auction.deadline;
+}
+
+export async function getTokenName(publicClient: any,auctionedToken: string): Promise<string>{
+  const tokenContract = {
+    abi: [{
+      name: 'symbol',
+      type: 'function',
+      stateMutability: 'view',
+      inputs: [],
+      outputs: [{ type: 'string' }]
+    }]
+  };
+
+  try {
+    const symbol = await publicClient.readContract({
+      address: auctionedToken,
+      abi: tokenContract.abi,
+      functionName: 'symbol'
+    });
+    return symbol as string;
+  } catch (error) {
+    console.error('Error getting token symbol:', error);
+    return 'Unknown';
+  }
 }

@@ -10,6 +10,7 @@ import { HelpCircle } from "lucide-react";
 import { Auction } from "@/lib/mock-data";
 import { format } from "date-fns";
 
+
 interface AuctionInfoProps {
   auction: Auction;
 }
@@ -18,55 +19,70 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
   const infoItems = [
     {
       label: "Auction Type",
-      value: auction.protocol.charAt(0).toUpperCase() + auction.protocol.slice(1),
+      value:
+        auction.protocol.charAt(0).toUpperCase() + auction.protocol.slice(1),
       tooltip: getAuctionTypeDescription(auction.protocol),
     },
-    { //TODO: Check case when single bid is made
-      label: auction.protocol.toLowerCase().includes("dutch") ? "Initial Price" : "Start Price",
-      value: `${auction.startingBid ? Number(auction.startingBid) / 1e18 : 0} ETH`,
+    {
+      //TODO: Check case when single bid is made
+      label: auction.protocol.toLowerCase().includes("dutch")
+        ? "Initial Price"
+        : "Start Price",
+      value: `${
+        auction.startingBid ? Number(auction.startingBid) / 1e18 : 0
+      } ${auction.biddingTokenName || "ETH"}`,
     },
     {
       label: "End Time",
-      value: format(Number(auction.deadline)*1000, "PPp"),
-    }
+      value: format(Number(auction.deadline) * 1000, "PPp"),
+    },
   ];
-  
+
   // Add Dutch auction specific information
   if (auction.protocol.toLowerCase().includes("dutch")) {
     infoItems.push({
       label: "Reserve Price",
-      value: `${auction.reservedPrice ? Number(auction.reservedPrice) / 1e18 : 0} ETH`,
+      value: `${
+        auction.reservedPrice ? Number(auction.reservedPrice) / 1e18 : 0
+      } ${auction.biddingTokenName || "ETH"}`,
       tooltip: "The minimum price at which the item can be sold",
     });
-    
+
     // Add decay type and factor for non-linear Dutch auctions
     if (auction.protocol !== "Linear") {
       infoItems.push({
         label: "Decay Type",
         value: auction.protocol,
-        tooltip: "The mathematical function used to calculate price decay over time",
+        tooltip:
+          "The mathematical function used to calculate price decay over time",
       });
-      
+
       if (auction.decayFactor) {
         infoItems.push({
           label: "Decay Factor",
-          value: auction.protocol === "Exponential" 
-            ? (Number(auction.decayFactor) / 1e5).toFixed(5)
-            : auction.decayFactor.toString(),
-          tooltip: auction.protocol === "Exponential" 
-            ? "The exponential decay rate factor (scaled by 10^5). Higher values mean faster price decay."
-            : "The rate at which the price decreases over time until someone buys or reserve price is reached",
+          value:
+            auction.protocol === "Exponential"
+              ? (Number(auction.decayFactor) / 1e5).toFixed(5)
+              : auction.decayFactor.toString(),
+          tooltip:
+            auction.protocol === "Exponential"
+              ? "The exponential decay rate factor (scaled by 10^5). Higher values mean faster price decay."
+              : "The rate at which the price decreases over time until someone buys or reserve price is reached",
         });
       }
     }
   }
-  
+
   // Add auction-type specific parameters
-  if ((auction.protocol === "English" || auction.protocol === "AllPay") && auction.minBidDelta) {
+  if (
+    (auction.protocol === "English" || auction.protocol === "AllPay") &&
+    auction.minBidDelta
+  ) {
     infoItems.push({
       label: "Minimum Bid Increment",
-      value: `${Number(auction.minBidDelta) / 1e18} ETH`,
-      tooltip: "The minimum amount by which each new bid must exceed the current highest bid",
+      value: `${Number(auction.minBidDelta) / 1e18} ${auction.biddingTokenName || "ETH"}`,
+      tooltip:
+        "The minimum amount by which each new bid must exceed the current highest bid",
     });
   }
 
@@ -74,17 +90,20 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
     infoItems.push({
       label: "Payment Model",
       value: "All bidders pay",
-      tooltip: "In AllPay auctions, every bidder must pay their bid amount, regardless of winning",
+      tooltip:
+        "In AllPay auctions, every bidder must pay their bid amount, regardless of winning",
     });
   }
-  
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <TooltipProvider>
         {infoItems.map((item, index) => (
           <div key={index} className="flex flex-col">
             <div className="flex items-center gap-1">
-              <span className="text-sm text-muted-foreground">{item.label}</span>
+              <span className="text-sm text-muted-foreground">
+                {item.label}
+              </span>
               {item.tooltip && (
                 <Tooltip>
                   <TooltipTrigger asChild>

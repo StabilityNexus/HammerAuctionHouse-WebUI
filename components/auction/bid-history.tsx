@@ -29,29 +29,6 @@ export function BidHistory({ bids, auctionProtocol }: BidHistoryProps) {
 
   return (
     <div className="space-y-4">
-      {/* AllPay Auction Stats */}
-      {/* {auctionProtocol === "AllPay" && (
-        <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertCircle className="h-5 w-5 text-orange-600" />
-            <h3 className="font-semibold text-orange-800 dark:text-orange-200">AllPay Auction</h3>
-          </div>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-green-600" />
-              <span className="text-muted-foreground">Total Paid:</span>
-              <span className="font-semibold text-green-600">{totalAmountPaid.toFixed(2)} ETH</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Unique Bidders:</span>
-              <span className="font-semibold ml-1">{uniqueBidders.length}</span>
-            </div>
-          </div>
-          <p className="text-xs text-orange-700 dark:text-orange-300 mt-2">
-            ⚠️ All bidders pay their bid amounts. Only the highest bidder wins the item.
-          </p>
-        </div>
-      )} */}
 
       {/* Bid List */}
       <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
@@ -102,7 +79,7 @@ export function BidHistory({ bids, auctionProtocol }: BidHistoryProps) {
                 <p className={`font-semibold ${
                   isHighestBid ? "text-blue-600 dark:text-blue-400" : ""
                 }`}>
-                  {bid.amount} ETH
+                  {bid.amount} 
                 </p>
               </div>
             </motion.div>

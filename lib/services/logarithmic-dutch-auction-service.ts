@@ -1,7 +1,7 @@
 import { Address, erc20Abi, erc721Abi, parseEther } from "viem";
 import { readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
-import { IAuctionService, DutchAuctionParams } from "../auction-service";
+import { IAuctionService, DutchAuctionParams, getTokenName } from "../auction-service";
 import { Bid } from "../mock-data";
 import { generateCode } from "../storage";
 
@@ -445,10 +445,17 @@ export interface LogarithmicDutchAuctionParams extends DutchAuctionParams {
 export class LogarithmicDutchAuctionService implements IAuctionService {
   contractAddress: Address = "0x205718CC1D6279aecB410e9E2FAA841ddc60c2fD";
 
-  private mapAuctionData(auctionData: any): any {
+  private async mapAuctionData(auctionData: any,client: any): Promise<any> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 18) {
       console.warn("Invalid auction data:", auctionData, "Expected 18 fields, got:", auctionData?.length);
       return null;
+    }
+
+    let auctionedTokenName = "";
+    let biddingTokenName = "";
+    if(client){
+      auctionedTokenName = await getTokenName(client,auctionData[6]);
+      biddingTokenName = await getTokenName(client,auctionData[8]);
     }
 
     return {
@@ -473,7 +480,9 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
       isClaimed: auctionData[17],
       // Placeholders
       currentPrice: BigInt(0),
-      highestBid: BigInt(0)
+      highestBid: BigInt(0),
+      auctionedTokenName: auctionedTokenName,
+      biddingTokenName: biddingTokenName
     };
   }
 
@@ -495,7 +504,7 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
     }
   }
 
-  async getLastNAuctions(n: number = 10): Promise<any[]> {
+  async getLastNAuctions(n: number = 10,client?: any): Promise<any[]> {
     try {
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) return [];
@@ -511,11 +520,11 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
         });
       }
       const results = await readContracts(wagmi_config, { contracts });
-      const mappedAuctions = results
+      const mappedAuctions = Promise.all(results
         .filter((result: any) => !result.error && result.result)
-        .map((result: any) => this.mapAuctionData(result.result))
+        .map(async(result: any) => await this.mapAuctionData(result.result,client))
         .filter((auction: any) => auction !== null) // Remove null entries
-        .reverse(); // Show newest first
+        .reverse()); // Show newest first
       return mappedAuctions;
     } catch (error) {
       console.error("Error fetching last N auctions:", error);
@@ -657,7 +666,7 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
     }
   }
 
-  async getAuction(auctionId: bigint): Promise<any> {
+  async getAuction(auctionId: bigint,client?: any): Promise<any> {
     try {
       const data = await readContracts(wagmi_config, {
         contracts: [
@@ -670,7 +679,7 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
         ]
       });
       const auctionData = data[0].result;
-      const mappedAuction = this.mapAuctionData(auctionData);
+      const mappedAuction = this.mapAuctionData(auctionData,client);
       if (!mappedAuction) {
         throw new Error(`Invalid auction data for ID ${auctionId}`);
       }
@@ -688,7 +697,7 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
 
   async getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]> {
     try {
-      const auctions = await this.getLastNAuctions(50); // Get last 50 auctions
+      const auctions = await this.getLastNAuctions(50,client); // Get last 50 auctions
       return auctions;
     } catch (error) {
       console.error("Error fetching all auctions:", error);

@@ -5,7 +5,7 @@ import { IAuctionService, EnglishAuctionParams } from "../auction-service";
 import { Bid } from "../mock-data";
 import { parseEther } from "ethers";
 import { generateCode } from "../storage";
-import { ProjectorIcon } from "lucide-react";
+import { getTokenName } from "../auction-service";
 
 export const ENGLISH_ABI = [
   {
@@ -478,7 +478,7 @@ export class EnglishAuctionService implements IAuctionService {
     }
   }
 
-  async getLastNAuctions(n: number = 10): Promise<any[]> {
+  async getLastNAuctions(n: number = 10, publicClient?: any): Promise<any[]> {
     try {
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) {
@@ -497,13 +497,14 @@ export class EnglishAuctionService implements IAuctionService {
         });
       }
       const results = await readContracts(wagmi_config, { contracts });
-      const mappedAuctions = results
-        .filter((result: any) => !result.error && result.result)
-        .map((result: any) => this.mapAuctionData(result.result))
-        .filter((auction: any) => auction !== null) // Remove null entries
+      const mappedAuctions = await Promise.all(
+        results
+          .filter((result: any) => !result.error && result.result)
+          .map(async (result: any) => await this.mapAuctionData(result.result, publicClient))
+      );
+      return mappedAuctions
+        .filter((auction: any) => auction !== null)
         .reverse(); // Show newest first
-
-      return mappedAuctions;
     } catch (error) {
       console.error("Error fetching last N auctions:", error);
       throw error;
@@ -626,7 +627,7 @@ export class EnglishAuctionService implements IAuctionService {
     }
   }
 
-  async getAuction(auctionId: bigint): Promise<any> {
+  async getAuction(auctionId: bigint, publicClient?: any): Promise<any> {
     try {
       const data = await readContracts(wagmi_config, {
         contracts: [
@@ -639,7 +640,7 @@ export class EnglishAuctionService implements IAuctionService {
         ]
       });
       const auctionData = data[0].result;
-      const mappedAuction = this.mapAuctionData(auctionData);
+      const mappedAuction = await this.mapAuctionData(auctionData, publicClient);
       if (!mappedAuction) {
         throw new Error(`Invalid auction data for ID ${auctionId}`);
       }
@@ -650,14 +651,27 @@ export class EnglishAuctionService implements IAuctionService {
     }
   }
 
-  private mapAuctionData(auctionData: any): any {
+  private async mapAuctionData(auctionData: any, publicClient?: any): Promise<any> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 17) {
       console.warn("Invalid auction data:", auctionData);
       return null;
     }
+
+    let auctionedTokenName = "Unknown Token";
+    let biddingTokenName = "Unknown Token";
+    
+    if (publicClient) {
+      try {
+        auctionedTokenName = await getTokenName(publicClient, auctionData[6]);
+        biddingTokenName = await getTokenName(publicClient, auctionData[8]);
+      } catch (error) {
+        console.warn("Error fetching token names:", error);
+      }
+    }
+
     return {
       protocol: "English",
-      id: generateCode("English",String(auctionData[0])),
+      id: generateCode("English", String(auctionData[0])),
       name: auctionData[1],
       description: auctionData[2],
       imgUrl: auctionData[3],
@@ -673,13 +687,19 @@ export class EnglishAuctionService implements IAuctionService {
       winner: auctionData[13],
       deadline: auctionData[14],
       deadlineExtension: auctionData[15],
-      isClaimed: auctionData[16]
+      isClaimed: auctionData[16],
+      auctionedTokenName: auctionedTokenName,
+      biddingTokenName: biddingTokenName,
+      // Vickrey placeholders
+      bidCommitEnd: BigInt(0),
+      bidRevealEnd: BigInt(0),
+      winningBid: BigInt(0),
     };
   }
 
   async getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]> {
     try {
-      const auctions = await this.getLastNAuctions(50); // Get last 50 auctions
+      const auctions = await this.getLastNAuctions(50, client); // Get last 50 auctions
       return auctions;
     } catch (error) {
       console.error("Error fetching all auctions:", error);

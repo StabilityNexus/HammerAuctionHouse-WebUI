@@ -1,7 +1,7 @@
 import { Address, erc20Abi, erc721Abi, keccak256, encodePacked, parseEther, parseAbiItem } from "viem";
-import { readContracts } from '@wagmi/core';
+import { getToken, readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
-import { IAuctionService, VickreyAuctionParams } from "../auction-service";
+import { getTokenName, IAuctionService, VickreyAuctionParams } from "../auction-service";
 import { Bid } from "../mock-data";
 import { generateCode } from "../storage";
 
@@ -504,10 +504,22 @@ export const VICKREY_ABI =[
 export class VickreyAuctionService implements IAuctionService {
   contractAddress: Address = "0x56587c523FdAeE847463F93D58Cfd2e8023dee54";
 
-  private mapAuctionData(auctionData: any): any {
+  private async mapAuctionData(auctionData: any, publicClient?: any): Promise<any> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 16) {
       console.warn("Invalid Vickrey auction data:", auctionData, "Expected 16 fields, got:", auctionData?.length);
       return null;
+    }
+    
+    let auctionedTokenName = "Unknown Token";
+    let biddingTokenName = "Unknown Token";
+    
+    if (publicClient) {
+      try {
+        auctionedTokenName = await getTokenName(publicClient, auctionData[6]);
+        biddingTokenName = await getTokenName(publicClient, auctionData[8]);
+      } catch (error) {
+        console.warn("Error fetching token names:", error);
+      }
     }
 
     return {
@@ -528,6 +540,8 @@ export class VickreyAuctionService implements IAuctionService {
       bidCommitEnd: auctionData[13],
       bidRevealEnd: auctionData[14],
       isClaimed: auctionData[15],
+      auctionedTokenName: auctionedTokenName,
+      biddingTokenName: biddingTokenName,
       //Placeholders
       startingBid: BigInt(0),
       minBidDelta: BigInt(0),
@@ -590,7 +604,7 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async getLastNAuctions(n: number = 10): Promise<any[]> {
+  async getLastNAuctions(n: number = 10, publicClient?: any): Promise<any[]> {
     try {
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) return [];
@@ -606,12 +620,15 @@ export class VickreyAuctionService implements IAuctionService {
         });
       }
       const results = await readContracts(wagmi_config, { contracts });
-      const mappedAuctions = results
-        .filter((result: any) => !result.error && result.result)
-        .map((result: any) => this.mapAuctionData(result.result))
+      const mappedAuctions = await Promise.all(
+        results
+          .filter((result: any) => !result.error && result.result)
+          .map(async (result: any) => await this.mapAuctionData(result.result, publicClient))
+      );
+      return mappedAuctions
         .filter((auction: any) => auction !== null)
         .reverse(); // Show newest first
-      return mappedAuctions;
+      
     } catch (error) {
       console.error("Error fetching last N Vickrey auctions:", error);
       throw error;
@@ -725,7 +742,7 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async getAuction(auctionId: bigint): Promise<any> {
+  async getAuction(auctionId: bigint, publicClient?: any): Promise<any> {
     try {
       const data = await readContracts(wagmi_config, {
         contracts: [
@@ -738,7 +755,7 @@ export class VickreyAuctionService implements IAuctionService {
         ]
       });
       const auctionData = data[0].result;
-      const mappedAuction = this.mapAuctionData(auctionData);
+      const mappedAuction = await this.mapAuctionData(auctionData, publicClient);
       if (!mappedAuction) {
         throw new Error(`Invalid Vickrey auction data for ID ${auctionId}`);
       }
@@ -751,7 +768,7 @@ export class VickreyAuctionService implements IAuctionService {
 
   async getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]> {
     try {
-      const auctions = await this.getLastNAuctions(50); // Get last 50 auctions
+      const auctions = await this.getLastNAuctions(50, client); // Get last 50 auctions
       return auctions;
     } catch (error) {
       console.error("Error fetching all Vickrey auctions:", error);

@@ -37,7 +37,8 @@ export function LogarithmicDetail({
               {Number(
                 formatEther(currentAuction.auctionedTokenIdOrAmount)
               ).toFixed(4)}
-              {" ETH"}
+              {" "}
+              {currentAuction.auctionedTokenName || "ETH"}
             </p>
           </div>
 

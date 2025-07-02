@@ -37,8 +37,8 @@ export function ExponentialDetail({
             <p className="text-3xl font-bold">
               {Number(
                 formatEther(currentAuction.auctionedTokenIdOrAmount)
-              ).toFixed(4)}
-              {" ETH"}
+              ).toFixed(4)}{" "}
+              {currentAuction.auctionedTokenName || "ETH"}
             </p>
           </div>
 

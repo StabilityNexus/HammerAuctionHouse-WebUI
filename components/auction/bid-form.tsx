@@ -286,12 +286,12 @@ export function BidForm({ auction }: BidFormProps) {
                     ? "Sold" 
                     : Date.now() >= Number(auction.deadline) * 1000
                     ? "Auction Ended"
-                    : `${bidAmount} ETH`}
+                    : `${bidAmount} ${auction.biddingTokenName || "ETH"}`}
                 </span>
               </div>
               <div className="text-xs text-muted-foreground flex justify-between">
-                <span>Reserve Price: {reservePrice} ETH</span>
-                <span>Starting Price: {Number(auction.startingBid || auction.startingPrice || 0) / 1e18} ETH</span>
+                <span>Reserve Price: {reservePrice} {auction.biddingTokenName || "ETH"}</span>
+                <span>Starting Price: {Number(auction.startingBid || auction.startingPrice || 0) / 1e18} ${auction.biddingTokenName || "ETH"}</span>
               </div>
               {auction.isClaimed ? (
                 <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-2">
@@ -338,7 +338,7 @@ export function BidForm({ auction }: BidFormProps) {
                   Your Bid Amount
                 </label>
                 <span className="text-xs text-muted-foreground">
-                  Min. bid: {minBidAmount} ETH
+                  Min. bid: {minBidAmount} {auction.biddingTokenName || "ETH"}
                 </span>
               </div>
 
@@ -353,14 +353,14 @@ export function BidForm({ auction }: BidFormProps) {
                   className="pr-12"
                 />
                 <div className="absolute inset-y-0 right-3 flex items-center text-muted-foreground">
-                  ETH
+                  {auction.biddingTokenName || "ETH"}
                 </div>
               </div>
 
               {!isValidBid && bidAmount && (
                 <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
-                  Bid must be at least {minBidAmount} ETH
+                  Bid must be at least {minBidAmount} {auction.biddingTokenName || "ETH"}
                 </p>
               )}
             </>
@@ -452,13 +452,13 @@ export function BidForm({ auction }: BidFormProps) {
                     "This auction has ended and is no longer available for purchase."
                   ) : (
                     <>
-                      You are about to purchase {auction.name} for {bidAmount} ETH.
+                      You are about to purchase {auction.name} for {bidAmount} {auction.biddingTokenName || "ETH"}.
                       This action cannot be undone after confirmation.
                     </>
                   )
                 ) : (
                   <>
-                    You are about to place a bid of {bidAmount} ETH on{" "}
+                    You are about to place a bid of {bidAmount} {auction.biddingTokenName || "ETH"} on{" "}
                     {auction.name}. This action cannot be undone after confirmation.
                   </>
                 )}

@@ -99,8 +99,8 @@ export function VickreyDetail({
             <p className="text-3xl font-bold">
               {Number(
                 formatEther(currentAuction.auctionedTokenIdOrAmount)
-              ).toFixed(4)}
-              {" ETH"}
+              ).toFixed(4)}{" "}
+              {currentAuction.auctionedTokenName || "ETH"}
             </p>
 
             <div className="mt-2 text-sm text-muted-foreground">
@@ -173,7 +173,7 @@ export function VickreyDetail({
                     <p className="text-muted-foreground">
                       Winning bid:{" "}
                       {(Number(currentAuction.winningBid) / 1e18).toFixed(4)}{" "}
-                      ETH
+                      {currentAuction.biddingTokenName || "ETH"}
                     </p>
                   ) : (
                     <p className="text-muted-foreground">

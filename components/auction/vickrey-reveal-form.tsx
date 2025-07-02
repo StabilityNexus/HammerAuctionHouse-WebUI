@@ -199,7 +199,7 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="bidAmount">Bid Amount (ETH)</Label>
+          <Label htmlFor="bidAmount">Bid Amount</Label>
           <Input
             id="bidAmount"
             type="number"

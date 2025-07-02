@@ -18,8 +18,10 @@ import {
   generateCode,
   decode,
 } from "@/lib/storage";
-import { useAccount } from "wagmi";
+import { useAccount, usePublicClient } from "wagmi";
 import { etherUnits, formatEther } from "viem";
+import { getTokenName } from "@/lib/auction-service";
+import { add } from "lodash";
 
 interface AuctionCardProps {
   auction: Auction;
@@ -29,9 +31,11 @@ export function AuctionCard({ auction }: AuctionCardProps) {
   const { isConnected, address } = useAccount();
   const [isWatched, setIsWatched] = useState(false);
   const auctionId = decode(auction.id).id;
+  const publicClient = usePublicClient();
   useEffect(() => {
     setIsWatched(!!address && isPresent("WishList",auction.protocol, auctionId));
   }, [address, auction]);
+
 
   let status = "";
   if (Number(auction.deadline) * 1000 - Date.now() > 0) {
@@ -39,6 +43,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
   } else {
     status = "ended";
   }
+  
 
   // Determine auction status text and color
   let statusConfig = {
@@ -131,7 +136,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
             <div>
               <p className="text-muted-foreground text-sm">Auctioned Item</p>
               <p className="font-medium text-lg">
-                {Number(formatEther(auction.auctionedTokenIdOrAmount)).toFixed(4)} ETH
+                {Number(formatEther(auction.auctionedTokenIdOrAmount)).toFixed(4)}{" "}{auction.auctionedTokenName || "Item"}
               </p>
             </div>
 

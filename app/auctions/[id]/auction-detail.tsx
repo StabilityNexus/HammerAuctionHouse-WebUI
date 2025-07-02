@@ -6,7 +6,7 @@ import { ArrowLeft, Clock, Info, Wallet, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { Auction, getBidsForAuction, AuctionType, Bid } from "@/lib/mock-data";
+import { Auction, AuctionType, Bid } from "@/lib/mock-data";
 import { getAuctionService } from "@/lib/auction-service";
 import {
   usePublicClient,
@@ -59,7 +59,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     setError(null);
     try {
       const auctionService = getAuctionService(protocol);
-      const auctionData = await auctionService.getAuction(BigInt(id));
+      const auctionData = await auctionService.getAuction(BigInt(id),publicClient);
       setCurrentAuction(auctionData);
     } catch (err) {
       console.error(`Error fetching ${protocol} auction from contract:`, err);

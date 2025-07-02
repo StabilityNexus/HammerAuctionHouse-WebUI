@@ -1,7 +1,7 @@
 import { Address, erc20Abi, erc721Abi, parseAbiItem } from "viem";
 import { readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
-import { IAuctionService, AllPayAuctionParams } from "../auction-service";
+import { IAuctionService, AllPayAuctionParams, getTokenName } from "../auction-service";
 import { Bid } from "../mock-data";
 import { parseEther } from "ethers";
 import { generateCode } from "../storage";
@@ -459,11 +459,18 @@ export const ALLPAY_ABI = [
 
 export class AllPayAuctionService implements IAuctionService {
   contractAddress: Address = "0x4E3a05c4F5A53b7977CCaD23Ccd7Dc617FE79CA6";
+  
 
-  private mapAuctionData(auctionData: any): any {
+  private async mapAuctionData(client:any,auctionData: any): Promise<any> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 17) {
       console.warn("Invalid auction data:", auctionData);
       return null;
+    }
+    let auctionedTokenName = "";
+    let biddingTokenName = "";
+    if(client){
+      auctionedTokenName = await getTokenName(client, auctionData[6]);
+      biddingTokenName = await getTokenName(client, auctionData[8]);
     }
 
     return {
@@ -484,7 +491,9 @@ export class AllPayAuctionService implements IAuctionService {
       winner: auctionData[13],
       deadline: auctionData[14],
       deadlineExtension: auctionData[15],
-      isClaimed: auctionData[16]
+      isClaimed: auctionData[16],
+      auctionedTokenName: auctionedTokenName,
+      biddingTokenName: biddingTokenName // Add token name
     };
   }
 
@@ -604,7 +613,7 @@ export class AllPayAuctionService implements IAuctionService {
     }
   }
 
-  async getAuction(auctionId: bigint): Promise<any> {
+  async getAuction(auctionId: bigint,client?: any): Promise<any> {
     try {
       const data = await readContracts(wagmi_config, {
         contracts: [
@@ -617,7 +626,7 @@ export class AllPayAuctionService implements IAuctionService {
         ]
       });
       const auctionData = data[0].result;
-      const mappedAuction = this.mapAuctionData(auctionData);
+      const mappedAuction = await this.mapAuctionData(client,auctionData);
       if (!mappedAuction) {
         throw new Error(`Invalid auction data for ID ${auctionId}`);
       }
@@ -646,7 +655,7 @@ export class AllPayAuctionService implements IAuctionService {
     }
   }
 
-  async getLastNAuctions(n: number = 10): Promise<any[]> {
+  async getLastNAuctions(n: number = 10,client?:any): Promise<any[]> {
     try {
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) {
@@ -665,11 +674,13 @@ export class AllPayAuctionService implements IAuctionService {
         });
       }
       const results = await readContracts(wagmi_config, { contracts });
-      const mappedAuctions = results
-        .filter((result: any) => !result.error && result.result)
-        .map((result: any) => this.mapAuctionData(result.result))
-        .filter((auction: any) => auction !== null) // Remove null entries
-        .reverse(); // Show newest first
+      const mappedAuctions = await Promise.all(
+        results
+          .filter((result: any) => !result.error && result.result)
+          .map(async (result: any) => await this.mapAuctionData(client, result.result))
+          .filter((auction: any) => auction !== null)
+          .reverse()
+      );
       return mappedAuctions;
     } catch (error) {
       console.error("Error fetching last N auctions:", error);
@@ -679,7 +690,7 @@ export class AllPayAuctionService implements IAuctionService {
 
   async getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]> {
     try {
-      const auctions = await this.getLastNAuctions(50); // Get last 50 auctions
+      const auctions = await this.getLastNAuctions(50,client); // Get last 50 auctions
       return auctions;
     } catch (error) {
       console.error("Error fetching all auctions:", error);
