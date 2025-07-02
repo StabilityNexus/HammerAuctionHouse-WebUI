@@ -73,7 +73,7 @@ export function Footer({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_50%)]"></div>
       </div>
       
-      <div className="container relative py-4 md:py-8">
+      <div className="container relative py-1 md:py-2">
         {/* Main footer content */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
           {/* Logo and branding section */}

@@ -641,7 +641,7 @@ export class VickreyAuctionService implements IAuctionService {
         writeContract,
         params.auctionedToken,
         this.contractAddress,
-        parseEther(String(params.auctionedTokenIdOrAmount)),
+        (params.auctionType === BigInt(0)?params.auctionedTokenIdOrAmount:parseEther(String(params.auctionedTokenIdOrAmount))),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
       await writeContract({
@@ -654,7 +654,7 @@ export class VickreyAuctionService implements IAuctionService {
           params.imgUrl,
           Number(params.auctionType),
           params.auctionedToken,
-          parseEther(String(params.auctionedTokenIdOrAmount)),
+          (params.auctionType === BigInt(0)?params.auctionedTokenIdOrAmount:parseEther(String(params.auctionedTokenIdOrAmount))),
           params.biddingToken,
           Number(params.bidCommitDuration),
           Number(params.bidRevealDuration)

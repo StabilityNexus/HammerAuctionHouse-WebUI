@@ -532,7 +532,7 @@ export class AllPayAuctionService implements IAuctionService {
         writeContract,
         params.auctionedToken,
         this.contractAddress,
-        parseEther(String(params.auctionedTokenIdOrAmount)),
+        (params.auctionType === BigInt(0)?params.auctionedTokenIdOrAmount:parseEther(String(params.auctionedTokenIdOrAmount))),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
       await writeContract({
@@ -545,7 +545,7 @@ export class AllPayAuctionService implements IAuctionService {
           params.imgUrl,
           Number(params.auctionType),
           params.auctionedToken,
-          parseEther(String(params.auctionedTokenIdOrAmount)), //TODO::not in case of nfts
+          (params.auctionType === BigInt(0)?params.auctionedTokenIdOrAmount:parseEther(String(params.auctionedTokenIdOrAmount))), //TODO::not in case of nfts
           params.biddingToken,
           params.startingBid,
           params.minBidDelta,
