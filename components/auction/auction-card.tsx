@@ -136,7 +136,9 @@ export function AuctionCard({ auction }: AuctionCardProps) {
             <div>
               <p className="text-muted-foreground text-sm">Auctioned Item</p>
               <p className="font-medium text-lg">
-                {Number(formatEther(auction.auctionedTokenIdOrAmount)).toFixed(4)}{" "}{auction.auctionedTokenName || "Item"}
+                {BigInt(auction.auctionType) === BigInt(1) 
+                  ? Number(formatEther(auction.auctionedTokenIdOrAmount)).toFixed(4)
+                  : `#${auction.auctionedTokenIdOrAmount.toString()}`}{" "}{auction.auctionedTokenName || "Item"}
               </p>
             </div>
 

@@ -38,10 +38,9 @@ export function LinearDetail({
           <div>
             <p className="text-sm text-muted-foreground mb-1">Asset</p>
             <p className="text-3xl font-bold">
-              {Number(
-                formatEther(currentAuction.auctionedTokenIdOrAmount)
-              ).toFixed(4)}{" "}
-              {currentAuction.auctionedTokenName || "ETH"}
+              {BigInt(currentAuction.auctionType) === BigInt(1) 
+                  ? Number(formatEther(currentAuction.auctionedTokenIdOrAmount)).toFixed(4)
+                  : `#${currentAuction.auctionedTokenIdOrAmount.toString()}`}{" "}{currentAuction.auctionedTokenName || "Item"}
             </p>
           </div>
 

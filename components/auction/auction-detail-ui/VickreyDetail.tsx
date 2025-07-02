@@ -21,7 +21,7 @@ export function VickreyDetail({
   currentAuction,
   publicClient,
 }: VickreyDetailProps) {
-  const auctionId= decode(currentAuction.id).id;
+  const auctionId = decode(currentAuction.id).id;
   const [bids, setBids] = useState<Bid[]>([]);
   const [isLoadingBids, setIsLoadingBids] = useState(false);
   const fetchBidsFromContract = useCallback(async () => {
@@ -97,10 +97,12 @@ export function VickreyDetail({
           <div>
             <p className="text-sm text-muted-foreground mb-1">Asset</p>
             <p className="text-3xl font-bold">
-              {Number(
-                formatEther(currentAuction.auctionedTokenIdOrAmount)
-              ).toFixed(4)}{" "}
-              {currentAuction.auctionedTokenName || "ETH"}
+              {BigInt(currentAuction.auctionType) === BigInt(1)
+                ? Number(
+                    formatEther(currentAuction.auctionedTokenIdOrAmount)
+                  ).toFixed(4)
+                : `#${currentAuction.auctionedTokenIdOrAmount.toString()}`}{" "}
+              {currentAuction.auctionedTokenName || "Item"}
             </p>
 
             <div className="mt-2 text-sm text-muted-foreground">
