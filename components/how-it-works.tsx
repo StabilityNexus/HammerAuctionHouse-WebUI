@@ -154,7 +154,7 @@ export function HowItWorksSection() {
         >
           <h2 className="text-3xl font-bold mb-4">How It Works</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Whether you're selling or bidding, Hammer Auction House makes it easy to participate
+            Whether you&apos;re selling or bidding, Hammer Auction House makes it easy to participate
             in secure, transparent blockchain auctions.
           </p>
         </motion.div>
