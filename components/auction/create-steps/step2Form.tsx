@@ -9,9 +9,18 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { getDurationInSeconds } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ArrowRight, HelpCircle } from "lucide-react";
@@ -94,21 +103,8 @@ export function Step2Form({
     revealDays: z.string().optional(),
     revealHours: z.string().optional(),
     revealMinutes: z.string().optional(),
+    minBid: z.string().min(1, "Minimum bid is required").default("0"),
   });
-  // .refine(
-  //   (data) => {
-  //     const revealSeconds = getDurationSeconds(
-  //       data.revealDays || "",
-  //       data.revealHours || "",
-  //       data.revealMinutes || ""
-  //     );
-  //     return revealSeconds >= 86400;
-  //   },
-  //   {
-  //     message: "Reveal period must be at least 1 day",
-  //     path: ["revealDays"],
-  //   }
-  // );
 
   const formSchema = React.useMemo(() => {
     switch (formData.type) {
@@ -141,6 +137,7 @@ export function Step2Form({
     revealDays?: string;
     revealHours?: string;
     revealMinutes?: string;
+    minBid?: string;
   };
 
   // Auction type selection tab
@@ -192,6 +189,7 @@ export function Step2Form({
         revealDays: formData.revealDays || "2",
         revealHours: formData.revealHours || "0",
         revealMinutes: formData.revealMinutes || "0",
+        minBid: formData.minBid || "0",
       };
     }
     // english/all-pay
@@ -240,6 +238,8 @@ export function Step2Form({
         data.revealHours || "0",
         data.revealMinutes || "0"
       );
+      // Ensure minBid is properly set
+      update.minBid = data.minBid || "0";
     } else {
       update.duration = getDurationInSeconds(
         data.days || "0",
@@ -253,14 +253,17 @@ export function Step2Form({
   };
 
   const auctionType = formData.type || "english";
-  
+
   const watchedValues = form_2.watch();
   const dutchSubtype = watchedValues.subtype || formData.subtype || "linear";
   console.log("Current auction type:", auctionType);
   console.log("Dutch subtype:", dutchSubtype);
-  const dutchStartPrice = watchedValues.startPrice || formData.startPrice || "0";
-  const dutchReservePrice = watchedValues.reservePrice || formData.reservePrice || "0";
-  const dutchDecayFactor = watchedValues.decayFactor || formData.decayFactor || "0";
+  const dutchStartPrice =
+    watchedValues.startPrice || formData.startPrice || "0";
+  const dutchReservePrice =
+    watchedValues.reservePrice || formData.reservePrice || "0";
+  const dutchDecayFactor =
+    watchedValues.decayFactor || formData.decayFactor || "0";
   const dutchDuration = getDurationInSeconds(
     watchedValues.days || formData.days || "0",
     watchedValues.hours || formData.hours || "0",
@@ -268,346 +271,137 @@ export function Step2Form({
   );
 
   return (
-      <Form {...form_2}>
-        <form onSubmit={form_2.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Auction Type Tabs */}
-          <div className="mb-6">
-            <Label className="mb-2 block">Auction Type</Label>
-            <div className="flex flex-wrap gap-3">
-              {auctionTypes.map((type) => (
-                <button
-                  key={type.value}
-                  type="button"
-                  className={`border rounded-lg p-4 flex-1 min-w-[180px] text-left transition-all ${
-                    auctionType === type.value
-                      ? "border-primary bg-primary/5"
-                      : "hover:border-primary/50"
-                  }`}
-                  onClick={() => {
-                    form_2.setValue("type", type.value as "english" | "all-pay" | "dutch" | "vickrey");
-                    
-                    // Immediately update formData with the new auction type
-                    const currentFormData = form_2.getValues();
-                    const update = { 
-                      ...currentFormData, 
-                      type: type.value as "english" | "all-pay" | "dutch" | "vickrey"
-                    };
-                    updateFormData(update);
-                  }}
-                >
-                  <div className="font-medium mb-1">{type.label}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {type.description}
-                  </div>
-                </button>
-              ))}
-            </div>
+    <Form {...form_2}>
+      <form onSubmit={form_2.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Auction Type Tabs */}
+        <div className="mb-6">
+          <Label className="mb-2 block">Auction Type</Label>
+          <div className="flex flex-wrap gap-3">
+            {auctionTypes.map((type) => (
+              <button
+                key={type.value}
+                type="button"
+                className={`border rounded-lg p-4 flex-1 min-w-[180px] text-left transition-all ${
+                  auctionType === type.value
+                    ? "border-primary bg-primary/5"
+                    : "hover:border-primary/50"
+                }`}
+                onClick={() => {
+                  form_2.setValue(
+                    "type",
+                    type.value as "english" | "all-pay" | "dutch" | "vickrey"
+                  );
+
+                  // Immediately update formData with the new auction type
+                  const currentFormData = form_2.getValues();
+                  const update = {
+                    ...currentFormData,
+                    type: type.value as
+                      | "english"
+                      | "all-pay"
+                      | "dutch"
+                      | "vickrey",
+                  };
+                  updateFormData(update);
+                }}
+              >
+                <div className="font-medium mb-1">{type.label}</div>
+                <div className="text-xs text-muted-foreground">
+                  {type.description}
+                </div>
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* English/All-Pay */}
-          {(auctionType === "english" || auctionType === "all-pay") && (
-            <>
-              <FormField
-                control={form_2.control}
-                name="startPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start Price (ETH)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" min="0.01" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form_2.control}
-                name="minBidDelta"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center gap-1">
-                      <FormLabel>Minimum Bid Increment (ETH)</FormLabel>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">
-                            The minimum amount by which each new bid must exceed
-                            the current highest bid.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <FormControl>
-                      <Input type="number" step="0.01" min="0.01" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form_2.control}
-                name="deadlineExtension"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center gap-1">
-                      <FormLabel>Deadline Extension (seconds)</FormLabel>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">
-                            Time (in seconds) by which the auction deadline
-                            extends when a new bid is placed near the end.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <FormControl>
-                      <Input type="number" step="1" min="0" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {/* Duration fields with label */}
-              <div>
-                <div className="flex items-center gap-1 mb-1">
-                  <Label>Duration</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">
-                        Total auction duration. You can set days, hours, and
-                        minutes.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <div className="flex gap-2">
-                  <FormField
-                    control={form_2.control}
-                    name="days"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Days</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form_2.control}
-                    name="hours"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Hours</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" max="23" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form_2.control}
-                    name="minutes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Minutes</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" max="59" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Reverse Dutch */}
-          {auctionType === "dutch" && (
-            <>
-              <FormField
-                control={form_2.control}
-                name="subtype"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reverse Dutch Subtype</FormLabel>
-                    <Select 
-                      value={field.value} 
-                      onValueChange={(value) => {
-                        field.onChange(value as "linear" | "exponential" | "logarithmic");
-                        form_2.setValue("subtype", value as "linear" | "exponential" | "logarithmic");
-                        
-                        // Immediately update formData with the new subtype
-                        const currentFormData = form_2.getValues();
-                        const update = { 
-                          ...currentFormData, 
-                          subtype: value as "linear" | "exponential" | "logarithmic"
-                        };
-                        updateFormData(update);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select subtype" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="linear">Linear</SelectItem>
-                        <SelectItem value="exponential">Exponential</SelectItem>
-                        <SelectItem value="logarithmic">Logarithmic</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form_2.control}
-                name="startPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start Price (ETH)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" min="0.01" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form_2.control}
-                name="reservePrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reserve Price (ETH)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="Optional"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {(dutchSubtype === "exponential" ||
-                dutchSubtype === "logarithmic") && (
-                <FormField
-                  control={form_2.control}
-                  name="decayFactor"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Decay Factor</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0.01"
-                          max="1"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        {/* English/All-Pay */}
+        {(auctionType === "english" || auctionType === "all-pay") && (
+          <>
+            <FormField
+              control={form_2.control}
+              name="startPrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Start Price (ETH)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" min="0.01" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-              {/* Duration fields with label */}
-              <div>
-                <div className="flex items-center gap-1 mb-1">
-                  <Label>Duration</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">
-                        Total auction duration. You can set days, hours, and
-                        minutes.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <div className="flex gap-2">
-                  <FormField
-                    control={form_2.control}
-                    name="days"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Days</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form_2.control}
-                    name="hours"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Hours</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" max="23" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form_2.control}
-                    name="minutes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Minutes</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" max="59" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-              {/* Decay Preview Chart */}
-              <div className="pt-6">
-                <DecayPreviewChart
-                  startPrice={parseFloat(dutchStartPrice || "0")}
-                  reservedPrice={parseFloat(dutchReservePrice || "0")}
-                  duration={Number(dutchDuration)}
-                  decayFactor={parseFloat(dutchDecayFactor || "0")}
-                  decayType={dutchSubtype || "linear"}
-                />
-              </div>
-            </>
-          )}
-
-          {/* Vickrey */}
-          {auctionType === "vickrey" && (
-            <>
-              <div className="flex items-center gap-1 font-semibold mb-2">
-                Commit Period
+            />
+            <FormField
+              control={form_2.control}
+              name="minBidDelta"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-1">
+                    <FormLabel>Minimum Bid Increment (ETH)</FormLabel>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">
+                          The minimum amount by which each new bid must exceed
+                          the current highest bid.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <FormControl>
+                    <Input type="number" step="0.01" min="0.01" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form_2.control}
+              name="deadlineExtension"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-1">
+                    <FormLabel>Deadline Extension (seconds)</FormLabel>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">
+                          Time (in seconds) by which the auction deadline
+                          extends when a new bid is placed near the end.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <FormControl>
+                    <Input type="number" step="1" min="0" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {/* Duration fields with label */}
+            <div>
+              <div className="flex items-center gap-1 mb-1">
+                <Label>Duration</Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="max-w-xs">
-                      Duration in which bidders can commit their sealed bids.
+                      Total auction duration. You can set days, hours, and
+                      minutes.
                     </p>
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2">
                 <FormField
                   control={form_2.control}
-                  name="commitDays"
+                  name="days"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Days</FormLabel>
@@ -619,7 +413,7 @@ export function Step2Form({
                 />
                 <FormField
                   control={form_2.control}
-                  name="commitHours"
+                  name="hours"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Hours</FormLabel>
@@ -631,7 +425,7 @@ export function Step2Form({
                 />
                 <FormField
                   control={form_2.control}
-                  name="commitMinutes"
+                  name="minutes"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Minutes</FormLabel>
@@ -642,16 +436,120 @@ export function Step2Form({
                   )}
                 />
               </div>
-              <div className="flex items-center gap-1 font-semibold mb-2">
-                Reveal Period
+            </div>
+          </>
+        )}
+
+        {/* Reverse Dutch */}
+        {auctionType === "dutch" && (
+          <>
+            <FormField
+              control={form_2.control}
+              name="subtype"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reverse Dutch Subtype</FormLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(
+                        value as "linear" | "exponential" | "logarithmic"
+                      );
+                      form_2.setValue(
+                        "subtype",
+                        value as "linear" | "exponential" | "logarithmic"
+                      );
+
+                      // Immediately update formData with the new subtype
+                      const currentFormData = form_2.getValues();
+                      const update = {
+                        ...currentFormData,
+                        subtype: value as
+                          | "linear"
+                          | "exponential"
+                          | "logarithmic",
+                      };
+                      updateFormData(update);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select subtype" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="linear">Linear</SelectItem>
+                      <SelectItem value="exponential">Exponential</SelectItem>
+                      <SelectItem value="logarithmic">Logarithmic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form_2.control}
+              name="startPrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Start Price (ETH)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" min="0.01" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form_2.control}
+              name="reservePrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reserve Price (ETH)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="Optional"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {(dutchSubtype === "exponential" ||
+              dutchSubtype === "logarithmic") && (
+              <FormField
+                control={form_2.control}
+                name="decayFactor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Decay Factor</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        max="1"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            {/* Duration fields with label */}
+            <div>
+              <div className="flex items-center gap-1 mb-1">
+                <Label>Duration</Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="max-w-xs">
-                      Duration when all committed bidders are expected to reveal
-                      their bids. Must be at least 1 day.
+                      Total auction duration. You can set days, hours, and
+                      minutes.
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -659,19 +557,19 @@ export function Step2Form({
               <div className="flex gap-2">
                 <FormField
                   control={form_2.control}
-                  name="revealDays"
+                  name="days"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Days</FormLabel>
                       <FormControl>
-                        <Input type="number" min="1" {...field} />
+                        <Input type="number" min="0" {...field} />
                       </FormControl>
                     </FormItem>
                   )}
                 />
                 <FormField
                   control={form_2.control}
-                  name="revealHours"
+                  name="hours"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Hours</FormLabel>
@@ -683,7 +581,7 @@ export function Step2Form({
                 />
                 <FormField
                   control={form_2.control}
-                  name="revealMinutes"
+                  name="minutes"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Minutes</FormLabel>
@@ -694,34 +592,181 @@ export function Step2Form({
                   )}
                 />
               </div>
-              <FormMessage />
-            </>
-          )}
-          
-          {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8 pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={goToPrevStep}
-              disabled={currentStep === 0}
-              type="button"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            
-            <Button 
-              type="submit"
-              onClick={() => {
-                // Force validation before submission
-                form_2.handleSubmit(onSubmit)();
-              }}
-            >
-              Continue
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        </form>
-      </Form>
-    );
+            </div>
+            {/* Decay Preview Chart */}
+            <div className="pt-6">
+              <DecayPreviewChart
+                startPrice={parseFloat(dutchStartPrice || "0")}
+                reservedPrice={parseFloat(dutchReservePrice || "0")}
+                duration={Number(dutchDuration)}
+                decayFactor={parseFloat(dutchDecayFactor || "0")}
+                decayType={dutchSubtype || "linear"}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Vickrey */}
+        {auctionType === "vickrey" && (
+          <>
+            <div className="flex items-center gap-1 font-semibold mb-2">
+              Minimum Bid
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    Minimum bid amount that must be paid to win auction.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="flex gap-2 mb-4">
+              <FormField
+                control={form_2.control}
+                name="minBid"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input type="number" step="0.01" min="0" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="flex items-center gap-1 font-semibold mb-2">
+              Commit Period
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    Duration in which bidders can commit their sealed bids.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="flex gap-2 mb-4">
+              <FormField
+                control={form_2.control}
+                name="commitDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Days</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form_2.control}
+                name="commitHours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hours</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" max="23" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form_2.control}
+                name="commitMinutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Minutes</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" max="59" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="flex items-center gap-1 font-semibold mb-2">
+              Reveal Period
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    Duration when all committed bidders are expected to reveal
+                    their bids. Must be at least 1 day.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="flex gap-2">
+              <FormField
+                control={form_2.control}
+                name="revealDays"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Days</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form_2.control}
+                name="revealHours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hours</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" max="23" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form_2.control}
+                name="revealMinutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Minutes</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" max="59" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormMessage />
+          </>
+        )}
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-between mt-8 pt-4 border-t">
+          <Button
+            variant="outline"
+            onClick={goToPrevStep}
+            disabled={currentStep === 0}
+            type="button"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+
+          <Button
+            type="submit"
+            onClick={() => {
+              // Force validation before submission
+              form_2.handleSubmit(onSubmit)();
+            }}
+          >
+            Continue
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
 }

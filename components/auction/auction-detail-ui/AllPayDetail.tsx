@@ -1,6 +1,6 @@
 import { Auction, Bid } from "@/lib/mock-data";
 import { motion, AnimatePresence } from "framer-motion";
-import { formatEther } from "viem";
+import { formatEther, parseEther } from "viem";
 import { CountdownTimer } from "../countdown-timer";
 import { BidForm } from "../bid-form";
 import { Info } from "lucide-react";
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionInfo } from "../auction-info";
 import { BidHistory } from "../bid-history";
 import { decode } from "@/lib/storage";
+import { useAccount } from "wagmi";
 
 interface AllPayDetailProps {
     currentAuction: Auction;
@@ -24,6 +25,8 @@ export function AllPayDetail(
   const auctionId = decode(currentAuction.id).id;
   const [bids, setBids] = useState<Bid[]>([]);
   const [isLoadingBids, setIsLoadingBids] = useState(false);
+  const [currentBid,setCurrentBid] = useState(BigInt(0));
+  const { address: userAddress, isConnected } = useAccount();
   const fetchBidsFromContract = useCallback(async () => {
     if (!publicClient) return;
     setIsLoadingBids(true);
@@ -35,7 +38,7 @@ export function AllPayDetail(
       const auctionService = getAuctionService(currentAuction.protocol);
       const currentBlock = await publicClient.getBlockNumber();
       const fromBlock =
-        currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
+        currentBlock > BigInt(10000000) ? currentBlock - BigInt(10000000) : BigInt(0);
       const bidHistory = await auctionService.getBidHistory(
         publicClient,
         BigInt(auctionId),
@@ -54,9 +57,25 @@ export function AllPayDetail(
     }
   }, [publicClient, currentAuction]);
 
+    const fetchCurrentBid = async () => {
+      if(!publicClient || !userAddress) return;
+      try {
+        const auctionService = getAuctionService("AllPay");
+        if (auctionService && auctionService.getCurrentBid) {
+          const currentBid = await auctionService.getCurrentBid(publicClient,BigInt(auctionId), userAddress);
+          setCurrentBid(currentBid);
+        }
+        console.log("current bid is",currentBid);
+
+      } catch (error) {
+        console.error("Error fetching current bid from contract: ",error);
+      }
+    };
+
   useEffect(() => {
     if (currentAuction && publicClient) {
       fetchBidsFromContract();
+      fetchCurrentBid();
     }
   }, [fetchBidsFromContract]);
 
@@ -99,6 +118,22 @@ export function AllPayDetail(
             />
           </div>
         </div>
+
+        {/* Add current bid display */}
+        {isConnected && (
+          <div className="mb-4 p-4 border rounded-lg bg-muted/30">
+            <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between w-full">
+                <p className="text-sm text-muted-foreground mb-1">Your Current Bid</p>
+                <p className="text-xl font-semibold">
+                  {Number(currentBid) > 0 
+                  ? `${Number(formatEther(currentBid)).toFixed(4)} ${currentAuction.biddingTokenName || "ETH"}`
+                  : "No active bid"}
+                </p>
+                </div>
+            </div>
+          </div>
+        )}
 
         {Date.now() < Number(currentAuction.deadline) * 1000 && (
           <BidForm auction={currentAuction} />

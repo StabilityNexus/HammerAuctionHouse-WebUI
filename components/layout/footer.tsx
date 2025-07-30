@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { SiGithub,SiX,SiDiscord,SiTelegram } from "@icons-pack/react-simple-icons";
 
 interface SocialLink {
@@ -51,9 +52,14 @@ export function Footer({
 
   const defaultLogo = (
     <div className="relative">
-      {/* Hexagon background */}
       <div className="w-15 h-15">
-        <img src="stable.svg" alt="Stablitiy Nexus" />
+        <Image
+          src="/stable.svg"
+          alt="Stability Nexus"
+          width={80}
+          height={80}
+          priority
+        />
       </div>
       {/* Subtle glow effect */}
       <div className="absolute inset-0 w-10 h-10 bg-primary/20 transform rotate-12 rounded-lg blur-md -z-10"></div>

@@ -5,6 +5,7 @@ import { Bid, AuctionType } from "@/lib/mock-data";
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, DollarSign } from "lucide-react";
+import { formatEther } from "viem";
 
 interface BidHistoryProps {
   bids: Bid[];
@@ -42,42 +43,44 @@ export function BidHistory({ bids, auctionProtocol }: BidHistoryProps) {
               transition={{ delay: index * 0.05 }}
               className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
                 isHighestBid
-                  ? "bg-gray-50 dark:bg-gray-950/20 border-gray-200 dark:border-gray-800"
-                  : "bg-card/50 hover:bg-card/80"
+                  ? "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800"
+                  : "bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900"
               }`}
             >
               <div className="flex items-center gap-3">
                 <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium ${
                   isHighestBid
-                    ? "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300"
-                    : "bg-primary/10 text-primary"
+                    ? "bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    : "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800"
                 }`}>
                   {index + 1}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-sm">
+                    <p className="font-medium text-sm text-gray-900 dark:text-gray-100">
                       {`${bid.bidder.substring(0, 6)}...${bid.bidder.substring(38)}`}
                     </p>
                     {isHighestBid && (
-                      <Badge variant="secondary" className="text-xs bg-green-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                      <Badge variant="secondary" className="text-xs bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
                         Winner
                       </Badge>
                     )}
                     {auctionProtocol === "AllPay" && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs border-gray-300 dark:border-gray-700">
                         Paid
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {formatDistanceToNow(bid.timestamp, { addSuffix: true })}
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <p className={`font-semibold ${
-                  isHighestBid ? "text-blue-600 dark:text-blue-400" : ""
+                  isHighestBid 
+                    ? "text-gray-900 dark:text-gray-100" 
+                    : "text-gray-600 dark:text-gray-400"
                 }`}>
                   {bid.amount} 
                 </p>

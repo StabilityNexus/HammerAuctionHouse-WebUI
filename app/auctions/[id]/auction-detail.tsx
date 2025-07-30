@@ -8,11 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { Auction, AuctionType, Bid } from "@/lib/mock-data";
 import { getAuctionService } from "@/lib/auction-service";
-import {
-  usePublicClient,
-  useAccount,
-  useWriteContract,
-} from "wagmi";
+import { usePublicClient, useAccount, useWriteContract } from "wagmi";
 import { toast } from "sonner";
 import { AllPayDetail } from "@/components/auction/auction-detail-ui/AllPayDetail";
 import { EnglishDetail } from "@/components/auction/auction-detail-ui/EnglishDetail";
@@ -36,7 +32,6 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
   const publicClient = usePublicClient();
   const { address: userAddress, isConnected } = useAccount();
   const { writeContract } = useWriteContract();
-
   const getVickreyPhase = (auction: Auction) => {
     if (auction.protocol !== "Vickrey") return null;
 
@@ -59,7 +54,10 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     setError(null);
     try {
       const auctionService = getAuctionService(protocol);
-      const auctionData = await auctionService.getAuction(BigInt(id),publicClient);
+      const auctionData = await auctionService.getAuction(
+        BigInt(id),
+        publicClient
+      );
       setCurrentAuction(auctionData);
     } catch (err) {
       console.error(`Error fetching ${protocol} auction from contract:`, err);
@@ -152,7 +150,8 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
       <div className="container py-12 px-4 text-center">
         <h1 className="text-2xl font-bold mb-4">Auction Not Found</h1>
         <p className="text-muted-foreground mb-6">
-          The auction you&apos;re looking for doesn&apos;t exist or has been removed.
+          The auction you&apos;re looking for doesn&apos;t exist or has been
+          removed.
         </p>
         <Button asChild>
           <Link href="/auctions">Back to Auctions</Link>
@@ -227,7 +226,10 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
               {/* Withdraw Funds Button - Only for auctioneer */}
               {userAddress?.toLowerCase() ===
                 currentAuction.auctioneer.toLowerCase() &&
-                currentAuction.availableFunds! > 0 &&
+                ((currentAuction.protocol !== "Vickrey" &&
+                  currentAuction.availableFunds! > 0) ||
+                  (currentAuction.protocol === "Vickrey" &&
+                    getVickreyPhase(currentAuction) === "ended")) &&
                 (currentAuction.protocol != "English" ||
                   Date.now() >= Number(currentAuction.deadline) * 1000) && (
                   // Only show if there are funds to withdraw
@@ -292,21 +294,15 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
         )}
 
         {protocol === "Linear" && (
-          <LinearDetail
-            currentAuction={currentAuction}
-          />
+          <LinearDetail currentAuction={currentAuction} />
         )}
 
         {protocol === "Exponential" && (
-          <ExponentialDetail
-            currentAuction={currentAuction}
-          />
+          <ExponentialDetail currentAuction={currentAuction} />
         )}
 
         {protocol === "Logarithmic" && (
-          <LogarithmicDetail
-            currentAuction={currentAuction}
-          />
+          <LogarithmicDetail currentAuction={currentAuction} />
         )}
       </div>
     </div>
@@ -329,8 +325,3 @@ function Badge({ status, type }: { status: string; type: string }) {
     </div>
   );
 }
-
-//TODOS:
-//1.Add support for auctioneer to withdraw funds from auction and check auction balance
-//2. Add support for winner to claim auctioned item after it ends
-//3. Refactor code all-over and then replicate for english-auction

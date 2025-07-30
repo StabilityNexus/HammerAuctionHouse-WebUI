@@ -1,341 +1,15 @@
 import { Address, erc20Abi, erc721Abi, parseEther } from "viem";
 import { readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
-import { IAuctionService, DutchAuctionParams } from "../auction-service";
+import { IAuctionService, DutchAuctionParams, getTokenName } from "../auction-service";
 import { Bid } from "../mock-data";
 import { generateCode } from "../storage";
-
-export const LINEAR_DUTCH_ABI = [
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "SafeERC20FailedOperation",
-    "type": "error"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "Id",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "name",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "description",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "imgUrl",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "auctioneer",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "enum Auction.AuctionType",
-        "name": "auctionType",
-        "type": "uint8"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "auctionedToken",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "auctionedTokenIdOrAmount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "biddingToken",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "startingPrice",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "reservedPrice",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "deadline",
-        "type": "uint256"
-      }
-    ],
-    "name": "AuctionCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amountWithdrawn",
-        "type": "uint256"
-      }
-    ],
-    "name": "fundsWithdrawn",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "withdrawer",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "auctionedTokenAddress",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "auctionedTokenIdOrAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "itemWithdrawn",
-    "type": "event"
-  },
-  {
-    "inputs": [],
-    "name": "auctionCounter",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "auctions",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
-      {
-        "internalType": "string",
-        "name": "name",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "description",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "imgUrl",
-        "type": "string"
-      },
-      {
-        "internalType": "address",
-        "name": "auctioneer",
-        "type": "address"
-      },
-      {
-        "internalType": "enum Auction.AuctionType",
-        "name": "auctionType",
-        "type": "uint8"
-      },
-      {
-        "internalType": "address",
-        "name": "auctionedToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "auctionedTokenIdOrAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "biddingToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "startingPrice",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "availableFunds",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "reservedPrice",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "winner",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "deadline",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "duration",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "isClaimed",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getCurrentPrice",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "name",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "description",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "imgUrl",
-        "type": "string"
-      },
-      {
-        "internalType": "enum Auction.AuctionType",
-        "name": "auctionType",
-        "type": "uint8"
-      },
-      {
-        "internalType": "address",
-        "name": "auctionedToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "auctionedTokenIdOrAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "biddingToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "startingPrice",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "reservedPrice",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "duration",
-        "type": "uint256"
-      }
-    ],
-    "name": "createAuction",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
-] as const;
+import { AUCTION_CONTRACTS, LINEAR_DUTCH_ABI } from "../contract-data";
 
 export class LinearDutchAuctionService implements IAuctionService {
-  contractAddress: Address = "0xA6BD412DaeE7367F21c5eD36883b5731FD351B8B";
+  contractAddress: Address = AUCTION_CONTRACTS.Linear as `0x${string}`;
 
-  private async mapAuctionData(auctionData: any,client: any): Promise<any> {
+  private async mapAuctionData(auctionData: any, client: any): Promise<any> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 16) {
       console.warn("Invalid auction data:", auctionData);
       return null;
@@ -343,14 +17,14 @@ export class LinearDutchAuctionService implements IAuctionService {
 
     let auctionedTokenName = "";
     let biddingTokenName = "";
-    if(client){
-      auctionedTokenName = await client.getTokenName(auctionData[6]);
-      biddingTokenName = await client.getTokenName(auctionData[8]);
+    if (client) {
+      auctionedTokenName = await getTokenName(client,auctionData[6]);
+      biddingTokenName = await getTokenName(client,auctionData[8]);
     }
 
     return {
       protocol: "Linear",
-      id: generateCode("Linear",String(auctionData[0])),
+      id: generateCode("Linear", String(auctionData[0])),
       name: auctionData[1],
       description: auctionData[2],
       imgUrl: auctionData[3],
@@ -392,7 +66,7 @@ export class LinearDutchAuctionService implements IAuctionService {
     }
   }
 
-  async getLastNAuctions(n: number = 10,client?: any): Promise<any[]> {
+  async getLastNAuctions(n: number = 10, client?: any): Promise<any[]> {
     try {
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) return [];
@@ -410,7 +84,7 @@ export class LinearDutchAuctionService implements IAuctionService {
       const results = await readContracts(wagmi_config, { contracts });
       const mappedAuctions = Promise.all(results
         .filter((result: any) => !result.error && result.result)
-        .map(async (result: any) => await this.mapAuctionData(result.result,client))
+        .map(async (result: any) => await this.mapAuctionData(result.result, client))
         .filter((auction: any) => auction !== null) // Remove null entries
         .reverse()); // Show newest first
       return mappedAuctions;
@@ -448,7 +122,7 @@ export class LinearDutchAuctionService implements IAuctionService {
         writeContract,
         params.auctionedToken,
         this.contractAddress,
-        (params.auctionType === BigInt(0)?params.auctionedTokenIdOrAmount:parseEther(String(params.auctionedTokenIdOrAmount))),
+        (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
       await writeContract({
@@ -461,7 +135,7 @@ export class LinearDutchAuctionService implements IAuctionService {
           params.imgUrl,
           Number(params.auctionType),
           params.auctionedToken,
-          (params.auctionType === BigInt(0)?params.auctionedTokenIdOrAmount:parseEther(String(params.auctionedTokenIdOrAmount))),
+          (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
           params.biddingToken,
           params.startingPrice,
           params.reservedPrice,
@@ -499,15 +173,12 @@ export class LinearDutchAuctionService implements IAuctionService {
     }
   }
 
-  async withdrawItem(writeContract: any, auctionId: bigint): Promise<void> {
+  async withdrawItem(writeContract: any, auctionId: bigint, biddingToken: string): Promise<void> {
     try {
       const currentPrice = await this.getCurrentPrice(auctionId);
-      const auctionData = await this.getAuction(auctionId);
-      const isNFT = auctionData[5] === BigInt(0); // auctionType === 0 means NFT
-      const biddingToken = auctionData[7] as Address; // biddingToken address from auction data
       await this.approveToken(
         writeContract,
-        biddingToken,
+        biddingToken as `0x${string}`,
         this.contractAddress,
         currentPrice,
         false
@@ -517,7 +188,6 @@ export class LinearDutchAuctionService implements IAuctionService {
         abi: LINEAR_DUTCH_ABI,
         functionName: "withdrawItem",
         args: [auctionId],
-        value: isNFT ? currentPrice : BigInt(0) // Send ETH if it's an NFT auction
       });
     } catch (error) {
       console.error("Error withdrawing item:", error);
@@ -539,7 +209,7 @@ export class LinearDutchAuctionService implements IAuctionService {
     }
   }
 
-  async getAuction(auctionId: bigint,client?: any): Promise<any> {
+  async getAuction(auctionId: bigint, client?: any): Promise<any> {
     try {
       const data = await readContracts(wagmi_config, {
         contracts: [
@@ -552,7 +222,7 @@ export class LinearDutchAuctionService implements IAuctionService {
         ]
       });
       const auctionData = data[0].result;
-      const mappedAuction = await this.mapAuctionData(auctionData,client);
+      const mappedAuction = await this.mapAuctionData(auctionData, client);
       if (!mappedAuction) {
         throw new Error(`Invalid auction data for ID ${auctionId}`);
       }
@@ -565,7 +235,7 @@ export class LinearDutchAuctionService implements IAuctionService {
 
   async getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]> {
     try {
-      const auctions = await this.getLastNAuctions(50,client); // Get last 50 auctions
+      const auctions = await this.getLastNAuctions(50, client); // Get last 50 auctions
       return auctions;
     } catch (error) {
       console.error("Error fetching all auctions:", error);
@@ -581,4 +251,39 @@ export class LinearDutchAuctionService implements IAuctionService {
   ): Promise<Bid[]> {
     return [];
   }
+
+  async getIndexedAuctions(client: any,start: bigint,end: bigint): Promise<any[]>{
+      try{
+        const counter = await this.getAuctionCounter();
+        if (counter === BigInt(0)) {
+          console.log("No auctions found - counter is 0");
+          return [];
+        }
+        if(start < counter){
+          return [];
+        }
+        end = end > counter ? counter : end;
+        const contracts = [];
+        for (let i = start; i < end; i++) {
+          contracts.push({
+            address: this.contractAddress,
+            abi: LINEAR_DUTCH_ABI,
+            functionName: 'auctions',
+            args: [i]
+          });
+        }
+        const results = await readContracts(wagmi_config, { contracts });
+        const mappedAuctions = await Promise.all(
+          results
+            .filter((result: any) => !result.error && result.result)
+            .map(async (result: any) => await this.mapAuctionData(client, result.result))
+            .filter((auction: any) => auction !== null)
+            .reverse()
+        );
+        return mappedAuctions;
+      }catch(error){
+        console.error("Error fetching indexed auctions:", error);
+        throw error;
+      }
+    }
 }

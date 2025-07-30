@@ -101,6 +101,10 @@ export function Step4Form({
           ) : null}
           {auctionType === "vickrey" ? (
             <>
+              <div className="text-muted-foreground">Minimum Bid</div>
+              <div className="font-medium">
+                {formData.minBid}
+              </div>
               <div className="text-muted-foreground">Commit Period</div>
               <div className="font-medium">
                 {formatDuration(Number(formData.commitDuration))}
@@ -139,13 +143,6 @@ export function Step4Form({
             </>
           )}
         </div>
-      </div>
-      <div className="bg-blue-500/10 text-blue-500 p-4 rounded-lg">
-        <p className="text-sm">
-          By creating this auction, you agree to our Terms of Service and
-          Auction Rules. Once published, your auction will be visible to all
-          HammerChain users.
-        </p>
       </div>
       <div className="flex justify-between mt-8 pt-4 border-t">
         <Button

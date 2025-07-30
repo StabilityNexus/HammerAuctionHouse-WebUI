@@ -29,13 +29,9 @@ import { append, decode } from "@/lib/storage";
 
 interface VickreyCommitFormProps {
   auction: Auction;
-  onCommitPlaced: () => void;
 }
 
-export function VickreyCommitForm({
-  auction,
-  onCommitPlaced,
-}: VickreyCommitFormProps) {
+export function VickreyCommitForm({ auction }: VickreyCommitFormProps) {
   const { isConnected, address } = useAccount();
   const [bidAmount, setBidAmount] = useState<string>("");
   const [salt, setSalt] = useState<string>("");
@@ -130,19 +126,11 @@ export function VickreyCommitForm({
         commitment,
         timestamp: Date.now(),
       };
-
-      const existingCommitments = JSON.parse(
-        localStorage.getItem("vickreyCommitments") || "[]"
-      );
-      existingCommitments.push(commitmentData);
       localStorage.setItem(
-        "vickreyCommitments",
-        JSON.stringify(existingCommitments)
+        `vickrey_commitment_${BigInt(auctionId)}_${address.toLowerCase()}`,
+        JSON.stringify(commitmentData)
       );
-
       toast.success("Commitment submitted successfully!");
-      append("Bids", auction.protocol, auctionId);
-      onCommitPlaced();
     } catch (error) {
       console.error("Error submitting commitment:", error);
       toast.error("Failed to submit commitment");

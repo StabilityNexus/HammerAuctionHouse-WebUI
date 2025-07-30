@@ -7,9 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, AlertCircle, CheckCircle } from "lucide-react";
-import { useAccount, useWriteContract } from "wagmi";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { getAuctionService } from "@/lib/auction-service";
-import { Address } from "viem";
 import { VickreyAuctionService } from "@/lib/services/vickrey-auction-service";
 
 interface VickreyRevealFormProps {
@@ -34,7 +33,15 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
   const [autoFilled, setAutoFilled] = useState(false);
 
   const { address } = useAccount();
-  const { writeContract } = useWriteContract();
+  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
+  
+  const {
+    isLoading: isConfirming,
+    isSuccess: isConfirmed,
+    error: confirmError,
+  } = useWaitForTransactionReceipt({
+    hash,
+  });
 
   // Load commitment data from localStorage on mount
   useEffect(() => {
@@ -42,7 +49,9 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
 
     const storageKey = `vickrey_commitment_${auctionId}_${address.toLowerCase()}`;
     const stored = localStorage.getItem(storageKey);
-    
+    console.log(stored);
+    console.log(address);
+    console.log(`vickrey_commitment_${auctionId}_${address.toLowerCase()}`);
     if (stored) {
       try {
         const data: CommitmentData = JSON.parse(stored);
@@ -56,40 +65,33 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
     }
   }, [address, auctionId]);
 
-  // NQ2jfKugP6ZrtvPm
-  //10
+  // Handle successful transaction confirmation
+  useEffect(() => {
+    if (isConfirmed && hash) {
+      console.log("Transaction confirmed:", hash);
+      setSuccess(true);
+      setIsRevealing(false);
 
-
-  const validateReveal = async (): Promise<boolean> => {
-    if (!bidAmount || !salt) {
-      setError("Both bid amount and salt are required");
-      return false;
-    }
-
-    if (parseFloat(bidAmount) <= 0) {
-      setError("Bid amount must be greater than 0");
-      return false;
-    }
-
-    console.log("Validating reveal with bid amount:", bidAmount, "and salt:", salt);
-
-    try {
-      const bidAmountWei = BigInt(Math.floor(parseFloat(bidAmount) * 1e18));
-      const generatedHash = VickreyAuctionService.generateCommitment(bidAmountWei, salt);
-      console.log("Generated commitment hash:", generatedHash);
-
-      // If we have stored commitment data, verify the hash matches
-      if (commitmentData && generatedHash !== commitmentData.commitmentHash) {
-        setError("Bid amount and salt don't match your original commitment");
-        return false;
+      // Clear the stored commitment data after successful reveal
+      if (address) {
+        const storageKey = `vickrey_commitment_${auctionId}_${address.toLowerCase()}`;
+        localStorage.removeItem(storageKey);
       }
-
-      return true;
-    } catch (error) {
-      setError("Failed to validate commitment hash");
-      return false;
+      
+      if (onRevealSuccess) {
+        onRevealSuccess();
+      }
     }
-  };
+  }, [isConfirmed, hash, auctionId, address]);
+
+  // Handle transaction errors
+  useEffect(() => {
+    if (writeError || confirmError) {
+      console.error("Transaction error:", writeError || confirmError);
+      setError((writeError || confirmError)?.message || "Failed to reveal bid. Please try again.");
+      setIsRevealing(false);
+    }
+  }, [writeError, confirmError]);
 
   const handleReveal = async () => {
     if (!address || !writeContract) {
@@ -101,41 +103,18 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
     setIsRevealing(true);
 
     try {
-      // Validate the reveal data
-      const isValid = await validateReveal();
-      if (!isValid) {
-        setIsRevealing(false);
-        return;
-      }
-
       const vickreyService = getAuctionService("Vickrey");
-      
-      // Convert bid amount to wei (18 decimals)
       const bidAmountWei = BigInt(Math.floor(parseFloat(bidAmount) * 1e18));
       
-      await (vickreyService as any).revealBid(
+      await vickreyService.revealBid(
         writeContract,
         auctionId,
         bidAmountWei,
         salt
       );
-
-      setSuccess(true);
-      
-      // Clear the stored commitment data after successful reveal
-      if (address) {
-        const storageKey = `vickrey_commitment_${auctionId}_${address.toLowerCase()}`;
-        localStorage.removeItem(storageKey);
-      }
-      
-      if (onRevealSuccess) {
-        onRevealSuccess();
-      }
-
     } catch (error: any) {
       console.error("Reveal error:", error);
       setError(error.message || "Failed to reveal bid. Please try again.");
-    } finally {
       setIsRevealing(false);
     }
   };
@@ -150,10 +129,10 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
 
   if (success) {
     return (
-      <Card className="w-full max-w-md">
+      <Card className="w-full">
         <CardContent className="pt-6">
-          <div className="text-center">
-            <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+          <div className="text-center w-full">
+            <CheckCircle className="w-12 h-12 mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Bid Revealed Successfully!</h3>
             <p className="text-sm text-muted-foreground">
               Your bid has been revealed and is now part of the auction.
@@ -235,10 +214,13 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
 
         <Button
           onClick={handleReveal}
-          disabled={isRevealing || !bidAmount || !salt}
+          disabled={isRevealing || isPending || isConfirming || !bidAmount || !salt}
           className="w-full"
         >
-          {isRevealing ? "Revealing..." : "Reveal Bid"}
+          {isPending && "Preparing Transaction..."}
+          {isConfirming && "Confirming..."}
+          {!isPending && !isConfirming && isRevealing && "Processing..."}
+          {!isPending && !isConfirming && !isRevealing && "Reveal Bid"}
         </Button>
 
         <div className="text-xs text-muted-foreground space-y-1">
@@ -250,12 +232,3 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
     </Card>
   );
 }
-
-
-//TODOS:
-//1. Look into vickrey auction service and add it's new functions in IAuctionService Interface
-//2. Look into validation logic and remove local storage for now
-
-
-// kYQM08YNjGiabkjc
-// 0x85733efed3cd6040b0db9a338cfbb820b7ffba4ed1bb0fd5434932fa8ec06a27

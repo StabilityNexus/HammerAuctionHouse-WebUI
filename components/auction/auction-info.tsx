@@ -6,16 +6,32 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, Copy, CheckCircle2 } from "lucide-react";
 import { Auction } from "@/lib/mock-data";
 import { format } from "date-fns";
-
+import React from "react";
 
 interface AuctionInfoProps {
   auction: Auction;
 }
 
+function shortenAddress(address: string): string {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
 export function AuctionInfo({ auction }: AuctionInfoProps) {
+  const [copiedAddresses, setCopiedAddresses] = React.useState<{
+    [key: string]: boolean;
+  }>({});
+
+  const copyToClipboard = (address: string, type: "asset" | "bidding") => {
+    navigator.clipboard.writeText(address);
+    setCopiedAddresses((prev) => ({ ...prev, [type]: true }));
+    setTimeout(() => {
+      setCopiedAddresses((prev) => ({ ...prev, [type]: false }));
+    }, 2000);
+  };
+
   const infoItems = [
     {
       label: "Auction Type",
@@ -24,7 +40,42 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
       tooltip: getAuctionTypeDescription(auction.protocol),
     },
     {
-      //TODO: Check case when single bid is made
+      label: "Asset",
+      value: (
+        <div className="flex items-center gap-2">
+          <span>{shortenAddress(auction.auctionedToken)}</span>
+          <button
+            onClick={() => copyToClipboard(auction.auctionedToken, "asset")}
+            className="hover:text-primary"
+          >
+            {copiedAddresses["asset"] ? (
+              <CheckCircle2 className="h-4 w-4" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </button>
+        </div>
+      ),
+    },
+    {
+      label: "Bidding Token",
+      value: (
+        <div className="flex items-center gap-2">
+          <span>{shortenAddress(auction.biddingToken)}</span>
+          <button
+            onClick={() => copyToClipboard(auction.biddingToken, "bidding")}
+            className="hover:text-primary"
+          >
+            {copiedAddresses["bidding"] ? (
+              <CheckCircle2 className="h-4 w-4" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </button>
+        </div>
+      ),
+    },
+    {
       label: auction.protocol.toLowerCase().includes("dutch")
         ? "Initial Price"
         : "Start Price",

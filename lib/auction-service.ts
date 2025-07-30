@@ -37,6 +37,7 @@ export interface DutchAuctionParams extends BaseAuctionParams {
 export interface VickreyAuctionParams extends BaseAuctionParams {
   bidCommitDuration: bigint;
   bidRevealDuration: bigint;
+  minBid: bigint;
 }
 
 // Union type for all auction parameters
@@ -46,15 +47,6 @@ export type AuctionParams =
   | DutchAuctionParams
   | VickreyAuctionParams;
 
-// Auction contract addresses
-export const AUCTION_CONTRACTS: Record<AuctionType, Address> = {
-  English: "0x30562E1d406FF878e1ceCbDe12322f971F916a7E",
-  AllPay: "0x4E3a05c4F5A53b7977CCaD23Ccd7Dc617FE79CA6",
-  Exponential: "0xA093851ad8c014d6301B1dC28E81B5458E7CbbB0", 
-  Linear: "0xA6BD412DaeE7367F21c5eD36883b5731FD351B8B", 
-  Logarithmic: "0x205718CC1D6279aecB410e9E2FAA841ddc60c2fD",
-  Vickrey: "0x56587c523FdAeE847463F93D58Cfd2e8023dee54",
-};
 
 // Abstract auction service interface
 export interface IAuctionService {
@@ -62,7 +54,7 @@ export interface IAuctionService {
   createAuction(writeContract: any, params: any): Promise<void>;
   placeBid(writeContract: any, auctionId: bigint, bidAmount: bigint, tokenAddress: Address, auctionType: bigint): Promise<void>;
   withdrawFunds(writeContract: any, auctionId: bigint): Promise<void>;
-  withdrawItem(writeContract: any, auctionId: bigint): Promise<void>;
+  withdrawItem(writeContract: any, auctionId: bigint,biddingToken?: string): Promise<void>;
   getAuction(auctionId: bigint,client: any): Promise<any>;
   getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]>;
   getBidHistory(client: any, auctionId: bigint, startBlock: bigint, endBlock: bigint): Promise<Bid[]>;
@@ -73,6 +65,12 @@ export interface IAuctionService {
   
   // Dutch auction specific methods
   getCurrentPrice?(auctionId: bigint): Promise<bigint>;
+
+  //Vickrey Auction specific methods
+  revealBid?(writeContract: any,auctionId: bigint,bidAmount: bigint,salt: string): Promise<void>;
+
+  //AllPay & English specific methods
+  getCurrentBid?(client: any,auctionId: bigint,userAddress: Address): Promise<any>;
 }
 
 // Factory function to get the appropriate auction service
@@ -156,6 +154,10 @@ export async function getTokenName(publicClient: any,auctionedToken: string): Pr
     }]
   };
 
+  if(auctionedToken=="0x0000000000000000000000000000000000000000"){
+    return 'Unknown';
+  }
+
   try {
     const symbol = await publicClient.readContract({
       address: auctionedToken,
@@ -168,3 +170,5 @@ export async function getTokenName(publicClient: any,auctionedToken: string): Pr
     return 'Unknown';
   }
 }
+
+

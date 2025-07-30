@@ -27,7 +27,6 @@ import { AuctionType } from "@/lib/mock-data";
 import { Address } from "viem";
 import { getDurationInSeconds } from "@/lib/utils";
 import { append, decode } from "@/lib/storage";
-import { get } from "lodash";
 
 function transformFormDataToParams(formData: any, auctionType: AuctionType) {
   const baseParams = {
@@ -123,10 +122,13 @@ function transformFormDataToParams(formData: any, auctionType: AuctionType) {
             formData.revealMinutes || "0"
           );
 
+      const minBid = formData.minBid ? BigInt(formData.minBid) : BigInt(0);
+
       return {
         ...baseParams,
         bidCommitDuration: commitDuration,
         bidRevealDuration: revealDuration,
+        minBid: minBid
       } as VickreyAuctionParams;
     }
 
@@ -171,6 +173,7 @@ export default function CreateAuction() {
     revealMinutes: "0",
     commitDuration: "",
     revealDuration: "",
+    minBid: "0",
     // Token fields
     tokenAddress: "",
     biddingTokenAddress: "0x0000000000000000000000000000000000000000", // ETH placeholder

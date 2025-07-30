@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionInfo } from "../auction-info";
 import { BidHistory } from "../bid-history";
 import { decode } from "@/lib/storage";
+import { useAccount } from "wagmi";
 interface EnglishDetailProps {
   currentAuction: Auction;
   publicClient: any;
@@ -22,7 +23,9 @@ export function EnglishDetail({
 }: EnglishDetailProps) {
   const [bids, setBids] = useState<Bid[]>([]);
   const [isLoadingBids, setIsLoadingBids] = useState(false);
-  const auctionId= decode(currentAuction.id).id;
+  const auctionId = decode(currentAuction.id).id;
+  const [currentBid,setCurrentBid] = useState(BigInt(0));
+  const { address: userAddress, isConnected } = useAccount();
   const fetchBidsFromContract = useCallback(async () => {
     if (!publicClient) return;
     setIsLoadingBids(true);
@@ -34,7 +37,9 @@ export function EnglishDetail({
       const auctionService = getAuctionService(currentAuction.protocol);
       const currentBlock = await publicClient.getBlockNumber();
       const fromBlock =
-        currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
+        currentBlock > BigInt(10000000)
+          ? currentBlock - BigInt(10000000)
+          : BigInt(0);
       const bidHistory = await auctionService.getBidHistory(
         publicClient,
         BigInt(auctionId),
@@ -52,26 +57,31 @@ export function EnglishDetail({
       setIsLoadingBids(false);
     }
   }, [publicClient, currentAuction]);
-
+  
+  const fetchCurrentBid = async () => {
+    if (!publicClient || !userAddress) return;
+    try {
+      const auctionService = getAuctionService("English");
+      if (auctionService && auctionService.getCurrentBid) {
+        const currentBid = await auctionService.getCurrentBid(
+          publicClient,
+          BigInt(auctionId),
+          userAddress
+        );
+        setCurrentBid(currentBid);
+      }
+      console.log("current bid is", currentBid);
+    } catch (error) {
+      console.error("Error fetching current bid from contract: ", error);
+    }
+  };
   useEffect(() => {
     if (currentAuction && publicClient) {
       fetchBidsFromContract();
+      fetchCurrentBid();
     }
   }, [fetchBidsFromContract]);
 
-  // Callback to refetch bids after successful bid placement
-  const handleBidPlaced = useCallback(
-    async (newBid: Bid) => {
-      // Add the new bid optimistically for immediate UI feedback
-      // setBids((prevBids) => [newBid, ...prevBids]);
-
-      // Refetch from blockchain after a short delay to get the real data
-      setTimeout(() => {
-        fetchBidsFromContract();
-      }, 2000);
-    },
-    [fetchBidsFromContract]
-  );
 
   return (
     <motion.div
@@ -93,9 +103,12 @@ export function EnglishDetail({
           <div>
             <p className="text-sm text-muted-foreground mb-1">Asset</p>
             <p className="text-3xl font-bold">
-              {BigInt(currentAuction.auctionType) === BigInt(1) 
-                  ? Number(formatEther(currentAuction.auctionedTokenIdOrAmount)).toFixed(4)
-                  : `#${currentAuction.auctionedTokenIdOrAmount.toString()}`}{" "}{currentAuction.auctionedTokenName || "Item"}
+              {BigInt(currentAuction.auctionType) === BigInt(1)
+                ? Number(
+                    formatEther(currentAuction.auctionedTokenIdOrAmount)
+                  ).toFixed(4)
+                : `#${currentAuction.auctionedTokenIdOrAmount.toString()}`}{" "}
+              {currentAuction.auctionedTokenName || "Item"}
             </p>
           </div>
 
@@ -112,6 +125,26 @@ export function EnglishDetail({
             />
           </div>
         </div>
+
+        {/* Add current bid display */}
+        {isConnected && (
+          <div className="mb-4 p-4 border rounded-lg bg-muted/30">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between w-full">
+                <p className="text-sm text-muted-foreground mb-1">
+                  Your Current Bid
+                </p>
+                <p className="text-xl font-semibold">
+                  {Number(currentBid) > 0
+                    ? `${Number(formatEther(currentBid)).toFixed(4)} ${
+                        currentAuction.biddingTokenName || "ETH"
+                      }`
+                    : "No active bid"}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {Date.now() < Number(currentAuction.deadline) * 1000 && (
           <BidForm auction={currentAuction} />

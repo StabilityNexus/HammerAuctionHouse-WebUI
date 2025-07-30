@@ -39,7 +39,7 @@ export function VickreyDetail({
       const auctionService = getAuctionService(currentAuction.protocol);
       const currentBlock = await publicClient.getBlockNumber();
       const fromBlock =
-        currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
+        currentBlock > BigInt(10000000) ? currentBlock - BigInt(10000000) : BigInt(0);
       const bidHistory = await auctionService.getBidHistory(
         publicClient,
         BigInt(auctionId),
