@@ -2,8 +2,8 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Step1Form } from "./create-steps/step1Form";
-import { Step2Form } from "./create-steps/step2Form";
 import { Step3Form } from "./create-steps/step3Form";
+import { Step2Form } from "./create-steps/step2Form";
 import { Step4Form } from "./create-steps/step4Form";
 interface AuctionCreationFormProps {
   currentStep: number;

@@ -4,8 +4,6 @@ import { motion } from "framer-motion";
 import { Bid, AuctionType } from "@/lib/mock-data";
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, DollarSign } from "lucide-react";
-import { formatEther } from "viem";
 
 interface BidHistoryProps {
   bids: Bid[];

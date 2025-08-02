@@ -55,6 +55,11 @@ export function LinearDetail({
                   : "ended"
               }
             />
+            {Date.now() >= Number(currentAuction.deadline) * 1000 && (
+                <p className="text-sm font-medium text-muted-foreground">
+                    {currentAuction.isClaimed ? "Asset has been claimed" : "Asset has not been claimed yet"}
+                </p>
+            )}
           </div>
         </div>
 

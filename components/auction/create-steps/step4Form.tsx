@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
+import { getTokenName } from "@/lib/auction-service";
 import { formatDuration, getDurationInSeconds } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { usePublicClient } from "wagmi";
 
 interface Step4Form {
   currentStep: number;
@@ -28,6 +30,27 @@ export function Step4Form({
 }: Step4Form) {
   const auctionType = formData.type;
   const tokenType = formData.auctionType;
+  const biddingTokenAddress = formData.biddingTokenAddress;
+  const auctionedTokenAddress = formData.auctionedTokenAddress;
+    const [bidTokenSymbol,setBidTokenSymbol] = useState("");
+    const [auctionedTokenSymbol,setAuctionedTokenSymbol] = useState("");
+    const client = usePublicClient();
+    const fetchBiddingTokenSymbol = async()=>{
+      if(!client) return;
+      try {
+        const bidsymbol = await getTokenName(client,biddingTokenAddress);
+        setBidTokenSymbol(bidsymbol);
+        const auctionedSymbol = await getTokenName(client,auctionedTokenAddress);
+        setAuctionedTokenSymbol(auctionedSymbol);
+      } catch (error) {
+        console.error("Error occured while fetching token symbol: ",error);
+      }
+    }
+  
+    useEffect(()=>{
+      fetchBiddingTokenSymbol();
+    },[client]);
+  
 
   // Duration
   let durationLabel = "-";
@@ -69,9 +92,9 @@ export function Step4Form({
           {auctionType === "english" || auctionType === "all-pay" ? (
             <>
               <div className="text-muted-foreground">Start Price</div>
-              <div className="font-medium">{formData.startPrice} ETH</div>
+              <div className="font-medium">{formData.startPrice} {bidTokenSymbol}</div>
               <div className="text-muted-foreground">Min Bid Increment</div>
-              <div className="font-medium">{formData.minBidDelta} ETH</div>
+              <div className="font-medium">{formData.minBidDelta} {bidTokenSymbol}</div>
               <div className="text-muted-foreground">Deadline Extension</div>
               <div className="font-medium">
                 {formData.deadlineExtension} sec
@@ -83,11 +106,11 @@ export function Step4Form({
               <div className="text-muted-foreground">Subtype</div>
               <div className="font-medium capitalize">{formData.subtype}</div>
               <div className="text-muted-foreground">Start Price</div>
-              <div className="font-medium">{formData.startPrice} ETH</div>
+              <div className="font-medium">{formData.startPrice} {bidTokenSymbol}</div>
               {formData.reservePrice && (
                 <>
                   <div className="text-muted-foreground">Reserve Price</div>
-                  <div className="font-medium">{formData.reservePrice} ETH</div>
+                  <div className="font-medium">{formData.reservePrice} {bidTokenSymbol}</div>
                 </>
               )}
               {(formData.subtype === "exponential" ||
@@ -103,7 +126,7 @@ export function Step4Form({
             <>
               <div className="text-muted-foreground">Minimum Bid</div>
               <div className="font-medium">
-                {formData.minBid}
+                {formData.minBid} {bidTokenSymbol}
               </div>
               <div className="text-muted-foreground">Commit Period</div>
               <div className="font-medium">
@@ -139,7 +162,7 @@ export function Step4Form({
           {tokenType === "ERC20" && (
             <>
               <div className="text-muted-foreground">ERC20 Token Amount</div>
-              <div className="font-medium">{formData.tokenAmount}</div>
+              <div className="font-medium">{formData.tokenAmount} {auctionedTokenSymbol}</div>
             </>
           )}
         </div>

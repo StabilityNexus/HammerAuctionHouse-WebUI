@@ -347,7 +347,8 @@ export function BidForm({ auction }: BidFormProps) {
                   Raise Bid Amount
                 </label>
                 <span className="text-xs text-muted-foreground">
-                  Min. bid: {minRaise} {auction.biddingTokenName || "ETH"}
+                  {auction.highestBid?"Min. bid": "Min. increment"}
+                  {minRaise} {auction.biddingTokenName || "ETH"}
                 </span>
               </div>
 
@@ -473,7 +474,7 @@ export function BidForm({ auction }: BidFormProps) {
                   )
                 ) : (
                   <>
-                    You are about to place a bid of {bidAmount}{" "}
+                    You are about to raise your current bid by {bidAmount}{" "}
                     {auction.biddingTokenName || "ETH"} on {auction.name}. This
                     action cannot be undone after confirmation.
                   </>

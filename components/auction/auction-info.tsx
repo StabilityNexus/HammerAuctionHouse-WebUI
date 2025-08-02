@@ -76,18 +76,21 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
       ),
     },
     {
-      label: auction.protocol.toLowerCase().includes("dutch")
-        ? "Initial Price"
-        : "Start Price",
-      value: `${
-        auction.startingBid ? Number(auction.startingBid) / 1e18 : 0
-      } ${auction.biddingTokenName || "ETH"}`,
-    },
-    {
       label: "End Time",
       value: format(Number(auction.deadline) * 1000, "PPp"),
     },
   ];
+
+  if (!auction.protocol.toLowerCase().includes("vickrey")) {
+    infoItems.push({
+      label: auction.protocol.toLowerCase().includes("dutch")
+        ? "Initial Price"
+        : "Start Price",
+      value: `${auction.startingBid ? Number(auction.startingBid) / 1e18 : 0} ${
+        auction.biddingTokenName || "ETH"
+      }`,
+    });
+  }
 
   // Add Dutch auction specific information
   if (auction.protocol.toLowerCase().includes("dutch")) {
@@ -131,7 +134,9 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
   ) {
     infoItems.push({
       label: "Minimum Bid Increment",
-      value: `${Number(auction.minBidDelta) / 1e18} ${auction.biddingTokenName || "ETH"}`,
+      value: `${Number(auction.minBidDelta) / 1e18} ${
+        auction.biddingTokenName || "ETH"
+      }`,
       tooltip:
         "The minimum amount by which each new bid must exceed the current highest bid",
     });

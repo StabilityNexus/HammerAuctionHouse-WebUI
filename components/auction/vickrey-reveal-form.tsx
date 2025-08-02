@@ -106,7 +106,7 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
       const vickreyService = getAuctionService("Vickrey");
       const bidAmountWei = BigInt(Math.floor(parseFloat(bidAmount) * 1e18));
       
-      await vickreyService.revealBid(
+      await vickreyService.revealBid!(
         writeContract,
         auctionId,
         bidAmountWei,

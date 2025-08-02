@@ -223,7 +223,7 @@ export default function Home() {
                         Digital Masterpiece #{i}
                       </h3>
                       <p className="text-white/90 text-sm">
-                        Current bid: {1 + i * 0.5} ETH
+                        Current bid: {1 + i * 0.5}
                       </p>
                     </div>
                   </div>

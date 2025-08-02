@@ -176,6 +176,13 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
         </div>
       )}
 
+      <WinnerBanner
+        auction={currentAuction}
+        userAddress={userAddress}
+        onWithdraw={handleWithdrawItem}
+        isWithdrawing={isWithdrawingItem}
+      />
+
       <div className="mb-6">
         <Button variant="ghost" size="sm" asChild className="group">
           <Link href="/auctions" className="flex items-center">
@@ -215,10 +222,10 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
           </motion.div>
           <div className="mt-4 max-h-40 overflow-y-auto pr-2">
             <h3 className="font-semibold">Description</h3>
-            <p className="text-muted-foreground mt-1">
+            <div className="text-muted-foreground mt-1">
               <Separator />
               {currentAuction.description}
-            </p>
+            </div>
           </div>
           {/* Withdrawal Buttons */}
           {isConnected && (
@@ -243,31 +250,6 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
                     {isWithdrawingFunds ? "Withdrawing..." : "Withdraw Funds"}
                   </Button>
                 )}
-
-              {/* Withdraw Item Button - Only for winner after auction ends */}
-              {!currentAuction.isClaimed &&
-                (() => {
-                  const auctionEnded =
-                    Date.now() >= Number(currentAuction.deadline) * 1000;
-                  const highestBidder = currentAuction?.winner;
-                  const isWinner =
-                    highestBidder &&
-                    userAddress?.toLowerCase() === highestBidder.toLowerCase();
-                  return (
-                    auctionEnded &&
-                    isWinner && (
-                      <Button
-                        onClick={handleWithdrawItem}
-                        disabled={isWithdrawingItem}
-                        className="w-full flex items-center justify-center gap-2"
-                        variant="outline"
-                      >
-                        <Package className="h-4 w-4" />
-                        {isWithdrawingItem ? "Withdrawing..." : "Withdraw Item"}
-                      </Button>
-                    )
-                  );
-                })()}
             </div>
           )}
         </div>
@@ -322,6 +304,101 @@ function Badge({ status, type }: { status: string; type: string }) {
     <div className={`px-3 py-1.5 rounded-lg font-medium text-sm ${bgColor}`}>
       {status.charAt(0).toUpperCase() + status.slice(1)} •{" "}
       {type.charAt(0).toUpperCase() + type.slice(1)}
+    </div>
+  );
+}
+
+// Add this component before the main AuctionDetail component
+function WinnerBanner({
+  auction,
+  userAddress,
+  onWithdraw,
+  isWithdrawing,
+}: {
+  auction: Auction;
+  userAddress?: string;
+  onWithdraw: () => void;
+  isWithdrawing: boolean;
+}) {
+  if (Date.now() < Number(auction.deadline) * 1000) return null;
+
+  const isWinner = userAddress?.toLowerCase() === auction.winner?.toLowerCase();
+
+  if(userAddress?.toLowerCase() === auction.auctioneer.toLowerCase()) {
+    return ;
+  }
+  return (
+    <div className="mb-6">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`p-4 rounded-lg border ${
+          isWinner
+            ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800"
+            : "bg-gray-50 border-gray-200 dark:bg-gray-950/20 dark:border-gray-600"
+        }`}
+      >
+        <div className="flex items-start gap-4 justify-center">
+          <div
+            className={`p-2 rounded-full ${
+              isWinner
+                ? "bg-green-100 dark:bg-green-900/40"
+                : "bg-gray-100 dark:bg-gray-900/40"
+            }`}
+          >
+            {isWinner ? (
+              <Package className="h-5 w-5 text-green-600 dark:text-green-400" />
+            ) : (
+              <Info className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            )}
+          </div>
+          <div className="flex-1">
+            <h3
+              className={`font-semibold ${
+                isWinner
+                  ? "text-green-800 dark:text-green-200"
+                  : "text-gray-800 dark:text-gray-200"
+              }`}
+            >
+              {isWinner ? "Congratulations! You won the auction!" : "Auction Ended"}
+            </h3>
+            <p
+              className={`mt-1 text-sm ${
+                isWinner
+                  ? "text-green-700 dark:text-green-300"
+                  : "text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              {isWinner
+                ? auction.isClaimed
+                  ? "You have successfully claimed this item."
+                  : "You can now withdraw your won item!"
+                : "Unfortunately, you didn't win this auction. Check out other exciting auctions!"}
+            </p>
+          </div>
+          {isWinner && !auction.isClaimed ? (
+            <Button
+              onClick={onWithdraw}
+              disabled={isWithdrawing}
+              className="shrink-0"
+              variant="outline"
+            >
+              <Package className="h-4 w-4 mr-2" />
+              {isWithdrawing ? "Withdrawing..." : "Withdraw Item"}
+            </Button>
+          ) : !isWinner && (
+            <Button
+              asChild
+              className="shrink-0"
+              variant="outline"
+            >
+              <Link href="/auctions">
+                Browse More Auctions
+              </Link>
+            </Button>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }

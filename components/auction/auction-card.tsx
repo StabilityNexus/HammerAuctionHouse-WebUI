@@ -20,8 +20,6 @@ import {
 } from "@/lib/storage";
 import { useAccount, usePublicClient } from "wagmi";
 import { etherUnits, formatEther } from "viem";
-import { getTokenName } from "@/lib/auction-service";
-import { add } from "lodash";
 
 interface AuctionCardProps {
   auction: Auction;
