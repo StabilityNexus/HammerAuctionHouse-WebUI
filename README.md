@@ -2,14 +2,10 @@
 <div name="readme-top"></div>
 
 <!-- Organization Logo -->
-<div align="center">
+<div align="center" style="display: flex; align-items: center; justify-content: center; gap: 16px;">
   <img alt="Stability Nexus" src="public/stability.svg" width="175">
-    &nbsp;
-    &nbsp;
-    <img src="public/cross.svg" style="filter: invert(1);" width="30" height="175" />
-    &nbsp;
-    &nbsp;
-    <img src="public/logo.svg" style="filter: invert(1);" width="175" />
+  <img src="public/cross.svg" width="30" style="margin: 0;" />
+  <img src="public/logo-white.svg" width="175" />
 </div>
 
 &nbsp;
@@ -17,7 +13,7 @@
 <!-- Organization Name -->
 <div align="center">
 
-[![Static Badge](https://img.shields.io/badge/Stability_Nexus-/HAH-228B22?style=for-the-badge&labelColor=FFC517)](https://bene-evm.stability.nexus/)
+[![Static Badge](https://img.shields.io/badge/Stability_Nexus-/HAH-228B22?style=for-the-badge&labelColor=FFC517)](https://www.dummy-url.com/)
 
 <!-- Correct deployed url to be added -->
 
