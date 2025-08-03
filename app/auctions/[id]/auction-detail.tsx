@@ -380,7 +380,7 @@ function WinnerBanner({
             <Button
               onClick={onWithdraw}
               disabled={isWithdrawing}
-              className="shrink-0 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white"
+              className="shrink-0 dark:bg-white bg-black dark:text-black text-white hover:bg-gray-800 dark:hover:bg-gray-100"
             >
               <Package className="h-4 w-4 mr-2" />
               {isWithdrawing ? "Withdrawing..." : "Withdraw Item"}
