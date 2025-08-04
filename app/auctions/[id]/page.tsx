@@ -1,14 +1,19 @@
-import { getAuctionById, mockAuctions } from "@/lib/mock-data";
 import { AuctionDetail } from "./auction-detail";
+import { decode } from "@/lib/storage";
+import { notFound } from "next/navigation";
 
-// This needs to be outside the client component
-export function generateStaticParams() {
-  return mockAuctions.map((auction) => ({
-    id: auction.id.toString(),
-  }));
-}
+export default async function AuctionPage({ params }: { params: Promise<{ id: string }> }) {
+  try {
+    const resolvedParams = await params;
+    const auctionId = resolvedParams.id;
+    const decoded = decode(auctionId);
+    
+    if (!decoded || !decoded.id || isNaN(Number(decoded.id))) {
+      notFound();
+    }
 
-export default async function AuctionPage({ params }: { params: { id: string } }) {
-  const auction = getAuctionById(params.id);
-  return <AuctionDetail auction={auction} />;
+    return <AuctionDetail protocol={decoded.protocol} id={BigInt(decoded.id)} />;
+  } catch (error) {
+    notFound();
+  }
 }

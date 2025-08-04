@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { SiGithub,SiX,SiDiscord,SiTelegram } from "@icons-pack/react-simple-icons";
 
 interface SocialLink {
@@ -51,9 +52,14 @@ export function Footer({
 
   const defaultLogo = (
     <div className="relative">
-      {/* Hexagon background */}
       <div className="w-15 h-15">
-        <img src="stable.svg" alt="Stablitiy Nexus" />
+        <Image
+          src="/stable.svg"
+          alt="Stability Nexus"
+          width={80}
+          height={80}
+          priority
+        />
       </div>
       {/* Subtle glow effect */}
       <div className="absolute inset-0 w-10 h-10 bg-primary/20 transform rotate-12 rounded-lg blur-md -z-10"></div>
@@ -73,11 +79,11 @@ export function Footer({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_50%)]"></div>
       </div>
       
-      <div className="container relative py-8 md:py-12">
+      <div className="w-full relative py-2 md:py-2 px-4 md:px-8">
         {/* Main footer content */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
           {/* Logo and branding section */}
-          <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="flex flex-col md:flex-row items-center gap-3">
             {/* Logo */}
             <div className="flex-shrink-0">
               {activeLogo}
@@ -86,7 +92,7 @@ export function Footer({
             {/* Branding text */}
             <div className="text-center md:text-left">
               <p className="text-lg font-bold text-foreground">
-                Made by the Stable Order
+                The Stable Order
               </p>
               <p className="text-sm text-muted-foreground">
                 Decentralized auction platform
@@ -128,7 +134,7 @@ export function Footer({
         </div>
         
         {/* Bottom section - Copyright */}
-        <div className="pt-6 flex justify-center border-t border-border">
+        <div className="pt-3 flex justify-center border-t border-border">
           <p className="text-xs text-muted-foreground text-center md:text-left">
               © {currentYear} Stability Nexus. All rights reserved.
             </p>

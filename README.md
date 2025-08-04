@@ -1,32 +1,135 @@
-# **Hammer Auction House**
+<!-- Don't delete it -->
+<div name="readme-top"></div>
 
-## **Demo**  
+<!-- Organization Logo -->
+<div align="center" style="display: flex; align-items: center; justify-content: center; gap: 16px;">
+  <img alt="Stability Nexus" src="public/stability.svg" width="175">
+  <img src="public/cross.svg" width="30" style="margin: 0;" />
+  <img src="public/logo-white.svg" width="175" />
+</div>
 
-<!-- Demo to be added -->
-https://github.com/user-attachments/assets/0be6d3c4-51b3-47ca-8e5f-128a74b39007
+&nbsp;
 
-## **About**  
+<!-- Organization Name -->
+<div align="center">
 
-Hammer Auction House is a **decentralized auction platform** built entirely on the **Ethereum blockchain**. It enables users to **list, bid, and win NFTs and ERC-20 tokens** through various auction mechanisms, ensuring a **transparent, secure, and automated** experience without intermediaries.  
+[![Static Badge](https://img.shields.io/badge/Stability_Nexus-/HAH-228B22?style=for-the-badge&labelColor=FFC517)](https://www.dummy-url.com/)
 
+<!-- Correct deployed url to be added -->
 
-##  **Key Features**  
-✅ **All-Pay Auctions** – Every bid is locked, and the highest bidder wins while others lose their bids.  
-✅ **Smart Contract Security** – Trustless execution with on-chain validation and verifiable transactions.  
-✅ **NFT & Token Trading** – Users can auction ERC-721 NFTs or ERC-20 tokens seamlessly.  
+</div>
 
+<!-- Organization/Project Social Handles -->
+<p align="center">
+<!-- Telegram -->
+<a href="https://t.me/StabilityNexus">
+<img src="https://img.shields.io/badge/Telegram-black?style=flat&logo=telegram&logoColor=white&logoSize=auto&color=24A1DE" alt="Telegram Badge"/></a>
+&nbsp;&nbsp;
+<!-- X (formerly Twitter) -->
+<a href="https://x.com/StabilityNexus">
+<img src="https://img.shields.io/twitter/follow/StabilityNexus" alt="X (formerly Twitter) Badge"/></a>
+&nbsp;&nbsp;
+<!-- Discord -->
+<a href="https://discord.gg/YzDKeEfWtS">
+<img src="https://img.shields.io/discord/995968619034984528?style=flat&logo=discord&logoColor=white&logoSize=auto&label=Discord&labelColor=5865F2&color=57F287" alt="Discord Badge"/></a>
+&nbsp;&nbsp;
+<!-- Medium -->
+<a href="https://news.stability.nexus/">
+  <img src="https://img.shields.io/badge/Medium-black?style=flat&logo=medium&logoColor=black&logoSize=auto&color=white" alt="Medium Badge"></a>
+&nbsp;&nbsp;
+<!-- LinkedIn -->
+<a href="https://linkedin.com/company/stability-nexus">
+  <img src="https://img.shields.io/badge/LinkedIn-black?style=flat&logo=LinkedIn&logoColor=white&logoSize=auto&color=0A66C2" alt="LinkedIn Badge"></a>
+&nbsp;&nbsp;
+<!-- Youtube -->
+<a href="https://www.youtube.com/@StabilityNexus">
+  <img src="https://img.shields.io/youtube/channel/subscribers/UCZOG4YhFQdlGaLugr_e5BKw?style=flat&logo=youtube&logoColor=white&logoSize=auto&labelColor=FF0000&color=FF0000" alt="Youtube Badge"></a>
+</p>
 
-<!-- Project Description (Start from here) -->
+---
 
-## **Getting Started**
+<div align="center">
+<h1>A Modular Web3 Auction Platform with Multi-Protocol Support</h1>
+</div>
 
-First install the required packages by running:
+## Table of Contents
+
+- [About](#about)
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Smart Contracts](#smart-contracts)
+- [Getting Started](#getting-started)
+- [Contributing](#contributing)
+
+## About
+
+<!-- Correct url to be added -->
+
+[Hammer Auction House](https://www.dummy-url.com) is a decentralized auction platform that redefines digital asset trading on blockchain. Users can participate in a variety of auction types with full transparency and security provided by smart contracts.
+
+---
+
+## Key Features
+
+- **Multiple Auction Types:** Supports English, Dutch, All-Pay and Vickrey auctions for both NFTs and ERC-20 tokens.
+- **Smart Contract Security:** Trustless execution with on-chain validation and verifiable, immutable transactions.
+- **NFT & Token Trading:** List, bid on, and win ERC-721 NFTs and ERC-20 tokens.
+- **Wallet Integration:** Seamless MetaMask and Web3 wallet support.
+- **Transparent History:** Fully on-chain transaction records and bid history.
+- **Extensible Services:** Modular auction services interface to support future auction mechanisms.
+
+---
+
+## Tech Stack
+
+**Frontend**
+
+- Next.js 14+ (React)
+- TypeScript
+- TailwindCSS
+- shadcn/ui
+
+**Blockchain**
+
+- Wagmi
+- Solidity Smart Contracts
+- Ethers.js
+- Rainbow-Kit Wallet Integration
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm/yarn/pnpm
+- MetaMask or any other web3 wallet browser extension
+
+### Installation
+
+#### 1. Clone the Repository
+
+```bash
+git clone https://github.com/StabilityNexus/HammerAuctionHouse-WebUI.git
+cd HammerAuctionHouse-WebUI
+```
+
+#### 2. Install Dependencies
+
+Using your preferred package manager:
 
 ```bash
 npm install
+# or
+yarn install
+# or
+pnpm install
 ```
 
-Then, run the development server:
+#### 3. Run the Development Server
+
+Start the app locally:
 
 ```bash
 npm run dev
@@ -36,55 +139,37 @@ yarn dev
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+#### 4. Open your Browser
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Navigate to [http://localhost:3000](http://localhost:3000) to see the application.
 
-## **Project Technologies**
+---
 
-Technologies used:
+## Smart Contracts
 
-- Nextjs
-- TailwindCSS
-- shadcn UI Library
-  <br />
+Smart contract code powering auction logic can be found at
+**[HammerAuctionHouse-Solidity](https://github.com/Stability-Nexus/HammerAuctionHouse-Solidity)**.
 
-This project uses TailwindCSS along with shadcn UI library.
-The library is installed and configured, you just need to start using the components. <br />
+Contracts implement support for English, Dutch, All-Pay and Vickrey auction variants. See the Solidity repo for deployment,and method references.
 
-### **shadcn UI Library Usage** <br />
+---
 
-Visit [here](https://ui.shadcn.com/) to checkout the UI Library. <br />
+## Contributing
 
-- Run the command in the Installation section of a component to install it.
-- Read the Usage section to implement the component.
+We welcome contributions of all kinds! To contribute:
 
-## **Commands to run before pushing code**
+1. Fork the repository and create your feature branch (`git checkout -b feature/AmazingFeature`).
+2. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+3. Run the development workflow commands to ensure code quality:
+   - `npm run format:write`
+   - `npm run lint:fix`
+   - `npm run typecheck`
+4. Push your branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request for review.
 
-After you commit all your changes, run these commands and commit the changes for these commands before pushing the code to the repository.
+If you encounter bugs, need help, or have feature requests:
 
-### **First Command**
+- Please open an issue in this repository providing detailed information.
+- Describe the problem clearly and include any relevant logs or screenshots.
 
-```bash
-npm run format:write
-```
-
-This command formats the code properly with proper indentation and spacing so that the code is easier to read.
-
-### **Second Command**
-
-```bash
-npm run lint:fix
-```
-
-This command displays any errors in the code. After running this command, you will get a list of errors and warnings. <br />
-You can ignore the warnings, but if you get any error, it will provide the suggested fix for that error. <br />
-Then, fix the error and push your code finally!
-
-### **Third Command**
-
-```bash
-npm run typecheck
-```
-
-This command displays any issues (if present) within the code.
+We appreciate your feedback and contributions!

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="24" height="24">
+    <!-- X Symbol -->
+    <path d="M5 0L20 15L35 0L40 5L25 20L40 35L35 40L20 25L5 40L0 35L15 20L0 5Z" 
+          fill="#FFFFFF" 
+          stroke="#FFFFFF" 
+          stroke-width="2"/>
+</svg>
