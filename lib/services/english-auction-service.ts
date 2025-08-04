@@ -28,11 +28,10 @@ export class EnglishAuctionService implements IAuctionService {
     }
   }
 
-  async getLastNAuctions(n: number = 10, publicClient?: any): Promise<any[]> {
+  async getLastNAuctions(client?:any,n: number = 10): Promise<any[]> {
     try {
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) {
-        console.log("No auctions found - counter is 0");
         return [];
       }
       const start = counter > BigInt(n) ? counter - BigInt(n) : BigInt(0);
@@ -50,11 +49,11 @@ export class EnglishAuctionService implements IAuctionService {
       const mappedAuctions = await Promise.all(
         results
           .filter((result: any) => !result.error && result.result)
-          .map(async (result: any) => await this.mapAuctionData(result.result, publicClient))
+          .map(async (result: any) => await this.mapAuctionData(client, result.result))
+          .filter((auction: any) => auction !== null)
+          .reverse()
       );
-      return mappedAuctions
-        .filter((auction: any) => auction !== null)
-        .reverse(); // Show newest first
+      return mappedAuctions;
     } catch (error) {
       console.error("Error fetching last N auctions:", error);
       throw error;
@@ -201,7 +200,7 @@ export class EnglishAuctionService implements IAuctionService {
     }
   }
 
-  private async mapAuctionData(auctionData: any, publicClient?: any): Promise<any> {
+  private async mapAuctionData(client: any,auctionData: any): Promise<any> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 17) {
       console.warn("Invalid auction data:", auctionData);
       return null;
@@ -210,10 +209,10 @@ export class EnglishAuctionService implements IAuctionService {
     let auctionedTokenName = "Unknown Token";
     let biddingTokenName = "Unknown Token";
     
-    if (publicClient) {
+    if (client) {
       try {
-        auctionedTokenName = await getTokenName(publicClient, auctionData[6]);
-        biddingTokenName = await getTokenName(publicClient, auctionData[8]);
+        auctionedTokenName = await getTokenName(client, auctionData[6]);
+        biddingTokenName = await getTokenName(client, auctionData[8]);
       } catch (error) {
         console.warn("Error fetching token names:", error);
       }
@@ -245,16 +244,6 @@ export class EnglishAuctionService implements IAuctionService {
       bidRevealEnd: BigInt(0),
       winningBid: BigInt(0),
     };
-  }
-
-  async getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]> {
-    try {
-      const auctions = await this.getLastNAuctions(50, client); // Get last 50 auctions
-      return auctions;
-    } catch (error) {
-      console.error("Error fetching all auctions:", error);
-      throw error;
-    }
   }
 
   async getBidHistory(
@@ -319,16 +308,15 @@ export class EnglishAuctionService implements IAuctionService {
         })
         return result;
       } catch (error) {
-        console.log("Error occured while fetching user's cureent bid: ",error);
+        console.error("Error occured while fetching user's cureent bid: ",error);
         throw error;
       }
     }
-
+//TODO: For Pagination
   async getIndexedAuctions(client: any,start: bigint,end: bigint): Promise<any[]>{
       try{
         const counter = await this.getAuctionCounter();
         if (counter === BigInt(0)) {
-          console.log("No auctions found - counter is 0");
           return [];
         }
         if(start < counter){

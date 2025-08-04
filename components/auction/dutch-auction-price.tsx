@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { usePublicClient, useWalletClient } from 'wagmi';
+import { useWalletClient } from 'wagmi';
 import { getAuctionService } from '@/lib/auction-service';
 import { Button } from '../ui/button';
-import { parseEther, formatEther } from 'viem';
+import { formatEther } from 'viem';
 import { AuctionType } from '@/lib/mock-data';
 
 interface DutchAuctionPriceProps {
@@ -15,7 +15,6 @@ interface DutchAuctionPriceProps {
 export function DutchAuctionPrice({ auctionId, isEnded, onBuyout, protocol = "Linear" }: DutchAuctionPriceProps) {
   const [currentPrice, setCurrentPrice] = useState<bigint>(BigInt(0));
   const [isLoading, setIsLoading] = useState(false);
-  const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
 
   // Check if this is a reverse Dutch auction
@@ -30,10 +29,9 @@ export function DutchAuctionPrice({ auctionId, isEnded, onBuyout, protocol = "Li
       }
       
       try {
-        const dutchService = getAuctionService(protocol);
+        const dutchService = await getAuctionService(protocol);
         if (dutchService.getCurrentPrice) {
           const price = await dutchService.getCurrentPrice(auctionId);
-          console.log('Current price fetched:', price);
           setCurrentPrice(price);
         }
       } catch (error) {
@@ -64,7 +62,7 @@ export function DutchAuctionPrice({ auctionId, isEnded, onBuyout, protocol = "Li
     
     setIsLoading(true);
     try {
-      const dutchService = getAuctionService(protocol);
+      const dutchService = await getAuctionService(protocol);
       await dutchService.withdrawItem(walletClient, auctionId);
       onBuyout();
     } catch (error) {

@@ -27,7 +27,7 @@ export default function Dashboard() {
       const auctions = loadList("CreatedAuctions");
       const fetchedAuctions = await Promise.all(
         auctions.map(async (auctionData) => {
-          const service = getAuctionService(decode(auctionData).protocol);
+          const service = await getAuctionService(decode(auctionData).protocol);
           const auction = await service.getAuction(BigInt(decode(auctionData).id),publicClient);
           if(auction.auctioneer==emptyAddress){return;}
           return auction;
@@ -44,7 +44,7 @@ export default function Dashboard() {
       const auctions = loadList("Bids");
       const fetchedAuctions = await Promise.all(
         auctions.map(async (auctionData) => {
-          const service = getAuctionService(decode(auctionData).protocol);
+          const service = await getAuctionService(decode(auctionData).protocol);
           const auction = await service.getAuction(BigInt(decode(auctionData).id),publicClient);
           if(auction.auctioneer==emptyAddress){return;}
           return auction;
@@ -61,7 +61,7 @@ export default function Dashboard() {
       const auctions = loadList("WishList");
       const fetchedAuctions = await Promise.all(
         auctions.map(async (auctionData) => {
-          const service = getAuctionService(decode(auctionData).protocol);
+          const service = await getAuctionService(decode(auctionData).protocol);
           const auction = await service.getAuction(BigInt(decode(auctionData).id),publicClient);
           if(auction.auctioneer==emptyAddress){return;}
           return auction;

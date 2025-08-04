@@ -62,8 +62,6 @@ export function Step4Form({
     durationLabel = formatDuration(Number(formData.duration));
   }
 
-  console.log("Reviewing auction data:", formData);
-
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-6">

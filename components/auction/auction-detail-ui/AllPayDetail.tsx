@@ -31,11 +31,7 @@ export function AllPayDetail(
     if (!publicClient) return;
     setIsLoadingBids(true);
     try {
-      console.log(
-        `Fetching ${currentAuction.protocol} auction bids for ID:`,
-        auctionId
-      );
-      const auctionService = getAuctionService(currentAuction.protocol);
+      const auctionService = await getAuctionService(currentAuction.protocol);
       const currentBlock = await publicClient.getBlockNumber();
       const fromBlock =
         currentBlock > BigInt(10000000) ? currentBlock - BigInt(10000000) : BigInt(0);
@@ -45,7 +41,6 @@ export function AllPayDetail(
         fromBlock,
         currentBlock
       );
-      console.log("Fetched bid history:", bidHistory);
       setBids(bidHistory);
     } catch (err) {
       console.error(
@@ -60,13 +55,11 @@ export function AllPayDetail(
     const fetchCurrentBid = async () => {
       if(!publicClient || !userAddress) return;
       try {
-        const auctionService = getAuctionService("AllPay");
+        const auctionService = await getAuctionService("AllPay");
         if (auctionService && auctionService.getCurrentBid) {
           const currentBid = await auctionService.getCurrentBid(publicClient,BigInt(auctionId), userAddress);
           setCurrentBid(currentBid);
         }
-        console.log("current bid is",currentBid);
-
       } catch (error) {
         console.error("Error fetching current bid from contract: ",error);
       }

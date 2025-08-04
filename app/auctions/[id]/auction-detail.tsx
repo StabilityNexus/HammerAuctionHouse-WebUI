@@ -6,7 +6,7 @@ import { ArrowLeft, Info, Wallet, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { Auction, AuctionType, Bid } from "@/lib/mock-data";
+import { Auction, AuctionType } from "@/lib/mock-data";
 import { getAuctionService } from "@/lib/auction-service";
 import { usePublicClient, useAccount, useWriteContract } from "wagmi";
 import { toast } from "sonner";
@@ -53,7 +53,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const auctionService = getAuctionService(protocol);
+      const auctionService = await getAuctionService(protocol);
       const auctionData = await auctionService.getAuction(
         BigInt(id),
         publicClient
@@ -82,7 +82,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     }
     try {
       setIsWithdrawingFunds(true);
-      const auctionService = getAuctionService(protocol);
+      const auctionService = await getAuctionService(protocol);
       await auctionService.withdrawFunds(writeContract, BigInt(id));
       toast.success("Withdrawal transaction submitted!");
     } catch (error) {
@@ -113,7 +113,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     }
     try {
       setIsWithdrawingItem(true);
-      const auctionService = getAuctionService(protocol);
+      const auctionService = await getAuctionService(protocol);
       await auctionService.withdrawItem(writeContract, BigInt(id));
       toast.success("Item withdrawal transaction submitted!");
     } catch (error) {

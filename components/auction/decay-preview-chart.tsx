@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   LineChart,
   Line,
@@ -10,7 +10,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 import { HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -57,9 +56,7 @@ export function DecayPreviewChart({
     const data = [];
     const steps = 50;
     const safeReserve = reservedPrice || 0;
-    console.log(decayFactor)
     decayFactor= (decayFactor * 1.0);
-    console.log(decayFactor)
 
     for (let i = 0; i <= steps; i++) {
       const t = (i / steps) * duration;

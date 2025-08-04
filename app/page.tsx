@@ -10,12 +10,6 @@ import {
   Globe,
   TrendingUp,
   Lock,
-  Search,
-  Wallet,
-  BadgeCheck,
-  Award,
-  ShieldCheck,
-  Settings,
   ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -30,11 +30,7 @@ export function EnglishDetail({
     if (!publicClient) return;
     setIsLoadingBids(true);
     try {
-      console.log(
-        `Fetching ${currentAuction.protocol} auction bids for ID:`,
-        auctionId
-      );
-      const auctionService = getAuctionService(currentAuction.protocol);
+      const auctionService = await getAuctionService(currentAuction.protocol);
       const currentBlock = await publicClient.getBlockNumber();
       const fromBlock =
         currentBlock > BigInt(10000000)
@@ -46,7 +42,6 @@ export function EnglishDetail({
         fromBlock,
         currentBlock
       );
-      console.log("Fetched bid history:", bidHistory);
       setBids(bidHistory);
     } catch (err) {
       console.error(
@@ -61,7 +56,7 @@ export function EnglishDetail({
   const fetchCurrentBid = async () => {
     if (!publicClient || !userAddress) return;
     try {
-      const auctionService = getAuctionService("English");
+      const auctionService = await getAuctionService("English");
       if (auctionService && auctionService.getCurrentBid) {
         const currentBid = await auctionService.getCurrentBid(
           publicClient,
@@ -70,7 +65,6 @@ export function EnglishDetail({
         );
         setCurrentBid(currentBid);
       }
-      console.log("current bid is", currentBid);
     } catch (error) {
       console.error("Error fetching current bid from contract: ", error);
     }

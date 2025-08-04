@@ -7,7 +7,6 @@ import { parseEther } from "ethers";
 import { generateCode } from "../storage";
 import { ALLPAY_ABI } from "../contract-data";
 import { AUCTION_CONTRACTS } from "../contract-data";
-import { useReadContract } from "wagmi";
 
 export class AllPayAuctionService implements IAuctionService {
   contractAddress: Address = AUCTION_CONTRACTS.AllPay as `0x${string}`;
@@ -207,11 +206,10 @@ export class AllPayAuctionService implements IAuctionService {
     }
   }
 
-  async getLastNAuctions(n: number = 10,client?:any): Promise<any[]> {
+  async getLastNAuctions(client?:any,n: number = 10): Promise<any[]> {
     try {
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) {
-        console.log("No auctions found - counter is 0");
         return [];
       }
       const start = counter > BigInt(n) ? counter - BigInt(n) : BigInt(0);
@@ -250,7 +248,7 @@ export class AllPayAuctionService implements IAuctionService {
       })
       return result;
     } catch (error) {
-      console.log("Error occured while fetching user's cureent bid: ",error);
+      console.error("Error occured while fetching user's cureent bid: ",error);
       throw error;
     }
   }
@@ -259,7 +257,6 @@ export class AllPayAuctionService implements IAuctionService {
     try{
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) {
-        console.log("No auctions found - counter is 0");
         return [];
       }
       if(start < counter){
@@ -286,16 +283,6 @@ export class AllPayAuctionService implements IAuctionService {
       return mappedAuctions;
     }catch(error){
       console.error("Error fetching indexed auctions:", error);
-      throw error;
-    }
-  }
-
-  async getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]> {
-    try {
-      const auctions = await this.getLastNAuctions(50,client); // Get last 50 auctions
-      return auctions;
-    } catch (error) {
-      console.error("Error fetching all auctions:", error);
       throw error;
     }
   }

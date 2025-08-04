@@ -3,13 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Hammer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
-// import { ConnectButton } from "@/components/ui/wallet-button";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { cn } from "@/lib/utils";
-import { useWriteContract, usePublicClient } from "wagmi";
 
 const navItems = [
 	{ name: "Home", path: "/" },

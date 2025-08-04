@@ -266,7 +266,6 @@ export function Step3Form({
         data.minutes || "0"
       );
     }
-    console.log("Step 2 form submission data:", update);
     updateFormData(update);
     goToNextStep();
   };
@@ -275,8 +274,6 @@ export function Step3Form({
 
   const watchedValues = form_3.watch();
   const dutchSubtype = watchedValues.subtype || formData.subtype || "linear";
-  console.log("Current auction type:", auctionType);
-  console.log("Dutch subtype:", dutchSubtype);
   const dutchStartPrice =
     watchedValues.startPrice || formData.startPrice || "0";
   const dutchReservePrice =

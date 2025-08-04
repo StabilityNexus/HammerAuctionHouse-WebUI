@@ -32,11 +32,7 @@ export function VickreyDetail({
       return;
     setIsLoadingBids(true);
     try {
-      console.log(
-        `Fetching ${currentAuction.protocol} auction bids for ID:`,
-        auctionId
-      );
-      const auctionService = getAuctionService(currentAuction.protocol);
+      const auctionService = await getAuctionService(currentAuction.protocol);
       const currentBlock = await publicClient.getBlockNumber();
       const fromBlock =
         currentBlock > BigInt(10000000)
@@ -48,7 +44,6 @@ export function VickreyDetail({
         fromBlock,
         currentBlock
       );
-      console.log("Fetched bid history:", bidHistory);
       setBids(bidHistory);
     } catch (err) {
       console.error(

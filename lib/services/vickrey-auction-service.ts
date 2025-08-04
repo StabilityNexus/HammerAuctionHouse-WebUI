@@ -9,7 +9,7 @@ import { AUCTION_CONTRACTS, VICKREY_ABI } from "../contract-data";
 export class VickreyAuctionService implements IAuctionService {
   contractAddress: Address = AUCTION_CONTRACTS.Vickrey as `0x${string}`;
 
-  private async mapAuctionData(auctionData: any, publicClient?: any): Promise<any> {
+  private async mapAuctionData(client: any,auctionData: any): Promise<any> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 16) {
       console.warn("Invalid Vickrey auction data:", auctionData, "Expected 16 fields, got:", auctionData?.length);
       return null;
@@ -18,10 +18,10 @@ export class VickreyAuctionService implements IAuctionService {
     let auctionedTokenName = "Unknown Token";
     let biddingTokenName = "Unknown Token";
     
-    if (publicClient) {
+    if (client) {
       try {
-        auctionedTokenName = await getTokenName(publicClient, auctionData[6]);
-        biddingTokenName = await getTokenName(publicClient, auctionData[8]);
+        auctionedTokenName = await getTokenName(client, auctionData[6]);
+        biddingTokenName = await getTokenName(client, auctionData[8]);
       } catch (error) {
         console.warn("Error fetching token names:", error);
       }
@@ -57,7 +57,6 @@ export class VickreyAuctionService implements IAuctionService {
   }
 
   static generateCommitment(bidAmount: bigint, salt: string): `0x${string}` {
-    console.log("Generating commitment with bidAmount:", bidAmount, "and salt:", salt);
     const saltBytes = keccak256(encodePacked(['string'], [salt]));
     return keccak256(encodePacked(['uint256', 'bytes32'], [bidAmount, saltBytes]));
   }
@@ -109,7 +108,7 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async getLastNAuctions(n: number = 10, publicClient?: any): Promise<any[]> {
+  async getLastNAuctions(client?:any,n: number = 10): Promise<any[]> {
     try {
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) return [];
@@ -128,11 +127,11 @@ export class VickreyAuctionService implements IAuctionService {
       const mappedAuctions = await Promise.all(
         results
           .filter((result: any) => !result.error && result.result)
-          .map(async (result: any) => await this.mapAuctionData(result.result, publicClient))
+          .map(async (result: any) => await this.mapAuctionData(client, result.result))
+          .filter((auction: any) => auction !== null)
+          .reverse()
       );
-      return mappedAuctions
-        .filter((auction: any) => auction !== null)
-        .reverse(); // Show newest first
+      return mappedAuctions;
       
     } catch (error) {
       console.error("Error fetching last N Vickrey auctions:", error);
@@ -274,15 +273,6 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]> {
-    try {
-      const auctions = await this.getLastNAuctions(50, client); // Get last 50 auctions
-      return auctions;
-    } catch (error) {
-      console.error("Error fetching all Vickrey auctions:", error);
-      throw error;
-    }
-  }
 
   async getBidHistory(
     client: any,
@@ -300,7 +290,6 @@ export class VickreyAuctionService implements IAuctionService {
         fromBlock: startBlock,
         toBlock: endBlock,
       });
-      console.log("Fetched logs: ",logs)
       const bids = await Promise.all(logs.map(async (log: any, index: number) => {
         const block = await client.getBlock({ blockNumber: log.blockNumber });
         return {
@@ -360,7 +349,6 @@ export class VickreyAuctionService implements IAuctionService {
       try{
         const counter = await this.getAuctionCounter();
         if (counter === BigInt(0)) {
-          console.log("No auctions found - counter is 0");
           return [];
         }
         if(start < counter){

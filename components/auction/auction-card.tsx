@@ -13,11 +13,10 @@ import { cn } from "@/lib/utils";
 import {
   remove,
   append,
-  loadList,
   isPresent,
   decode,
 } from "@/lib/storage";
-import { useAccount, usePublicClient } from "wagmi";
+import { useAccount } from "wagmi";
 import {formatEther } from "viem";
 
 interface AuctionCardProps {
@@ -64,11 +63,8 @@ export function AuctionCard({ auction }: AuctionCardProps) {
     if (!isConnected) return;
     if (isWatched) {
       remove("WishList",auction.protocol, auctionId);
-      console.log("Removed from watchlist:", auctionId);
-      console.log("Current watchlist:", loadList("WishList"));
     } else {
       append("WishList",auction.protocol, auctionId);
-      console.log("Added to watchlist:", auctionId);
     }
     setIsWatched(!isWatched);
   };

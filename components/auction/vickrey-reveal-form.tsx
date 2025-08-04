@@ -9,7 +9,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, AlertCircle, CheckCircle } from "lucide-react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { getAuctionService } from "@/lib/auction-service";
-import { VickreyAuctionService } from "@/lib/services/vickrey-auction-service";
 
 interface VickreyRevealFormProps {
   auctionId: bigint;
@@ -49,9 +48,6 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
 
     const storageKey = `vickrey_commitment_${auctionId}_${address.toLowerCase()}`;
     const stored = localStorage.getItem(storageKey);
-    console.log(stored);
-    console.log(address);
-    console.log(`vickrey_commitment_${auctionId}_${address.toLowerCase()}`);
     if (stored) {
       try {
         const data: CommitmentData = JSON.parse(stored);
@@ -68,7 +64,6 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
   // Handle successful transaction confirmation
   useEffect(() => {
     if (isConfirmed && hash) {
-      console.log("Transaction confirmed:", hash);
       setSuccess(true);
       setIsRevealing(false);
 
@@ -103,7 +98,7 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
     setIsRevealing(true);
 
     try {
-      const vickreyService = getAuctionService("Vickrey");
+      const vickreyService = await getAuctionService("Vickrey");
       const bidAmountWei = BigInt(Math.floor(parseFloat(bidAmount) * 1e18));
       
       await vickreyService.revealBid!(

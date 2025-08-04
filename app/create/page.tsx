@@ -198,9 +198,7 @@ export default function CreateAuction() {
   // Handle transaction confirmation
   useEffect(() => {
     if (isConfirmed) {
-      (async () => {
-        console.log("Transaction confirmed!");
-        
+      (async () => {        
         let auctionType: AuctionType;
         switch (formData.type) {
           case "all-pay":
@@ -226,7 +224,7 @@ export default function CreateAuction() {
             auctionType = "English";
         }
 
-        const auctionService = getAuctionService(auctionType);
+        const auctionService = await getAuctionService(auctionType);
         const lastAuction = await auctionService.getLastNAuctions(1);
         const auctionId = lastAuction.length > 0 ? decode(lastAuction[0].id).id : "";
         if(lastAuction.length > 0 && lastAuction[0].auctioneer === address){
@@ -287,13 +285,11 @@ export default function CreateAuction() {
           auctionType = "English";
       }
 
-      const auctionService = getAuctionService(auctionType);
+      const auctionService = await getAuctionService(auctionType);
 
       // Prepare auction parameters based on type
       const params = transformFormDataToParams(formData, auctionType);
-      console.log("Submitting auction with params:", params);
       await auctionService.createAuction(writeContract, params);
-      console.log("Transaction submitted, waiting for confirmation...");
     } catch (error) {
       console.error("Error creating auction:", error);
       setIsSubmitting(false);
