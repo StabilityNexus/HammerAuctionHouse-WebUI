@@ -1,6 +1,6 @@
 import { Auction, Bid } from "@/lib/mock-data";
-import { motion, AnimatePresence } from "framer-motion";
-import { formatEther, parseEther } from "viem";
+import { motion } from "framer-motion";
+import { formatEther } from "viem";
 import { CountdownTimer } from "../countdown-timer";
 import { BidForm } from "../bid-form";
 import { Info } from "lucide-react";

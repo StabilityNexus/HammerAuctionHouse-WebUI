@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionGrid } from "@/components/auction/auction-grid";
 import { Auction } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
-import { User, PlusCircle, DollarSign, Gavel, TrendingUp } from "lucide-react";
+import { User, PlusCircle} from "lucide-react";
 import Link from "next/link";
 import { useAccount, usePublicClient } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";

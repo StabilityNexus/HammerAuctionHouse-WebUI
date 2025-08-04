@@ -15,11 +15,10 @@ import {
   append,
   loadList,
   isPresent,
-  generateCode,
   decode,
 } from "@/lib/storage";
 import { useAccount, usePublicClient } from "wagmi";
-import { etherUnits, formatEther } from "viem";
+import {formatEther } from "viem";
 
 interface AuctionCardProps {
   auction: Auction;
@@ -29,7 +28,6 @@ export function AuctionCard({ auction }: AuctionCardProps) {
   const { isConnected, address } = useAccount();
   const [isWatched, setIsWatched] = useState(false);
   const auctionId = decode(auction.id).id;
-  const publicClient = usePublicClient();
   useEffect(() => {
     setIsWatched(!!address && isPresent("WishList",auction.protocol, auctionId));
   }, [address, auction]);

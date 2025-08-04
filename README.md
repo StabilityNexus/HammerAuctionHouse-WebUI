@@ -4,7 +4,7 @@
 <!-- Organization Logo -->
 <div align="center" style="display: flex; align-items: center; justify-content: center; gap: 16px;">
   <img alt="Stability Nexus" src="public/stability.svg" width="175">
-  <img src="public/cross.svg" width="30" style="margin: 0;" />
+  <!-- <img src="public/cross.svg" width="30" style="margin: 0;" /> -->
   <img src="public/logo-white.svg" width="175" />
 </div>
 
@@ -49,47 +49,32 @@
 ---
 
 <div align="center">
-<h1>A Modular Web3 Auction Platform with Multi-Protocol Support</h1>
+<h1>Hammer Auction House Platform with Multi-Protocol Support</h1>
 </div>
 
-## Table of Contents
+[Hammer Auction House](https://www.dummy-url.com) is a decentralized auction platform that redefines digital asset trading on blockchain. Supporting multiple auction mechanisms through smart contracts, it provides a secure and transparent environment for trading digital assets.
 
-- [About](#about)
-- [Key Features](#key-features)
-- [Tech Stack](#tech-stack)
-- [Smart Contracts](#smart-contracts)
-- [Getting Started](#getting-started)
-- [Contributing](#contributing)
+The platform is powered by smart contracts ([HammerAuctionHouse-Solidity](https://github.com/Stability-Nexus/HammerAuctionHouse-Solidity)) that implement:
 
-## About
-
-<!-- Correct url to be added -->
-
-[Hammer Auction House](https://www.dummy-url.com) is a decentralized auction platform that redefines digital asset trading on blockchain. Users can participate in a variety of auction types with full transparency and security provided by smart contracts.
-
----
-
-## Key Features
-
-- **Multiple Auction Types:** Supports English, Dutch, All-Pay and Vickrey auctions for both NFTs and ERC-20 tokens.
-- **Smart Contract Security:** Trustless execution with on-chain validation and verifiable, immutable transactions.
-- **NFT & Token Trading:** List, bid on, and win ERC-721 NFTs and ERC-20 tokens.
-- **Wallet Integration:** Seamless MetaMask and Web3 wallet support.
-- **Transparent History:** Fully on-chain transaction records and bid history.
-- **Extensible Services:** Modular auction services interface to support future auction mechanisms.
+- **Multiple Auction Types:** English, Dutch (Linear, Exponential, Logarithmic), All-Pay and Vickrey auctions for NFTs and ERC-20 tokens
+- **Smart Contract Security:** Trustless execution with on-chain validation and verifiable, immutable transactions
+- **NFT & Token Trading:** List, bid on, and win ERC-721 NFTs and ERC-20 tokens
+- **Wallet Integration:** Seamless MetaMask and Web3 wallet support
+- **Transparent History:** Fully on-chain transaction records and bid history
+- **Extensible Services:** Modular auction services interface to support future auction mechanisms
 
 ---
 
 ## Tech Stack
 
-**Frontend**
+### Frontend
 
 - Next.js 14+ (React)
 - TypeScript
 - TailwindCSS
 - shadcn/ui
 
-**Blockchain**
+### Blockchain
 
 - Wagmi
 - Solidity Smart Contracts
@@ -142,15 +127,6 @@ pnpm dev
 #### 4. Open your Browser
 
 Navigate to [http://localhost:3000](http://localhost:3000) to see the application.
-
----
-
-## Smart Contracts
-
-Smart contract code powering auction logic can be found at
-**[HammerAuctionHouse-Solidity](https://github.com/Stability-Nexus/HammerAuctionHouse-Solidity)**.
-
-Contracts implement support for English, Dutch, All-Pay and Vickrey auction variants. See the Solidity repo for deployment,and method references.
 
 ---
 

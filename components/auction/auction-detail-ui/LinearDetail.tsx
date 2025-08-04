@@ -6,9 +6,6 @@ import { BidForm } from "../bid-form";
 import { Info } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionInfo } from "../auction-info";
-import { useCallback, useEffect, useState } from "react";
-import { decode } from "@/lib/storage";
-import { getAuctionService } from "@/lib/auction-service";
 
 interface LinearDetailProps {
   currentAuction: Auction;

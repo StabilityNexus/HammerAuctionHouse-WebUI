@@ -245,7 +245,7 @@ export function Step3Form({
   }, [form_3, formData, updateFormData]);
 
   const onSubmit = (data: FormValues) => {
-    let update: any = { ...data };
+    const update: any = { ...data };
     if (data.type === "vickrey") {
       update.commitDuration = getDurationInSeconds(
         data.commitDays || "0",

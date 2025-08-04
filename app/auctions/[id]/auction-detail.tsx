@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Clock, Info, Wallet, Package } from "lucide-react";
+import { motion} from "framer-motion";
+import { ArrowLeft, Info, Wallet, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
@@ -24,7 +24,7 @@ interface AuctionDetailProps {
 
 export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
   const [currentAuction, setCurrentAuction] = useState<Auction | null>(null);
-  const [bids, setBids] = useState<Bid[]>([]);
+  // const [bids, setBids] = useState<Bid[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isWithdrawingFunds, setIsWithdrawingFunds] = useState(false);
@@ -129,7 +129,6 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     protocol,
     id,
     writeContract,
-    bids,
   ]);
 
   // Handle transaction confirmations

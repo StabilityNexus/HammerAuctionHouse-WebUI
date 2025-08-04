@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { getTokenName } from "@/lib/auction-service";
-import { formatDuration, getDurationInSeconds } from "@/lib/utils";
+import { formatDuration } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { usePublicClient } from "wagmi";

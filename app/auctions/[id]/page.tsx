@@ -14,6 +14,7 @@ export default async function AuctionPage({ params }: { params: Promise<{ id: st
 
     return <AuctionDetail protocol={decoded.protocol} id={BigInt(decoded.id)} />;
   } catch (error) {
+    console.error("Not supported params found: ",error);
     notFound();
   }
 }
