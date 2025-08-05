@@ -337,7 +337,7 @@ export default function CreateAuction() {
   if (!status || status !== "connected") {
     return (
       <div className="container py-12 px-4 flex flex-col items-center justify-center min-h-[70vh]">
-        <div className="max-w-md w-full bg-card border rounded-xl p-8 text-center">
+        <div className="max-w-md w-full bg-card border rounded-xl p-8 text-center flex flex-col items-center justify-center">
           <h1 className="text-2xl font-bold mb-6">Connect Wallet</h1>
           <p className="text-muted-foreground mb-8">
             You need to connect your wallet to create an auction on HAH.

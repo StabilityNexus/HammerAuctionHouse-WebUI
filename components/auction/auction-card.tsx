@@ -76,7 +76,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className="bg-card rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-all border"
     >
-      <Link href={`/auctions/${auction.id}`} className="block">
+      <Link href={`/auctions?id=${auction.id}`} className="block">
         <div className="aspect-square relative overflow-hidden bg-muted">
           <Image
             src={auction.imgUrl}
