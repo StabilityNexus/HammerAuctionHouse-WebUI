@@ -42,15 +42,7 @@ export interface Auction {
   bidRevealEnd?: bigint;
   startTime?: bigint;
   availableFunds?: bigint
-}
-
-// getUserBids and getUserWatchlist are not implemented due to missing data in Auction interface
-export function getUserBids(userAddress: string): Auction[] {
-  return [];
-}
-
-export function getUserWatchlist(userAddress: string): Auction[] {
-  return [];
+  currentPrice?: bigint;
 }
 
 // export function getAuctionById(id: string): Auction | undefined {

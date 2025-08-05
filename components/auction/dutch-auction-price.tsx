@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { useWalletClient } from 'wagmi';
-import { getAuctionService } from '@/lib/auction-service';
-import { Button } from '../ui/button';
-import { formatEther } from 'viem';
-import { AuctionType } from '@/lib/mock-data';
+import { useEffect, useState } from "react";
+import { useWriteContract } from "wagmi";
+import { getAuctionService } from "@/lib/auction-service";
+import { Button } from "../ui/button";
+import { formatEther } from "viem";
+import { AuctionType } from "@/lib/mock-data";
 
 interface DutchAuctionPriceProps {
   auctionId: bigint;
@@ -12,13 +12,22 @@ interface DutchAuctionPriceProps {
   protocol?: AuctionType; // Add protocol prop to determine which service to use
 }
 
-export function DutchAuctionPrice({ auctionId, isEnded, onBuyout, protocol = "Linear" }: DutchAuctionPriceProps) {
+export function DutchAuctionPrice({
+  auctionId,
+  isEnded,
+  onBuyout,
+  protocol = "Linear",
+}: DutchAuctionPriceProps) {
   const [currentPrice, setCurrentPrice] = useState<bigint>(BigInt(0));
   const [isLoading, setIsLoading] = useState(false);
-  const { data: walletClient } = useWalletClient();
+  const { writeContract } = useWriteContract();
 
   // Check if this is a reverse Dutch auction
-  const isReverseDutchAuction = ["Linear", "Exponential", "Logarithmic"].includes(protocol);
+  const isReverseDutchAuction = [
+    "Linear",
+    "Exponential",
+    "Logarithmic",
+  ].includes(protocol);
 
   useEffect(() => {
     const fetchCurrentPrice = async () => {
@@ -27,7 +36,7 @@ export function DutchAuctionPrice({ auctionId, isEnded, onBuyout, protocol = "Li
         setCurrentPrice(BigInt(0));
         return;
       }
-      
+
       try {
         const dutchService = await getAuctionService(protocol);
         if (dutchService.getCurrentPrice) {
@@ -35,7 +44,7 @@ export function DutchAuctionPrice({ auctionId, isEnded, onBuyout, protocol = "Li
           setCurrentPrice(price);
         }
       } catch (error) {
-        console.error('Error fetching current price:', error);
+        console.error("Error fetching current price:", error);
         // Set to 0 on error
         setCurrentPrice(BigInt(0));
       }
@@ -43,13 +52,13 @@ export function DutchAuctionPrice({ auctionId, isEnded, onBuyout, protocol = "Li
 
     // Fetch price once when component mounts or dependencies change
     fetchCurrentPrice();
-    
+
     // Update price periodically for reverse Dutch auctions
     let interval: NodeJS.Timeout;
     if (isReverseDutchAuction && !isEnded) {
       interval = setInterval(fetchCurrentPrice, 5000); // Update every 5 seconds
     }
-    
+
     return () => {
       if (interval) {
         clearInterval(interval);
@@ -58,15 +67,15 @@ export function DutchAuctionPrice({ auctionId, isEnded, onBuyout, protocol = "Li
   }, [auctionId, protocol, isEnded, isReverseDutchAuction]);
 
   const handleBuyout = async () => {
-    if (!walletClient || isEnded) return;
-    
+    if (!writeContract || isEnded) return;
+
     setIsLoading(true);
     try {
       const dutchService = await getAuctionService(protocol);
-      await dutchService.withdrawItem(walletClient, auctionId);
+      await dutchService.withdrawItem(writeContract, auctionId);
       onBuyout();
     } catch (error) {
-      console.error('Error buying out auction:', error);
+      console.error("Error buying out auction:", error);
     } finally {
       setIsLoading(false);
     }
@@ -80,16 +89,16 @@ export function DutchAuctionPrice({ auctionId, isEnded, onBuyout, protocol = "Li
           {isEnded ? "Auction Ended" : `${formatEther(currentPrice)} ETH`}
         </p>
       </div>
-      
+
       {/* Only show Buy Now button for non-reverse Dutch auctions */}
       {/* For reverse Dutch auctions (Linear, Exponential, Logarithmic), buy functionality is in BidForm */}
       {!isReverseDutchAuction && !isEnded && (
-        <Button 
-          onClick={handleBuyout} 
+        <Button
+          onClick={handleBuyout}
           disabled={isLoading || isEnded}
           className="w-full"
         >
-          {isLoading ? 'Processing...' : 'Buy Now'}
+          {isLoading ? "Processing..." : "Buy Now"}
         </Button>
       )}
     </div>

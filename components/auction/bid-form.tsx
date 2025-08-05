@@ -179,6 +179,9 @@ export function BidForm({ auction }: BidFormProps) {
         );
       } else {
         // For other auction types, place a bid
+        if(auctionService.placeBid === undefined){
+          return;
+        }
         await auctionService.placeBid(
           writeContract,
           BigInt(auctionId),

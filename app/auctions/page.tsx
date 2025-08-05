@@ -99,7 +99,8 @@ export default function AuctionsPage() {
         fetchLogarithmicDutchAuctions(),
         fetchVickreyAuctions()
       ]);
-      setFetchedAuctions([...allPayAuctions, ...englishAuctions, ...linearDutchAuctions, ...exponentialDutchAuctions, ...logarithmicDutchAuctions, ...vickreyAuctions]);
+      const allAuctions = [...allPayAuctions, ...englishAuctions, ...linearDutchAuctions, ...exponentialDutchAuctions, ...logarithmicDutchAuctions, ...vickreyAuctions].filter((auction): auction is Auction => auction !== null);
+      setFetchedAuctions(allAuctions);
     } catch (error) {
       console.error("Error fetching auctions:", error);
     } finally {

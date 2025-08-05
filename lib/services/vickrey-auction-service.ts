@@ -1,23 +1,25 @@
 import { Address, erc20Abi, erc721Abi, keccak256, encodePacked, parseEther, parseAbiItem } from "viem";
-import { getToken, readContracts } from '@wagmi/core';
+import { Config, readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
-import { getTokenName, IAuctionService, VickreyAuctionParams } from "../auction-service";
-import { Bid } from "../mock-data";
+import { getTokenName, IAuctionService, mappedData, VickreyAuctionParams } from "../auction-service";
+import { Auction, Bid } from "../mock-data";
 import { generateCode } from "../storage";
 import { AUCTION_CONTRACTS, VICKREY_ABI } from "../contract-data";
+import { WriteContractMutate } from "wagmi/query";
+import {UsePublicClientReturnType } from "wagmi";
 
 export class VickreyAuctionService implements IAuctionService {
   contractAddress: Address = AUCTION_CONTRACTS.Vickrey as `0x${string}`;
 
-  private async mapAuctionData(client: any,auctionData: any): Promise<any> {
+  private async mapAuctionData({ client, auctionData }: mappedData): Promise<Auction | null> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 16) {
       console.warn("Invalid Vickrey auction data:", auctionData, "Expected 16 fields, got:", auctionData?.length);
       return null;
     }
-    
+
     let auctionedTokenName = "Unknown Token";
     let biddingTokenName = "Unknown Token";
-    
+
     if (client) {
       try {
         auctionedTokenName = await getTokenName(client, auctionData[6]);
@@ -62,7 +64,7 @@ export class VickreyAuctionService implements IAuctionService {
   }
 
   private async approveToken(
-    writeContract: any,
+    writeContract: WriteContractMutate<Config, unknown>,
     tokenAddress: Address,
     spender: Address,
     amountOrId: bigint,
@@ -108,48 +110,41 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async getLastNAuctions(client?:any,n: number = 10): Promise<any[]> {
+  async getLastNAuctions(client: UsePublicClientReturnType, n: number = 10): Promise<(Auction | null)[]> {
     try {
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) return [];
       const start = counter > BigInt(n) ? counter - BigInt(n) + BigInt(0) : BigInt(0);
       const end = counter;
-      const contracts = [];
+      const promises = [];
       for (let i = start; i < end; i++) {
-        contracts.push({
-          address: this.contractAddress,
-          abi: VICKREY_ABI,
-          functionName: 'auctions',
-          args: [i]
-        });
+        promises.push(
+          this.getAuction(i, client).catch(error => {
+            console.warn(`Failed to fetch auction ${i}:`, error);
+            return null;
+          })
+        );
       }
-      const results = await readContracts(wagmi_config, { contracts });
-      const mappedAuctions = await Promise.all(
-        results
-          .filter((result: any) => !result.error && result.result)
-          .map(async (result: any) => await this.mapAuctionData(client, result.result))
-          .filter((auction: any) => auction !== null)
-          .reverse()
-      );
-      return mappedAuctions;
-      
+
+      const results = await Promise.all(promises);
+      return results.filter((auction): auction is Auction => auction !== null).reverse();
     } catch (error) {
       console.error("Error fetching last N Vickrey auctions:", error);
       throw error;
     }
   }
 
-  async createAuction(writeContract: any, params: VickreyAuctionParams): Promise<void> {
+  async createAuction(writeContract: WriteContractMutate<Config, unknown>, params: VickreyAuctionParams): Promise<void> {
     try {
       await this.approveToken(
         writeContract,
         params.auctionedToken,
         this.contractAddress,
-        (params.auctionType === BigInt(0)?params.auctionedTokenIdOrAmount:parseEther(String(params.auctionedTokenIdOrAmount))),
+        (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
-      
-      
+
+
       await writeContract({
         address: this.contractAddress,
         abi: VICKREY_ABI,
@@ -160,11 +155,11 @@ export class VickreyAuctionService implements IAuctionService {
           params.imgUrl,
           Number(params.auctionType),
           params.auctionedToken,
-          (params.auctionType === BigInt(0)?params.auctionedTokenIdOrAmount:parseEther(String(params.auctionedTokenIdOrAmount))),
+          (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
           params.biddingToken,
           parseEther(String(params.minBid)), // Use the parsed minBid value
-          Number(params.bidCommitDuration),
-          Number(params.bidRevealDuration)
+          BigInt(params.bidCommitDuration),
+          BigInt(params.bidRevealDuration)
         ],
       });
     } catch (error) {
@@ -173,7 +168,7 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async commitBid(writeContract: any, auctionId: bigint, commitment: `0x${string}`): Promise<void> {
+  async commitBid(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, commitment: `0x${string}`): Promise<void> {
     try {
       await writeContract({
         address: this.contractAddress,
@@ -188,16 +183,16 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async revealBid(writeContract: any, auctionId: bigint, bidAmount: bigint, salt: string): Promise<void> {
+  async revealBid(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, bidAmount: bigint, salt: string): Promise<void> {
     try {
       const biddingToken = (await this.getAuction(auctionId)).biddingToken
       const saltBytes = keccak256(encodePacked(['string'], [salt]));
       await this.approveToken(
         writeContract,
-        biddingToken,
+        biddingToken as `0x${string}`,
         this.contractAddress,
         bidAmount,
-        false 
+        false
       )
       await writeContract({
         address: this.contractAddress,
@@ -211,17 +206,7 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async placeBid(
-    writeContract: any,
-    auctionId: bigint,
-    bidAmount: bigint,
-    tokenAddress: Address,
-    auctionType: bigint
-  ): Promise<void> {
-    throw new Error("Vickrey auction uses commit/reveal mechanism - use commitBid and revealBid instead");
-  }
-
-  async withdrawFunds(writeContract: any, auctionId: bigint): Promise<void> {
+  async withdrawFunds(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
     try {
       await writeContract({
         address: this.contractAddress,
@@ -235,7 +220,7 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async withdrawItem(writeContract: any, auctionId: bigint): Promise<void> {
+  async withdrawItem(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
     try {
       await writeContract({
         address: this.contractAddress,
@@ -249,7 +234,7 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async getAuction(auctionId: bigint, publicClient?: any): Promise<any> {
+  async getAuction(auctionId: bigint, publicClient?: UsePublicClientReturnType): Promise<Auction> {
     try {
       const data = await readContracts(wagmi_config, {
         contracts: [
@@ -262,7 +247,7 @@ export class VickreyAuctionService implements IAuctionService {
         ]
       });
       const auctionData = data[0].result;
-      const mappedAuction = await this.mapAuctionData(auctionData, publicClient);
+      const mappedAuction = await this.mapAuctionData({ client: publicClient, auctionData: auctionData });
       if (!mappedAuction) {
         throw new Error(`Invalid Vickrey auction data for ID ${auctionId}`);
       }
@@ -275,12 +260,15 @@ export class VickreyAuctionService implements IAuctionService {
 
 
   async getBidHistory(
-    client: any,
+    client: UsePublicClientReturnType,
     auctionId: bigint,
     startBlock: bigint,
     endBlock: bigint
-  ): Promise<Bid[]> {
+  ): Promise<(Bid | undefined)[]> {
     try {
+      if (!client) {
+        return [];
+      }
       const logs = await client.getLogs({
         address: this.contractAddress,
         event: parseAbiItem(
@@ -290,13 +278,16 @@ export class VickreyAuctionService implements IAuctionService {
         fromBlock: startBlock,
         toBlock: endBlock,
       });
-      const bids = await Promise.all(logs.map(async (log: any, index: number) => {
+      const bids = await Promise.all(logs.map(async (log, index: number) => {
         const block = await client.getBlock({ blockNumber: log.blockNumber });
+        if (log.args.bidAmount === undefined || log.args.bidder === undefined) {
+          return; // Skip logs without bidAmount or bidder
+        }
         return {
           id: `${auctionId}-${index}`,
           auctionId: auctionId.toString(),
           bidder: log.args.bidder,
-          amount: Number(log.args.bidAmount) / 1e18, 
+          amount: Number(log.args.bidAmount) / 1e18,
           timestamp: Number(block.timestamp) * 1e3
         };
       }));
@@ -345,37 +336,4 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async getIndexedAuctions(client: any,start: bigint,end: bigint): Promise<any[]>{
-      try{
-        const counter = await this.getAuctionCounter();
-        if (counter === BigInt(0)) {
-          return [];
-        }
-        if(start < counter){
-          return [];
-        }
-        end = end > counter ? counter : end;
-        const contracts = [];
-        for (let i = start; i < end; i++) {
-          contracts.push({
-            address: this.contractAddress,
-            abi: VICKREY_ABI,
-            functionName: 'auctions',
-            args: [i]
-          });
-        }
-        const results = await readContracts(wagmi_config, { contracts });
-        const mappedAuctions = await Promise.all(
-          results
-            .filter((result: any) => !result.error && result.result)
-            .map(async (result: any) => await this.mapAuctionData(client, result.result))
-            .filter((auction: any) => auction !== null)
-            .reverse()
-        );
-        return mappedAuctions;
-      }catch(error){
-        console.error("Error fetching indexed auctions:", error);
-        throw error;
-      }
-    }
 }

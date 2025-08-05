@@ -1,10 +1,12 @@
 import { Address, erc20Abi, erc721Abi, parseEther } from "viem";
-import { readContracts } from '@wagmi/core';
+import { Config, readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
-import { IAuctionService, DutchAuctionParams, getTokenName } from "../auction-service";
-import { Bid } from "../mock-data";
+import { IAuctionService, DutchAuctionParams, getTokenName, mappedData } from "../auction-service";
+import { Auction } from "../mock-data";
 import { generateCode } from "../storage";
 import { AUCTION_CONTRACTS, LOGARITHMIC_DUTCH_ABI } from "../contract-data";
+import { UsePublicClientReturnType } from "wagmi";
+import { WriteContractMutate } from "wagmi/query";
 
 export interface LogarithmicDutchAuctionParams extends DutchAuctionParams {
   decayFactor: bigint; // Logarithmic decay factor (scaled by 10^5)
@@ -13,7 +15,7 @@ export interface LogarithmicDutchAuctionParams extends DutchAuctionParams {
 export class LogarithmicDutchAuctionService implements IAuctionService {
   contractAddress: Address = AUCTION_CONTRACTS.Logarithmic as `0x${string}`;
 
-  private async mapAuctionData(auctionData: any, client: any): Promise<any> {
+  private async mapAuctionData({ client, auctionData }: mappedData): Promise<Auction | null> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 18) {
       console.warn("Invalid auction data:", auctionData, "Expected 18 fields, got:", auctionData?.length);
       return null;
@@ -72,28 +74,24 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
     }
   }
 
-  async getLastNAuctions(client?:any,n: number = 10): Promise<any[]> {
+  async getLastNAuctions(client: UsePublicClientReturnType, n: number = 10): Promise<(Auction | null)[]> {
     try {
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) return [];
       const start = counter > BigInt(n) ? counter - BigInt(n) + BigInt(0) : BigInt(0);
       const end = counter;
-      const contracts = [];
+      const promises = [];
       for (let i = start; i < end; i++) {
-        contracts.push({
-          address: this.contractAddress,
-          abi: LOGARITHMIC_DUTCH_ABI,
-          functionName: 'auctions',
-          args: [i]
-        });
+        promises.push(
+          this.getAuction(i, client).catch(error => {
+            console.warn(`Failed to fetch auction ${i}:`, error);
+            return null;
+          })
+        );
       }
-      const results = await readContracts(wagmi_config, { contracts });
-      const mappedAuctions = Promise.all(results
-        .filter((result: any) => !result.error && result.result)
-        .map(async (result: any) => await this.mapAuctionData(result.result, client))
-        .filter((auction: any) => auction !== null) // Remove null entries
-        .reverse()); // Show newest first
-      return mappedAuctions;
+
+      const results = await Promise.all(promises);
+      return results.filter((auction): auction is Auction => auction !== null).reverse();
     } catch (error) {
       console.error("Error fetching last N auctions:", error);
       throw error;
@@ -101,7 +99,7 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
   }
 
   private async approveToken(
-    writeContract: any,
+    writeContract: WriteContractMutate<Config, unknown>,
     tokenAddress: Address,
     spender: Address,
     amountOrId: bigint,
@@ -151,7 +149,7 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
     }
   }
 
-  async createAuction(writeContract: any, params: LogarithmicDutchAuctionParams): Promise<void> {
+  async createAuction(writeContract: WriteContractMutate<Config, unknown>, params: LogarithmicDutchAuctionParams): Promise<void> {
     try {
       await this.approveToken(
         writeContract,
@@ -175,7 +173,7 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
           params.startingPrice,
           params.reservedPrice,
           params.decayFactor,
-          Number(params.duration)
+          BigInt(params.duration)
         ],
       });
     } catch (error) {
@@ -184,17 +182,8 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
     }
   }
 
-  async placeBid(
-    writeContract: any,
-    auctionId: bigint,
-    bidAmount: bigint,
-    tokenAddress: Address,
-    auctionType: bigint
-  ): Promise<void> {
-    throw new Error("Logarithmic Dutch auction does not support bidding - use withdrawItem to purchase at current price");
-  }
 
-  async withdrawFunds(writeContract: any, auctionId: bigint): Promise<void> {
+  async withdrawFunds(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
     try {
       await writeContract({
         address: this.contractAddress as `0x${string}`,
@@ -208,10 +197,10 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
     }
   }
 
-  async withdrawItem(writeContract: any, auctionId: bigint, biddingToken: string): Promise<void> {
+  async withdrawItem(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, biddingToken: string): Promise<void> {
     try {
       const currentPrice = await this.getCurrentPrice(auctionId);
-      if(currentPrice !== BigInt(0)) {
+      if (currentPrice !== BigInt(0)) {
         await this.approveToken(
           writeContract,
           biddingToken as `0x${string}`,
@@ -232,7 +221,7 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
     }
   }
 
-  async getAuction(auctionId: bigint, client?: any): Promise<any> {
+  async getAuction(auctionId: bigint, client: UsePublicClientReturnType): Promise<Auction> {
     try {
       const data = await readContracts(wagmi_config, {
         contracts: [
@@ -245,7 +234,7 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
         ]
       });
       const auctionData = data[0].result;
-      const mappedAuction = this.mapAuctionData(auctionData, client);
+      const mappedAuction = await this.mapAuctionData({ client: client, auctionData: auctionData });
       if (!mappedAuction) {
         throw new Error(`Invalid auction data for ID ${auctionId}`);
       }
@@ -255,56 +244,6 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
       throw error;
     }
   }
-
-  async getBidders(client: any, auctionId: bigint, startBlock: bigint, endBlock: bigint): Promise<any[]> {
-    // Logarithmic Dutch auction doesn't have bidders - only direct purchases
-    return [];
-  }
-
-
-  async getBidHistory(
-    client: any,
-    auctionId: bigint,
-    startBlock: bigint,
-    endBlock: bigint
-  ): Promise<Bid[]> {
-    // Logarithmic Dutch auction doesn't have bid history - only purchases
-    return [];
-  }
-
-  async getIndexedAuctions(client: any,start: bigint,end: bigint): Promise<any[]>{
-      try{
-        const counter = await this.getAuctionCounter();
-        if (counter === BigInt(0)) {
-          return [];
-        }
-        if(start < counter){
-          return [];
-        }
-        end = end > counter ? counter : end;
-        const contracts = [];
-        for (let i = start; i < end; i++) {
-          contracts.push({
-            address: this.contractAddress,
-            abi: LOGARITHMIC_DUTCH_ABI,
-            functionName: 'auctions',
-            args: [i]
-          });
-        }
-        const results = await readContracts(wagmi_config, { contracts });
-        const mappedAuctions = await Promise.all(
-          results
-            .filter((result: any) => !result.error && result.result)
-            .map(async (result: any) => await this.mapAuctionData(client, result.result))
-            .filter((auction: any) => auction !== null)
-            .reverse()
-        );
-        return mappedAuctions;
-      }catch(error){
-        console.error("Error fetching indexed auctions:", error);
-        throw error;
-      }
-    }
 }
 
 

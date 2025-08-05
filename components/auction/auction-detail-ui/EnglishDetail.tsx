@@ -11,10 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionInfo } from "../auction-info";
 import { BidHistory } from "../bid-history";
 import { decode } from "@/lib/storage";
-import { useAccount } from "wagmi";
+import { useAccount, UsePublicClientReturnType } from "wagmi";
 interface EnglishDetailProps {
-  currentAuction: Auction;
-  publicClient: any;
+    currentAuction: Auction;
+    publicClient: UsePublicClientReturnType;
 }
 
 export function EnglishDetail({
@@ -36,13 +36,18 @@ export function EnglishDetail({
         currentBlock > BigInt(10000000)
           ? currentBlock - BigInt(10000000)
           : BigInt(0);
+      if(auctionService.getBidHistory===undefined){
+        return ; 
+      }
       const bidHistory = await auctionService.getBidHistory(
         publicClient,
         BigInt(auctionId),
         fromBlock,
         currentBlock
       );
-      setBids(bidHistory);
+      if(bidHistory != undefined){
+        setBids(bidHistory.filter((bid): bid is Bid => bid !== undefined));
+      }
     } catch (err) {
       console.error(
         `Error fetching ${currentAuction.protocol} auction bids:`,

@@ -107,9 +107,9 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
         bidAmountWei,
         salt
       );
-    } catch (error: any) {
+    } catch (error) {
       console.error("Reveal error:", error);
-      setError(error.message || "Failed to reveal bid. Please try again.");
+      setError("Failed to reveal bid. Please try again.");
       setIsRevealing(false);
     }
   };

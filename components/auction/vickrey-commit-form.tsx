@@ -48,7 +48,7 @@ export function VickreyCommitForm({ auction }: VickreyCommitFormProps) {
 
   const {
     isLoading: isConfirming,
-    isSuccess: isConfirmed,
+    // isSuccess: isConfirmed,
     error: confirmError,
   } = useWaitForTransactionReceipt({
     hash,

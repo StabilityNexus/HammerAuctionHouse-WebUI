@@ -11,21 +11,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionInfo } from "../auction-info";
 import { BidHistory } from "../bid-history";
 import { decode } from "@/lib/storage";
-import { useAccount } from "wagmi";
+import { useAccount, UsePublicClientReturnType } from "wagmi";
 
 interface AllPayDetailProps {
-    currentAuction: Auction;
-    publicClient: any;
+  currentAuction: Auction;
+  publicClient: UsePublicClientReturnType;
 }
 
-export function AllPayDetail(
-  {currentAuction,
-  publicClient}: AllPayDetailProps
-) {
+export function AllPayDetail({
+  currentAuction,
+  publicClient,
+}: AllPayDetailProps) {
   const auctionId = decode(currentAuction.id).id;
   const [bids, setBids] = useState<Bid[]>([]);
   const [isLoadingBids, setIsLoadingBids] = useState(false);
-  const [currentBid,setCurrentBid] = useState(BigInt(0));
+  const [currentBid, setCurrentBid] = useState(BigInt(0));
   const { address: userAddress, isConnected } = useAccount();
   const fetchBidsFromContract = useCallback(async () => {
     if (!publicClient) return;
@@ -34,14 +34,21 @@ export function AllPayDetail(
       const auctionService = await getAuctionService(currentAuction.protocol);
       const currentBlock = await publicClient.getBlockNumber();
       const fromBlock =
-        currentBlock > BigInt(10000000) ? currentBlock - BigInt(10000000) : BigInt(0);
+        currentBlock > BigInt(10000000)
+          ? currentBlock - BigInt(10000000)
+          : BigInt(0);
+      if (auctionService.getBidHistory === undefined) {
+        return;
+      }
       const bidHistory = await auctionService.getBidHistory(
         publicClient,
         BigInt(auctionId),
         fromBlock,
         currentBlock
       );
-      setBids(bidHistory);
+      if (bidHistory != undefined) {
+        setBids(bidHistory.filter((bid): bid is Bid => bid !== undefined));
+      }
     } catch (err) {
       console.error(
         `Error fetching ${currentAuction.protocol} auction bids:`,
@@ -52,18 +59,22 @@ export function AllPayDetail(
     }
   }, [publicClient, currentAuction]);
 
-    const fetchCurrentBid = async () => {
-      if(!publicClient || !userAddress) return;
-      try {
-        const auctionService = await getAuctionService("AllPay");
-        if (auctionService && auctionService.getCurrentBid) {
-          const currentBid = await auctionService.getCurrentBid(publicClient,BigInt(auctionId), userAddress);
-          setCurrentBid(currentBid);
-        }
-      } catch (error) {
-        console.error("Error fetching current bid from contract: ",error);
+  const fetchCurrentBid = async () => {
+    if (!publicClient || !userAddress) return;
+    try {
+      const auctionService = await getAuctionService("AllPay");
+      if (auctionService && auctionService.getCurrentBid) {
+        const currentBid = await auctionService.getCurrentBid(
+          publicClient,
+          BigInt(auctionId),
+          userAddress
+        );
+        setCurrentBid(currentBid);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching current bid from contract: ", error);
+    }
+  };
 
   useEffect(() => {
     if (currentAuction && publicClient) {
@@ -92,9 +103,12 @@ export function AllPayDetail(
           <div>
             <p className="text-sm text-muted-foreground mb-1">Asset</p>
             <p className="text-3xl font-bold">
-              {BigInt(currentAuction.auctionType) === BigInt(1) 
-                  ? Number(formatEther(currentAuction.auctionedTokenIdOrAmount)).toFixed(4)
-                  : `#${currentAuction.auctionedTokenIdOrAmount.toString()}`}{" "}{currentAuction.auctionedTokenName || "Item"}
+              {BigInt(currentAuction.auctionType) === BigInt(1)
+                ? Number(
+                    formatEther(currentAuction.auctionedTokenIdOrAmount)
+                  ).toFixed(4)
+                : `#${currentAuction.auctionedTokenIdOrAmount.toString()}`}{" "}
+              {currentAuction.auctionedTokenName || "Item"}
             </p>
           </div>
 
@@ -110,9 +124,11 @@ export function AllPayDetail(
               }
             />
             {Date.now() >= Number(currentAuction.deadline) * 1000 && (
-                <p className="text-sm font-medium text-muted-foreground">
-                    {currentAuction.isClaimed ? "Asset has been claimed" : "Asset has not been claimed yet"}
-                </p>
+              <p className="text-sm font-medium text-muted-foreground">
+                {currentAuction.isClaimed
+                  ? "Asset has been claimed"
+                  : "Asset has not been claimed yet"}
+              </p>
             )}
           </div>
         </div>
@@ -121,14 +137,18 @@ export function AllPayDetail(
         {isConnected && (
           <div className="mb-4 p-4 border rounded-lg bg-muted/30">
             <div className="flex justify-between items-center">
-                <div className="flex items-center justify-between w-full">
-                <p className="text-sm text-muted-foreground mb-1">Your Current Bid</p>
-                <p className="text-xl font-semibold">
-                  {Number(currentBid) > 0 
-                  ? `${Number(formatEther(currentBid)).toFixed(4)} ${currentAuction.biddingTokenName || "ETH"}`
-                  : "No active bid"}
+              <div className="flex items-center justify-between w-full">
+                <p className="text-sm text-muted-foreground mb-1">
+                  Your Current Bid
                 </p>
-                </div>
+                <p className="text-xl font-semibold">
+                  {Number(currentBid) > 0
+                    ? `${Number(formatEther(currentBid)).toFixed(4)} ${
+                        currentAuction.biddingTokenName || "ETH"
+                      }`
+                    : "No active bid"}
+                </p>
+              </div>
             </div>
           </div>
         )}

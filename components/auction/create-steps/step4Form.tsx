@@ -1,3 +1,4 @@
+import { AuctionFormData } from "@/app/create/page";
 import { Button } from "@/components/ui/button";
 import { getTokenName } from "@/lib/auction-service";
 import { formatDuration } from "@/lib/utils";
@@ -7,10 +8,8 @@ import { usePublicClient } from "wagmi";
 
 interface Step4Form {
   currentStep: number;
-  formData: any;
+  formData: AuctionFormData;
   goToPrevStep: () => void;
-  goToNextStep: () => void;
-  updateFormData: (data: any) => void;
   handleFinalSubmit: () => void;
   isSubmitting?: boolean;
   isPending?: boolean;
@@ -19,10 +18,8 @@ interface Step4Form {
 
 export function Step4Form({
   formData,
-  updateFormData,
   currentStep,
   goToPrevStep,
-  goToNextStep,
   isSubmitting,
   isPending,
   isConfirming,

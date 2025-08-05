@@ -1,15 +1,17 @@
 import { Address, erc20Abi, erc721Abi, parseEther } from "viem";
-import { readContracts } from '@wagmi/core';
+import { Config, readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
-import { IAuctionService, DutchAuctionParams, getTokenName } from "../auction-service";
-import { Bid } from "../mock-data";
+import { IAuctionService, DutchAuctionParams, getTokenName, mappedData } from "../auction-service";
+import { Auction } from "../mock-data";
 import { generateCode } from "../storage";
 import { AUCTION_CONTRACTS, LINEAR_DUTCH_ABI } from "../contract-data";
+import { UsePublicClientReturnType } from "wagmi";
+import { WriteContractMutate } from "wagmi/query";
 
 export class LinearDutchAuctionService implements IAuctionService {
   contractAddress: Address = AUCTION_CONTRACTS.Linear as `0x${string}`;
 
-  private async mapAuctionData(auctionData: any, client: any): Promise<any> {
+  private async mapAuctionData({ client, auctionData }: mappedData): Promise<Auction | null> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 16) {
       console.warn("Invalid auction data:", auctionData);
       return null;
@@ -18,8 +20,8 @@ export class LinearDutchAuctionService implements IAuctionService {
     let auctionedTokenName = "";
     let biddingTokenName = "";
     if (client) {
-      auctionedTokenName = await getTokenName(client,auctionData[6]);
-      biddingTokenName = await getTokenName(client,auctionData[8]);
+      auctionedTokenName = await getTokenName(client, auctionData[6]);
+      biddingTokenName = await getTokenName(client, auctionData[8]);
     }
 
     return {
@@ -42,7 +44,7 @@ export class LinearDutchAuctionService implements IAuctionService {
       isClaimed: auctionData[15],
       //Placeholders
       currentPrice: BigInt(0),
-      higheshtBid: BigInt(0),
+      highestBid: BigInt(0),
       auctionedTokenName: auctionedTokenName,
       biddingTokenName: biddingTokenName
     };
@@ -66,28 +68,24 @@ export class LinearDutchAuctionService implements IAuctionService {
     }
   }
 
-  async getLastNAuctions(client?:any,n: number = 10): Promise<any[]> {
+  async getLastNAuctions(client: UsePublicClientReturnType, n: number = 10): Promise<(Auction | null)[]> {
     try {
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) return [];
       const start = counter > BigInt(n) ? counter - BigInt(n) : BigInt(0);
       const end = counter;
-      const contracts = [];
+      const promises = [];
       for (let i = start; i < end; i++) {
-        contracts.push({
-          address: this.contractAddress,
-          abi: LINEAR_DUTCH_ABI,
-          functionName: 'auctions',
-          args: [i]
-        });
+        promises.push(
+          this.getAuction(i, client).catch(error => {
+            console.warn(`Failed to fetch auction ${i}:`, error);
+            return null;
+          })
+        );
       }
-      const results = await readContracts(wagmi_config, { contracts });
-      const mappedAuctions = Promise.all(results
-        .filter((result: any) => !result.error && result.result)
-        .map(async (result: any) => await this.mapAuctionData(result.result, client))
-        .filter((auction: any) => auction !== null) // Remove null entries
-        .reverse()); // Show newest first
-      return mappedAuctions;
+
+      const results = await Promise.all(promises);
+      return results.filter((auction): auction is Auction => auction !== null).reverse();
     } catch (error) {
       console.error("Error fetching last N auctions:", error);
       throw error;
@@ -116,7 +114,7 @@ export class LinearDutchAuctionService implements IAuctionService {
     }
   }
 
-  async createAuction(writeContract: any, params: DutchAuctionParams): Promise<void> {
+  async createAuction(writeContract: WriteContractMutate<Config, unknown>, params: DutchAuctionParams): Promise<void> {
     try {
       await this.approveToken(
         writeContract,
@@ -139,7 +137,7 @@ export class LinearDutchAuctionService implements IAuctionService {
           params.biddingToken,
           params.startingPrice,
           params.reservedPrice,
-          Number(params.duration)
+          BigInt(params.duration)
         ],
       });
     } catch (error) {
@@ -148,18 +146,7 @@ export class LinearDutchAuctionService implements IAuctionService {
     }
   }
 
-  // In Linear Dutch Auction, there's no placeBid - buyers directly purchase at current price
-  async placeBid(
-    writeContract: any,
-    auctionId: bigint,
-    bidAmount: bigint,
-    tokenAddress: Address,
-    auctionType: bigint
-  ): Promise<void> {
-    throw new Error("Linear Dutch auction does not support bidding - use withdrawItem to purchase at current price");
-  }
-
-  async withdrawFunds(writeContract: any, auctionId: bigint): Promise<void> {
+  async withdrawFunds(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
     try {
       await writeContract({
         address: this.contractAddress as `0x${string}`,
@@ -173,7 +160,7 @@ export class LinearDutchAuctionService implements IAuctionService {
     }
   }
 
-  async withdrawItem(writeContract: any, auctionId: bigint, biddingToken: string): Promise<void> {
+  async withdrawItem(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, biddingToken: string): Promise<void> {
     try {
       const currentPrice = await this.getCurrentPrice(auctionId);
       await this.approveToken(
@@ -195,7 +182,7 @@ export class LinearDutchAuctionService implements IAuctionService {
     }
   }
 
-  private async approveToken(writeContract: any, tokenAddress: Address, spender: Address, amount: bigint, isNFT: boolean): Promise<void> {
+  private async approveToken(writeContract: WriteContractMutate<Config, unknown>, tokenAddress: Address, spender: Address, amount: bigint, isNFT: boolean): Promise<void> {
     try {
       await writeContract({
         address: tokenAddress as `0x${string}`,
@@ -209,7 +196,7 @@ export class LinearDutchAuctionService implements IAuctionService {
     }
   }
 
-  async getAuction(auctionId: bigint, client?: any): Promise<any> {
+  async getAuction(auctionId: bigint, client: UsePublicClientReturnType): Promise<Auction> {
     try {
       const data = await readContracts(wagmi_config, {
         contracts: [
@@ -222,7 +209,7 @@ export class LinearDutchAuctionService implements IAuctionService {
         ]
       });
       const auctionData = data[0].result;
-      const mappedAuction = await this.mapAuctionData(auctionData, client);
+      const mappedAuction = await this.mapAuctionData({ client: client, auctionData: auctionData });
       if (!mappedAuction) {
         throw new Error(`Invalid auction data for ID ${auctionId}`);
       }
@@ -234,46 +221,4 @@ export class LinearDutchAuctionService implements IAuctionService {
   }
 
 
-  async getBidHistory(
-    client: any,
-    auctionId: bigint,
-    startBlock: bigint,
-    endBlock: bigint
-  ): Promise<Bid[]> {
-    return [];
-  }
-
-  async getIndexedAuctions(client: any,start: bigint,end: bigint): Promise<any[]>{
-      try{
-        const counter = await this.getAuctionCounter();
-        if (counter === BigInt(0)) {
-          return [];
-        }
-        if(start < counter){
-          return [];
-        }
-        end = end > counter ? counter : end;
-        const contracts = [];
-        for (let i = start; i < end; i++) {
-          contracts.push({
-            address: this.contractAddress,
-            abi: LINEAR_DUTCH_ABI,
-            functionName: 'auctions',
-            args: [i]
-          });
-        }
-        const results = await readContracts(wagmi_config, { contracts });
-        const mappedAuctions = await Promise.all(
-          results
-            .filter((result: any) => !result.error && result.result)
-            .map(async (result: any) => await this.mapAuctionData(client, result.result))
-            .filter((auction: any) => auction !== null)
-            .reverse()
-        );
-        return mappedAuctions;
-      }catch(error){
-        console.error("Error fetching indexed auctions:", error);
-        throw error;
-      }
-    }
 }

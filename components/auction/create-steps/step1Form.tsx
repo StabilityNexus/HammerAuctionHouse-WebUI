@@ -1,3 +1,4 @@
+import { AuctionFormData } from "@/app/create/page";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,10 +17,10 @@ import { z } from "zod";
 
 interface Step1Form {
   currentStep: number;
-  formData: any;
+  formData: AuctionFormData;
   goToPrevStep: () => void;
   goToNextStep: () => void;
-  updateFormData: (data: any) => void;
+  updateFormData: (data: Partial<AuctionFormData>) => void;
 }
 
 export function Step1Form({

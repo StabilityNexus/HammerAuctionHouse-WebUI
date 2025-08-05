@@ -5,10 +5,11 @@ import { Step1Form } from "./create-steps/step1Form";
 import { Step3Form } from "./create-steps/step3Form";
 import { Step2Form } from "./create-steps/step2Form";
 import { Step4Form } from "./create-steps/step4Form";
+import { AuctionFormData } from "@/app/create/page";
 interface AuctionCreationFormProps {
   currentStep: number;
-  formData: any;
-  updateFormData: (data: any) => void;
+  formData: AuctionFormData;
+  updateFormData: (data: Partial<AuctionFormData>) => void;
   goToNextStep: () => void;
   goToPrevStep: () => void;
   handleFinalSubmit: () => void;
@@ -68,9 +69,7 @@ export function AuctionCreationForm({
           {currentStep === 3 && (
             <Step4Form
               formData={formData}
-              updateFormData={updateFormData}
               currentStep={currentStep}
-              goToNextStep={goToNextStep}
               goToPrevStep={goToPrevStep}
               handleFinalSubmit={handleFinalSubmit}
               isSubmitting={isSubmitting}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   LineChart,
@@ -34,43 +33,28 @@ export function DecayPreviewChart({
   decayFactor,
   decayType,
 }: DecayPreviewChartProps) {
-  const [visibleCurves, setVisibleCurves] = useState({
-    linear: true,
-    exponential: true,
-    logarithmic: true,
-  });
-
-  // Only show the selected decayType curve as active
-  useEffect(() => {
-    setVisibleCurves({
-      linear: decayType === "linear",
-      exponential: decayType === "exponential",
-      logarithmic: decayType === "logarithmic",
-    });
-  }, [decayType]);
-
   const generateChartData = () => {
     // Return empty if invalid inputs
     if (!startPrice || !duration) return [];
-    
+
     const data = [];
     const steps = 50;
     const safeReserve = reservedPrice || 0;
-    decayFactor= (decayFactor * 1.0);
+    decayFactor = decayFactor * 1.0;
 
     for (let i = 0; i <= steps; i++) {
       const t = (i / steps) * duration;
-      const progress = t / duration;
 
       // Linear decay
-      let linearPrice = startPrice - (startPrice - safeReserve) * t / duration;
+      let linearPrice =
+        startPrice - ((startPrice - safeReserve) * t) / duration;
       if (linearPrice < safeReserve) linearPrice = safeReserve;
 
       // Exponential decay
       let exponentialPrice = safeReserve;
       if (decayFactor > 0) {
-        exponentialPrice = safeReserve + 
-          (startPrice - safeReserve) * Math.exp(-decayFactor * t);
+        exponentialPrice =
+          safeReserve + (startPrice - safeReserve) * Math.exp(-decayFactor * t);
         if (exponentialPrice < safeReserve) exponentialPrice = safeReserve;
       }
 
@@ -78,9 +62,9 @@ export function DecayPreviewChart({
       let logarithmicPrice = startPrice;
       if (decayFactor > 0) {
         const logBase = 1 + decayFactor * duration;
-        logarithmicPrice = startPrice - 
-          ((startPrice - safeReserve) * 
-            Math.log(1 + decayFactor * t)) / 
+        logarithmicPrice =
+          startPrice -
+          ((startPrice - safeReserve) * Math.log(1 + decayFactor * t)) /
             Math.log(logBase);
         if (logarithmicPrice < safeReserve) logarithmicPrice = safeReserve;
       }
@@ -89,7 +73,7 @@ export function DecayPreviewChart({
         time: t,
         linear: decayType === "linear" ? linearPrice : null,
         exponential: decayType === "exponential" ? exponentialPrice : null,
-        logarithmic: decayType === "logarithmic" ? logarithmicPrice : null
+        logarithmic: decayType === "logarithmic" ? logarithmicPrice : null,
       });
     }
     return data;
@@ -121,8 +105,8 @@ export function DecayPreviewChart({
           </TooltipTrigger>
           <TooltipContent>
             <p className="max-w-xs">
-              This chart shows how the price will decrease over time based on the
-              selected decay type and parameters.
+              This chart shows how the price will decrease over time based on
+              the selected decay type and parameters.
             </p>
           </TooltipContent>
         </UITooltip>
@@ -130,7 +114,7 @@ export function DecayPreviewChart({
 
       <div className="h-[300px] w-full mt-4">
         <ResponsiveContainer>
-          <LineChart 
+          <LineChart
             data={chartData}
             margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
           >
@@ -138,16 +122,16 @@ export function DecayPreviewChart({
             <XAxis
               dataKey="time"
               tickFormatter={(value) => {
-                if (duration >= 86400) return `${Math.round(value/86400)}d`;
-                if (duration >= 3600) return `${Math.round(value/3600)}h`;
-                if (duration >= 60) return `${Math.round(value/60)}m`;
+                if (duration >= 86400) return `${Math.round(value / 86400)}d`;
+                if (duration >= 3600) return `${Math.round(value / 3600)}h`;
+                if (duration >= 60) return `${Math.round(value / 60)}m`;
                 return `${value}s`;
               }}
             />
             <YAxis
               domain={[
                 (dataMin: number) => Math.floor(dataMin * 0.9 * 100) / 100,
-                (dataMax: number) => Math.ceil(dataMax * 1.1 * 100) / 100
+                (dataMax: number) => Math.ceil(dataMax * 1.1 * 100) / 100,
               ]}
               tickFormatter={(value) => value.toFixed(2)}
             />
@@ -157,7 +141,11 @@ export function DecayPreviewChart({
                 return (
                   <div className="bg-background border rounded-lg p-2 shadow-lg">
                     <div className="text-sm font-medium">
-                      Price: {typeof payload[0].value === "number" ? payload[0].value.toFixed(3) : payload[0].value} ETH
+                      Price:{" "}
+                      {typeof payload[0].value === "number"
+                        ? payload[0].value.toFixed(3)
+                        : payload[0].value}{" "}
+                      ETH
                     </div>
                     <div className="text-xs text-muted-foreground">
                       Time: {payload[0].payload.time}s

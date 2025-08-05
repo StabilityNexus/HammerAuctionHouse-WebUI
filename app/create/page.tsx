@@ -11,6 +11,7 @@ import {
   useAccount,
   useWriteContract,
   useWaitForTransactionReceipt,
+  usePublicClient,
 } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
@@ -27,8 +28,41 @@ import { AuctionType } from "@/lib/mock-data";
 import { Address } from "viem";
 import { getDurationInSeconds } from "@/lib/utils";
 import { append, decode } from "@/lib/storage";
+export interface AuctionFormData{
+    title: string,
+    description: string,
+    imageUrl: string,
+    type: string,
+    subtype: "linear" | "exponential" | "logarithmic" | undefined,
+    startPrice: string,
+    reservePrice: string,
+    duration: bigint,
+    days: string,
+    hours: string,
+    minutes: string,
+    minBidDelta: string,
+    deadlineExtension: string,
+    decayFactor: string,
+    commitDays: string,
+    commitHours: string,
+    commitMinutes: string,
+    revealDays: string,
+    revealHours: string,
+    revealMinutes: string,
+    commitDuration: bigint,
+    revealDuration: bigint,
+    minBid: string,
+    tokenAddress: string,
+    biddingTokenAddress: string,
+    auctionedTokenAddress: string,
+    auctionType: "NFT" | "ERC20" | undefined, 
+    tokenId: string,
+    tokenAmount: string,
+}
 
-function transformFormDataToParams(formData: any, auctionType: AuctionType) {
+
+
+function transformFormDataToParams(formData: AuctionFormData, auctionType: AuctionType) {
   const baseParams = {
     name: formData.title,
     description: formData.description,
@@ -148,16 +182,17 @@ export default function CreateAuction() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const publicClient = usePublicClient();
   const [formData, setFormData] = useState({
     //Unified form data structure
     title: "",
     description: "",
     imageUrl: "",
     type: "english",
-    subtype: "linear", // For Dutch auctions
+    subtype: "linear" as "linear" | "exponential" | "logarithmic", // For Dutch auctions
     startPrice: "0.1",
     reservePrice: "",
-    duration: "3",
+    duration: BigInt(3),
     days: "3",
     hours: "0",
     minutes: "0",
@@ -171,14 +206,14 @@ export default function CreateAuction() {
     revealDays: "1",
     revealHours: "0",
     revealMinutes: "0",
-    commitDuration: "",
-    revealDuration: "",
+    commitDuration: BigInt(0),
+    revealDuration: BigInt(0),
     minBid: "0",
     // Token fields
     tokenAddress: "",
     biddingTokenAddress: "0x0000000000000000000000000000000000000000", // ETH placeholder
     auctionedTokenAddress: "0x0000000000000000000000000000000000000000",
-    auctionType: "NFT", // Fixed field name from tokenType
+    auctionType: "NFT" as "NFT" | "ERC20", // Fixed field name from tokenType
     tokenId: "1",
     tokenAmount: "100",
   });
@@ -225,7 +260,10 @@ export default function CreateAuction() {
         }
 
         const auctionService = await getAuctionService(auctionType);
-        const lastAuction = await auctionService.getLastNAuctions(1);
+        const lastAuction = await auctionService.getLastNAuctions(publicClient,1);
+        if(lastAuction[0] === null){
+          return ;
+        }
         const auctionId = lastAuction.length > 0 ? decode(lastAuction[0].id).id : "";
         if(lastAuction.length > 0 && lastAuction[0].auctioneer === address){
           append("CreatedAuctions",lastAuction[0].protocol,auctionId)
