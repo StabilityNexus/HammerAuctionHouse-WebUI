@@ -5,7 +5,8 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   output: 'export',
   distDir: 'out',
-  basePath: '',
+  basePath: '/HammerAuctionHouse-WebUI',
+  assetPrefix: '/HammerAuctionHouse-WebUI',
 };
 
 export default nextConfig;
