@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   distDir: 'out',
   basePath: '/HammerAuctionHouse-WebUI',
   assetPrefix: '/HammerAuctionHouse-WebUI',
+  trailingSlash: true,
 };
 
 export default nextConfig;

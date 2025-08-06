@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const navItems = [
 	{ name: "Home", path: "/" },
@@ -23,10 +24,13 @@ export function Navbar() {
 			<div className="container w-full flex h-17 items-center justify-between">
 				<div className="flex items-center gap-6">
 					<Link href="/" className="flex items-center gap-2">
-						<img
+						<Image
 							src="/logo.svg"
 							alt="Hammer Auction House Logo"
-							className="h-15 w-15 object-contain dark:invert"
+							className="dark:invert"
+							width={"60"}
+							height={"60"}
+							objectFit="contain"
 						/>
 						{/* <span className="text-lg font-bold text-foreground">Hammer Auction House</span> */}
 					<span className="text-3xl font-bold text-primary">HAH!</span>
