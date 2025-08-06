@@ -6,8 +6,11 @@ const nextConfig: NextConfig = {
   output: 'export',
   distDir: 'out',
   basePath: '/HammerAuctionHouse-WebUI',
-  assetPrefix: '/HammerAuctionHouse-WebUI',
+  assetPrefix: '/HammerAuctionHouse-WebUI/',
   trailingSlash: true,
+  experimental: {
+    optimizePackageImports: ['lucide-react']
+  }
 };
 
 export default nextConfig;
