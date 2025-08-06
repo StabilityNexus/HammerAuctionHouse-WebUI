@@ -1,16 +1,16 @@
-
+"use client";
 enum AuctionProtocol {
-    AllPay = '1',
-    English = '2',
-    Linear = '3',
-    Logarithmic = '4',
-    Exponential = '5',
-    Vickrey = '6',
+  AllPay = '1',
+  English = '2',
+  Linear = '3',
+  Logarithmic = '4',
+  Exponential = '5',
+  Vickrey = '6',
 }
-enum Storage{
-    WishList = 'Wishlist',
-    CreatedAuctions = 'CreatedAuctions',
-    Bids = 'Bids',
+enum Storage {
+  WishList = 'Wishlist',
+  CreatedAuctions = 'CreatedAuctions',
+  Bids = 'Bids',
 }
 
 // Read raw string (comma‑separated fixed codes) from localStorage
@@ -19,13 +19,13 @@ function _read(storage: keyof typeof Storage) {
   return localStorage.getItem(Storage[storage]) || '';
 }
 
-export function generateCode(protocol: keyof typeof AuctionProtocol, id: string){
-    // Generate a fixed-width code based on protocol and id
-    // Example: "1000001" for AllPayAuction
-    return `${AuctionProtocol[protocol]}${id.padStart(6, '0')}`;
+export function generateCode(protocol: keyof typeof AuctionProtocol, id: string) {
+  // Generate a fixed-width code based on protocol and id
+  // Example: "1000001" for AllPayAuction
+  return `${AuctionProtocol[protocol]}${id.padStart(6, '0')}`;
 }
 
-function _write(storage: keyof typeof Storage,raw: string) {
+function _write(storage: keyof typeof Storage, raw: string) {
   if (typeof window === 'undefined') return '';
   try {
     localStorage.setItem(Storage[storage], raw)
@@ -34,23 +34,23 @@ function _write(storage: keyof typeof Storage,raw: string) {
   }
 }
 
-export function append(storage: keyof typeof Storage,protocol: keyof typeof AuctionProtocol, id: string){
-    const existing = _read(storage);
-    const raw = generateCode(protocol, id);
-    const list = existing ? existing.split(',') : [];
-    if (!list.includes(raw)) list.push(raw);
-    const newRaw = list.join(',');
-    _write(storage,newRaw);
+export function append(storage: keyof typeof Storage, protocol: keyof typeof AuctionProtocol, id: string) {
+  const existing = _read(storage);
+  const raw = generateCode(protocol, id);
+  const list = existing ? existing.split(',') : [];
+  if (!list.includes(raw)) list.push(raw);
+  const newRaw = list.join(',');
+  _write(storage, newRaw);
 }
 
-export function remove(storage: keyof typeof Storage,protocol: keyof typeof AuctionProtocol, id: string) {
-    const existing = _read(storage);
-    const raw = generateCode(protocol, id);
-    const newRaw = existing
-        .split(',')
-        .filter(code => code !== raw)
-        .join(',');
-    _write(storage,newRaw);
+export function remove(storage: keyof typeof Storage, protocol: keyof typeof AuctionProtocol, id: string) {
+  const existing = _read(storage);
+  const raw = generateCode(protocol, id);
+  const newRaw = existing
+    .split(',')
+    .filter(code => code !== raw)
+    .join(',');
+  _write(storage, newRaw);
 }
 
 export function decode(code: string) {
@@ -62,11 +62,11 @@ export function decode(code: string) {
   return { protocol: protocolName, id };
 }
 
-export function isPresent(storage: keyof typeof Storage,protocol: keyof typeof AuctionProtocol, id: string){
-    const raw = _read(storage);
-    if (!raw) return false;
-    const code = generateCode(protocol, id);
-    return raw.split(',').includes(code);
+export function isPresent(storage: keyof typeof Storage, protocol: keyof typeof AuctionProtocol, id: string) {
+  const raw = _read(storage);
+  if (!raw) return false;
+  const code = generateCode(protocol, id);
+  return raw.split(',').includes(code);
 }
 
 
