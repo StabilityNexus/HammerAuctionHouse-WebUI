@@ -9,6 +9,7 @@ import { getAuctionService } from "@/lib/auction-service";
 import { decode } from "@/lib/storage";
 import { AuctionDetail } from "./auction-detail";
 import { useSearchParams } from "next/navigation";
+import { ConnectButton } from "@/components/ui/wallet-button";
 
 function AuctionsContent() {
   const searchParams = useSearchParams();
@@ -160,6 +161,22 @@ function AuctionsContent() {
     const decoded = decode(auctionId);
     return (
       <AuctionDetail protocol={decoded.protocol} id={BigInt(decoded.id)} />
+    );
+  }
+
+  if (!publicClient) {
+    return (
+      <div className="container w-screen py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto z-10">
+          <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 text-center">
+            <h2 className="text-3xl font-bold">Connect Your Wallet</h2>
+            <p className="text-muted-foreground max-w-md">
+              Please connect your wallet to browse and participate in auctions.
+            </p>
+            <ConnectButton />
+          </div>
+        </div>
+      </div>
     );
   }
 

@@ -4,8 +4,8 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   output: 'export',
   distDir: 'out',
-  basePath: '/HammerAuctionHouse-WebUI',
-  assetPrefix: '/HammerAuctionHouse-WebUI/',
+  basePath: '',
+  assetPrefix: '',
   trailingSlash: true,
   experimental: {
     optimizePackageImports: ['lucide-react']
