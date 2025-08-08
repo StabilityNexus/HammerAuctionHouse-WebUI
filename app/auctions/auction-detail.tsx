@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Clock, Info, Wallet, Package } from "lucide-react";
+import { motion} from "framer-motion";
+import { ArrowLeft, Info, Wallet, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { Auction, AuctionType, Bid } from "@/lib/mock-data";
+import { Auction, AuctionType } from "@/lib/mock-data";
 import { getAuctionService } from "@/lib/auction-service";
 import { usePublicClient, useAccount, useWriteContract } from "wagmi";
 import { toast } from "sonner";
@@ -24,7 +24,7 @@ interface AuctionDetailProps {
 
 export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
   const [currentAuction, setCurrentAuction] = useState<Auction | null>(null);
-  const [bids, setBids] = useState<Bid[]>([]);
+  // const [bids, setBids] = useState<Bid[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isWithdrawingFunds, setIsWithdrawingFunds] = useState(false);
@@ -53,7 +53,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const auctionService = getAuctionService(protocol);
+      const auctionService = await getAuctionService(protocol);
       const auctionData = await auctionService.getAuction(
         BigInt(id),
         publicClient
@@ -82,7 +82,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     }
     try {
       setIsWithdrawingFunds(true);
-      const auctionService = getAuctionService(protocol);
+      const auctionService = await getAuctionService(protocol);
       await auctionService.withdrawFunds(writeContract, BigInt(id));
       toast.success("Withdrawal transaction submitted!");
     } catch (error) {
@@ -113,7 +113,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     }
     try {
       setIsWithdrawingItem(true);
-      const auctionService = getAuctionService(protocol);
+      const auctionService = await getAuctionService(protocol);
       await auctionService.withdrawItem(writeContract, BigInt(id));
       toast.success("Item withdrawal transaction submitted!");
     } catch (error) {
@@ -129,7 +129,6 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     protocol,
     id,
     writeContract,
-    bids,
   ]);
 
   // Handle transaction confirmations

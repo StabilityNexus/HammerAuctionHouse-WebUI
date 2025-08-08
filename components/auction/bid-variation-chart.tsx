@@ -35,7 +35,18 @@ export function BidVariationChart({ bids }: BidVariationChartProps) {
     bidder: bid.bidder,
   }));
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  interface TooltipProps {
+    active?: boolean;
+    payload?: {
+      payload: {
+        timestamp: number;
+        amount: number;
+        bidder: string;
+      };
+    }[];
+  }
+
+  const CustomTooltip = ({ active, payload }: TooltipProps) => {
     if (!active || !payload || !payload.length) return null;
 
     const bid = payload[0].payload;

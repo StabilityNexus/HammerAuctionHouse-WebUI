@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Auction, Bid } from "@/lib/mock-data";
+import { Auction } from "@/lib/mock-data";
 import { Info, AlertCircle, Check } from "lucide-react";
 import {
   AlertDialog,
@@ -105,7 +105,7 @@ export function BidForm({ auction }: BidFormProps) {
         Date.now() < Number(auction.deadline) * 1000
       ) {
         try {
-          const auctionService = getAuctionService(auction.protocol);
+          const auctionService = await getAuctionService(auction.protocol);
           if (auctionService.getCurrentPrice) {
             const price = await auctionService.getCurrentPrice(
               BigInt(auctionId)
@@ -140,8 +140,6 @@ export function BidForm({ auction }: BidFormProps) {
   // Handle successful transaction confirmation
   useEffect(() => {
     if (isConfirmed && hash) {
-      console.log("Transaction confirmed:", hash);
-
       setShowSuccess(true);
       setIsSubmitting(false);
 
@@ -159,8 +157,6 @@ export function BidForm({ auction }: BidFormProps) {
     }
   }, [writeError, confirmError]);
 
-  console.log("bid amount", bidAmount);
-
   const handleSubmit = async () => {
     if (!isValidBid || !isConnected || !address || isSubmitting) return;
 
@@ -174,7 +170,7 @@ export function BidForm({ auction }: BidFormProps) {
 
     setIsSubmitting(true);
     try {
-      const auctionService = getAuctionService(auction.protocol);
+      const auctionService = await getAuctionService(auction.protocol);
       if (isReverseDutchAuction) {
         await auctionService.withdrawItem(
           writeContract,
@@ -183,6 +179,9 @@ export function BidForm({ auction }: BidFormProps) {
         );
       } else {
         // For other auction types, place a bid
+        if(auctionService.placeBid === undefined){
+          return;
+        }
         await auctionService.placeBid(
           writeContract,
           BigInt(auctionId),

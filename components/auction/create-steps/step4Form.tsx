@@ -1,16 +1,15 @@
+import { AuctionFormData } from "@/app/create/page";
 import { Button } from "@/components/ui/button";
 import { getTokenName } from "@/lib/auction-service";
-import { formatDuration, getDurationInSeconds } from "@/lib/utils";
+import { formatDuration } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { usePublicClient } from "wagmi";
 
 interface Step4Form {
   currentStep: number;
-  formData: any;
+  formData: AuctionFormData;
   goToPrevStep: () => void;
-  goToNextStep: () => void;
-  updateFormData: (data: any) => void;
   handleFinalSubmit: () => void;
   isSubmitting?: boolean;
   isPending?: boolean;
@@ -19,10 +18,8 @@ interface Step4Form {
 
 export function Step4Form({
   formData,
-  updateFormData,
   currentStep,
   goToPrevStep,
-  goToNextStep,
   isSubmitting,
   isPending,
   isConfirming,
@@ -61,8 +58,6 @@ export function Step4Form({
   } else {
     durationLabel = formatDuration(Number(formData.duration));
   }
-
-  console.log("Reviewing auction data:", formData);
 
   return (
     <div className="space-y-8">

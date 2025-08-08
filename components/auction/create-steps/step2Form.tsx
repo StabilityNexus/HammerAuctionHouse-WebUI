@@ -1,3 +1,4 @@
+import { AuctionFormData } from "@/app/create/page";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -9,16 +10,16 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, ArrowRight, HelpCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 interface Step2Form {
   currentStep: number;
-  formData: any;
+  formData: AuctionFormData;
   goToPrevStep: () => void;
   goToNextStep: () => void;
-  updateFormData: (data: any) => void;
+  updateFormData: (data: Partial<AuctionFormData>) => void;
 }
 
 export function Step2Form({

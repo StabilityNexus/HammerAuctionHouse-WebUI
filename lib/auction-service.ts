@@ -1,6 +1,33 @@
 // Auction Service - Unified API for all auction protocols
 import { Address } from "viem";
 import { AuctionType, Auction, Bid } from "./mock-data";
+import { Config, UsePublicClientReturnType } from "wagmi";
+import { WriteContractMutate } from "wagmi/query";
+
+export interface AuctionData {
+  name: string;
+  description: string;
+  imgUrl: string;
+  auctionType: bigint; // 0 = NFT, 1 = ERC20
+  auctionedToken: Address;
+  auctionedTokenIdOrAmount: bigint;
+  biddingToken: Address;
+  startingBid?: bigint;
+  minBidDelta?: bigint;
+  duration?: bigint;
+  deadlineExtension?: bigint;
+  startingPrice?: bigint;
+  reservedPrice?: bigint;
+  decayFactor?: bigint;
+  bidCommitDuration?: bigint;
+  bidRevealDuration?: bigint;
+  minBid?: bigint;
+}
+
+export interface mappedData {
+  client: UsePublicClientReturnType;
+  auctionData: readonly (bigint | string | boolean | `0x${string}` | number)[] | undefined;
+}
 
 // Base interfaces for all auction types
 export interface BaseAuctionParams {
@@ -41,9 +68,9 @@ export interface VickreyAuctionParams extends BaseAuctionParams {
 }
 
 // Union type for all auction parameters
-export type AuctionParams = 
+export type AuctionParams =
   | EnglishAuctionParams
-  | AllPayAuctionParams 
+  | AllPayAuctionParams
   | DutchAuctionParams
   | VickreyAuctionParams;
 
@@ -51,76 +78,76 @@ export type AuctionParams =
 // Abstract auction service interface
 export interface IAuctionService {
   contractAddress: Address;
-  createAuction(writeContract: any, params: any): Promise<void>;
-  placeBid(writeContract: any, auctionId: bigint, bidAmount: bigint, tokenAddress: Address, auctionType: bigint): Promise<void>;
-  withdrawFunds(writeContract: any, auctionId: bigint): Promise<void>;
-  withdrawItem(writeContract: any, auctionId: bigint,biddingToken?: string): Promise<void>;
-  getAuction(auctionId: bigint,client: any): Promise<any>;
-  getAllAuctions(client: any, startBlock: bigint, endBlock: bigint): Promise<any[]>;
-  getBidHistory(client: any, auctionId: bigint, startBlock: bigint, endBlock: bigint): Promise<Bid[]>;
-  
+  createAuction(writeContract: WriteContractMutate<Config, unknown>, params: Partial<AuctionParams>): Promise<void>;
+  placeBid?(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, bidAmount: bigint, tokenAddress: Address, auctionType: bigint): Promise<void>;
+  withdrawFunds(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void>;
+  withdrawItem(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, biddingToken?: string): Promise<void>;
+  getAuction(auctionId: bigint, client: UsePublicClientReturnType): Promise<Auction>;
+  getBidHistory?(client: UsePublicClientReturnType, auctionId: bigint, startBlock: bigint, endBlock: bigint): Promise<(undefined | Bid)[]>;
+
+  //Continue from here
   // New counter-based methods
   getAuctionCounter(): Promise<bigint>;
-  getLastNAuctions(n?: number): Promise<any[]>;
-  
+  getLastNAuctions(client: UsePublicClientReturnType, n?: number): Promise<(Auction | null)[]>;
+
   // Dutch auction specific methods
   getCurrentPrice?(auctionId: bigint): Promise<bigint>;
 
   //Vickrey Auction specific methods
-  revealBid?(writeContract: any,auctionId: bigint,bidAmount: bigint,salt: string): Promise<void>;
+  revealBid?(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, bidAmount: bigint, salt: string): Promise<void>;
 
   //AllPay & English specific methods
-  getCurrentBid?(client: any,auctionId: bigint,userAddress: Address): Promise<any>;
+  getCurrentBid?(client: UsePublicClientReturnType, auctionId: bigint, userAddress: Address): Promise<bigint>;
 }
 
 // Factory function to get the appropriate auction service
-export function getAuctionService(auctionType: AuctionType): IAuctionService {
+export async function getAuctionService(auctionType: AuctionType): Promise<IAuctionService> {
   switch (auctionType) {
     case "AllPay":
-      return getAllPayAuctionService();
+      return await getAllPayAuctionService();
     case "English":
-      return getEnglishAuctionService();
+      return await getEnglishAuctionService();
     case "Linear":
-      return getLinearDutchAuctionService();
+      return await getLinearDutchAuctionService();
     case "Exponential":
-      return getExponentialDutchAuctionService();
+      return await getExponentialDutchAuctionService();
     case "Logarithmic":
-      return getLogarithmicDutchAuctionService();
+      return await getLogarithmicDutchAuctionService();
     case "Vickrey":
-      return getVickreyAuctionService();
+      return await getVickreyAuctionService();
     default:
       throw new Error(`Unsupported auction type: ${auctionType}`);
   }
 }
 
 // Lazy imports to avoid circular dependencies
-function getAllPayAuctionService(): IAuctionService {
-  const { AllPayAuctionService } = require("./services/allpay-auction-service");
+async function getAllPayAuctionService(): Promise<IAuctionService> {
+  const { AllPayAuctionService } = await import("./services/allpay-auction-service");
   return new AllPayAuctionService();
 }
 
-function getEnglishAuctionService(): IAuctionService {
-  const { EnglishAuctionService } = require("./services/english-auction-service");
+async function getEnglishAuctionService(): Promise<IAuctionService> {
+  const { EnglishAuctionService } = await import("./services/english-auction-service");
   return new EnglishAuctionService();
 }
 
-function getLinearDutchAuctionService(): IAuctionService {
-  const { LinearDutchAuctionService } = require("./services/linear-dutch-auction-service");
+async function getLinearDutchAuctionService(): Promise<IAuctionService> {
+  const { LinearDutchAuctionService } = await import("./services/linear-dutch-auction-service");
   return new LinearDutchAuctionService();
 }
 
-function getExponentialDutchAuctionService(): IAuctionService {
-  const { ExponentialDutchAuctionService } = require("./services/exponential-dutch-auction-service");
+async function getExponentialDutchAuctionService(): Promise<IAuctionService> {
+  const { ExponentialDutchAuctionService } = await import("./services/exponential-dutch-auction-service");
   return new ExponentialDutchAuctionService();
 }
 
-function getLogarithmicDutchAuctionService(): IAuctionService {
-  const { LogarithmicDutchAuctionService } = require("./services/logarithmic-dutch-auction-service");
+async function getLogarithmicDutchAuctionService(): Promise<IAuctionService> {
+  const { LogarithmicDutchAuctionService } = await import("./services/logarithmic-dutch-auction-service");
   return new LogarithmicDutchAuctionService();
 }
 
-function getVickreyAuctionService(): IAuctionService {
-  const { VickreyAuctionService } = require("./services/vickrey-auction-service");
+async function getVickreyAuctionService(): Promise<IAuctionService> {
+  const { VickreyAuctionService } = await import("./services/vickrey-auction-service");
   return new VickreyAuctionService();
 }
 
@@ -143,7 +170,7 @@ export function isAuctionEnded(auction: Auction): boolean {
   return now >= auction.deadline;
 }
 
-export async function getTokenName(publicClient: any,auctionedToken: string): Promise<string>{
+export async function getTokenName(publicClient: UsePublicClientReturnType, auctionedToken: string): Promise<string> {
   const tokenContract = {
     abi: [{
       name: 'symbol',
@@ -154,13 +181,16 @@ export async function getTokenName(publicClient: any,auctionedToken: string): Pr
     }]
   };
 
-  if(auctionedToken=="0x0000000000000000000000000000000000000000"){
+  if (!publicClient) {
+    return 'Unknown';
+  }
+  if (auctionedToken == "0x0000000000000000000000000000000000000000") {
     return 'Unknown';
   }
 
   try {
     const symbol = await publicClient.readContract({
-      address: auctionedToken,
+      address: auctionedToken as Address,
       abi: tokenContract.abi,
       functionName: 'symbol'
     });

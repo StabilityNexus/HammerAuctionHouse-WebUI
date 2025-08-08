@@ -1,5 +1,5 @@
 import { Auction, Bid } from "@/lib/mock-data";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { formatEther } from "viem";
 import { CountdownTimer } from "../countdown-timer";
 import { BidForm } from "../bid-form";
@@ -11,10 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionInfo } from "../auction-info";
 import { BidHistory } from "../bid-history";
 import { decode } from "@/lib/storage";
-import { useAccount } from "wagmi";
+import { useAccount, UsePublicClientReturnType } from "wagmi";
 interface EnglishDetailProps {
-  currentAuction: Auction;
-  publicClient: any;
+    currentAuction: Auction;
+    publicClient: UsePublicClientReturnType;
 }
 
 export function EnglishDetail({
@@ -30,24 +30,24 @@ export function EnglishDetail({
     if (!publicClient) return;
     setIsLoadingBids(true);
     try {
-      console.log(
-        `Fetching ${currentAuction.protocol} auction bids for ID:`,
-        auctionId
-      );
-      const auctionService = getAuctionService(currentAuction.protocol);
+      const auctionService = await getAuctionService(currentAuction.protocol);
       const currentBlock = await publicClient.getBlockNumber();
       const fromBlock =
         currentBlock > BigInt(10000000)
           ? currentBlock - BigInt(10000000)
           : BigInt(0);
+      if(auctionService.getBidHistory===undefined){
+        return ; 
+      }
       const bidHistory = await auctionService.getBidHistory(
         publicClient,
         BigInt(auctionId),
         fromBlock,
         currentBlock
       );
-      console.log("Fetched bid history:", bidHistory);
-      setBids(bidHistory);
+      if(bidHistory != undefined){
+        setBids(bidHistory.filter((bid): bid is Bid => bid !== undefined));
+      }
     } catch (err) {
       console.error(
         `Error fetching ${currentAuction.protocol} auction bids:`,
@@ -61,7 +61,7 @@ export function EnglishDetail({
   const fetchCurrentBid = async () => {
     if (!publicClient || !userAddress) return;
     try {
-      const auctionService = getAuctionService("English");
+      const auctionService = await getAuctionService("English");
       if (auctionService && auctionService.getCurrentBid) {
         const currentBid = await auctionService.getCurrentBid(
           publicClient,
@@ -70,7 +70,6 @@ export function EnglishDetail({
         );
         setCurrentBid(currentBid);
       }
-      console.log("current bid is", currentBid);
     } catch (error) {
       console.error("Error fetching current bid from contract: ", error);
     }

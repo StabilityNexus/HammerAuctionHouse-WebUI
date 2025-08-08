@@ -22,7 +22,7 @@ export function CountdownTimer({ endTime, startTime, status }: CountdownTimerPro
   useEffect(() => {
     function updateTimer() {
       const now = Date.now();
-      let targetTime = status === "upcoming" ? startTime : endTime;
+      const targetTime = status === "upcoming" ? startTime : endTime;
       
       if (status === "ended" || (status === "upcoming" && now < startTime) || (status === "active" && now < endTime)) {
         const difference = Math.max(0, targetTime - now);

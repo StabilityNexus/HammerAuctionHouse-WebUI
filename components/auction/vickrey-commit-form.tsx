@@ -25,7 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { append, decode } from "@/lib/storage";
+import { decode } from "@/lib/storage";
 
 interface VickreyCommitFormProps {
   auction: Auction;
@@ -48,7 +48,7 @@ export function VickreyCommitForm({ auction }: VickreyCommitFormProps) {
 
   const {
     isLoading: isConfirming,
-    isSuccess: isConfirmed,
+    // isSuccess: isConfirmed,
     error: confirmError,
   } = useWaitForTransactionReceipt({
     hash,

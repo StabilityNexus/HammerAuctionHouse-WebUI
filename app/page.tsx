@@ -10,12 +10,6 @@ import {
   Globe,
   TrendingUp,
   Lock,
-  Search,
-  Wallet,
-  BadgeCheck,
-  Award,
-  ShieldCheck,
-  Settings,
   ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -82,50 +76,7 @@ export default function Home() {
     },
   ];
 
-  const auctioneerSteps = [
-    {
-      icon: <Settings className="h-6 w-6" />,
-      title: "Configure & Preview",
-      description:
-        "Set your auction parameters including start price, duration, and type. Preview how your auction will behave before going live.",
-      tooltip:
-        "Choose from English, Dutch, All-Pay, or Vickrey auction formats",
-    },
-    {
-      icon: <ShieldCheck className="h-6 w-6" />,
-      title: "Deploy Securely",
-      description:
-        "Deploy your auction contract to the blockchain with automated security checks and verification.",
-    },
-    {
-      icon: <Award className="h-6 w-6" />,
-      title: "Manage & Complete",
-      description:
-        "Track bids, communicate with bidders, and finalize the auction when complete.",
-    },
-  ];
 
-  const bidderSteps = [
-    {
-      icon: <Search className="h-6 w-6" />,
-      title: "Discover Auctions",
-      description:
-        "Browse active auctions with advanced filtering and search capabilities.",
-    },
-    {
-      icon: <Wallet className="h-6 w-6" />,
-      title: "Place Bids",
-      description:
-        "Connect your wallet and place bids with real-time price updates and notifications.",
-      tooltip: "Supports MetaMask, WalletConnect, and other popular wallets",
-    },
-    {
-      icon: <BadgeCheck className="h-6 w-6" />,
-      title: "Win & Collect",
-      description:
-        "If you win, claim your NFT automatically with proof of ownership on the blockchain.",
-    },
-  ];
 
   return (
     <div className="flex flex-col">

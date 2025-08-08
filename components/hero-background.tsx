@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { motion } from "framer-motion";
 
 export function HeroBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);

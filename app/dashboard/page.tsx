@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionGrid } from "@/components/auction/auction-grid";
 import { Auction } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
-import { User, PlusCircle, DollarSign, Gavel, TrendingUp } from "lucide-react";
+import { User, PlusCircle} from "lucide-react";
 import Link from "next/link";
 import { useAccount, usePublicClient } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -20,14 +20,18 @@ export default function Dashboard() {
   const [createdAuctions, setCreatedAuctions] = useState<Auction[]>([]);
   const [biddedAuctions, setBiddedAuctions] = useState<Auction[]>([]);
   const [watchedAuctions, setWatchedAuctions] = useState<Auction[]>([]);
+  const [isLoadingCreated, setIsLoadingCreated] = useState(false);
+  const [isLoadingBids, setIsLoadingBids] = useState(false);
+  const [isLoadingWatchlist, setIsLoadingWatchlist] = useState(false);
   const publicClient = usePublicClient();
   
   const fetchCreatedAuctions = async () =>{
+    setIsLoadingCreated(true);
     try {
       const auctions = loadList("CreatedAuctions");
       const fetchedAuctions = await Promise.all(
         auctions.map(async (auctionData) => {
-          const service = getAuctionService(decode(auctionData).protocol);
+          const service = await getAuctionService(decode(auctionData).protocol);
           const auction = await service.getAuction(BigInt(decode(auctionData).id),publicClient);
           if(auction.auctioneer==emptyAddress){return;}
           return auction;
@@ -36,15 +40,18 @@ export default function Dashboard() {
       setCreatedAuctions(fetchedAuctions.filter(auction => auction != null));
     } catch (error) {
       console.error("Error fetching created auctions:", error);
+    } finally {
+      setIsLoadingCreated(false);
     }
   }
 
   const fetchBiddedAuctions = async () =>{
+    setIsLoadingBids(true);
     try {
       const auctions = loadList("Bids");
       const fetchedAuctions = await Promise.all(
         auctions.map(async (auctionData) => {
-          const service = getAuctionService(decode(auctionData).protocol);
+          const service = await getAuctionService(decode(auctionData).protocol);
           const auction = await service.getAuction(BigInt(decode(auctionData).id),publicClient);
           if(auction.auctioneer==emptyAddress){return;}
           return auction;
@@ -53,15 +60,18 @@ export default function Dashboard() {
       setBiddedAuctions(fetchedAuctions.filter(auction => auction != null));
     } catch (error) {
       console.error("Error fetching bidded auctions:", error);
+    } finally {
+      setIsLoadingBids(false);
     }
   }
 
   const fetchWatchedAuctions = async () =>{
+    setIsLoadingWatchlist(true);
     try {
       const auctions = loadList("WishList");
       const fetchedAuctions = await Promise.all(
         auctions.map(async (auctionData) => {
-          const service = getAuctionService(decode(auctionData).protocol);
+          const service = await getAuctionService(decode(auctionData).protocol);
           const auction = await service.getAuction(BigInt(decode(auctionData).id),publicClient);
           if(auction.auctioneer==emptyAddress){return;}
           return auction;
@@ -70,6 +80,8 @@ export default function Dashboard() {
       setWatchedAuctions(fetchedAuctions.filter(auction => auction != null));
     } catch (error) {
       console.error("Error fetching watched auctions:", error);
+    } finally {
+      setIsLoadingWatchlist(false);
     }
   }
 
@@ -124,7 +136,12 @@ export default function Dashboard() {
                 </p>
               </div>
               
-              {createdAuctions.length > 0 ? (
+              {isLoadingCreated ? (
+                <div className="text-center py-12 border rounded-lg bg-muted/20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading your created auctions...</p>
+                </div>
+              ) : createdAuctions.length > 0 ? (
                 <AuctionGrid auctions={createdAuctions} />
               ) : (
                 <div className="text-center py-12 border rounded-lg bg-muted/20">
@@ -150,7 +167,12 @@ export default function Dashboard() {
                 </p>
               </div>
               
-              {biddedAuctions.length > 0 ? (
+              {isLoadingBids ? (
+                <div className="text-center py-12 border rounded-lg bg-muted/20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading your active bids...</p>
+                </div>
+              ) : biddedAuctions.length > 0 ? (
                 <AuctionGrid auctions={biddedAuctions} />
               ) : (
                 <div className="text-center py-12 border rounded-lg bg-muted/20">
@@ -173,7 +195,12 @@ export default function Dashboard() {
                 </p>
               </div>
               
-              {watchedAuctions.length > 0 ? (
+              {isLoadingWatchlist ? (
+                <div className="text-center py-12 border rounded-lg bg-muted/20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading your watchlist...</p>
+                </div>
+              ) : watchedAuctions.length > 0 ? (
                 <AuctionGrid auctions={watchedAuctions} />
               ) : (
                 <div className="text-center py-12 border rounded-lg bg-muted/20">

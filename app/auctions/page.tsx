@@ -1,28 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { AuctionGrid } from "@/components/auction/auction-grid";
 import { AuctionFilter } from "@/components/auction/auction-filter";
-import {AuctionType, Auction } from "@/lib/mock-data";
+import { AuctionType, Auction } from "@/lib/mock-data";
 import { usePublicClient } from "wagmi";
 import { getAuctionService } from "@/lib/auction-service";
+import { decode } from "@/lib/storage";
+import { AuctionDetail } from "./auction-detail";
+import { useSearchParams } from "next/navigation";
+import { ConnectButton } from "@/components/ui/wallet-button";
 
-export default function AuctionsPage() {
+function AuctionsContent() {
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<AuctionType[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
   const [fetchedAuctions, setFetchedAuctions] = useState<Auction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const publicClient = usePublicClient();
+  const auctionId = searchParams.get("id");
 
   const fetchAllPayAuctions = async () => {
     if (!publicClient) return [];
     try {
-      const allPayService = getAuctionService("AllPay");
-      console.log("Fetching AllPay auctions...");
-      const currentBlock = await publicClient.getBlockNumber();
-      const startBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
-      const auctions = await allPayService.getAllAuctions(publicClient, startBlock, currentBlock);
+      const allPayService = await getAuctionService("AllPay");
+      const auctions = await allPayService.getLastNAuctions(publicClient, 50);
       return auctions;
     } catch (error) {
       console.error("Error fetching AllPay auctions:", error);
@@ -33,11 +36,8 @@ export default function AuctionsPage() {
   const fetchEnglishAuctions = async () => {
     if (!publicClient) return [];
     try {
-      const englishService = getAuctionService("English");
-      console.log("Fetching English auctions...");
-      const currentBlock = await publicClient.getBlockNumber();
-      const startBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
-      const auctions = await englishService.getAllAuctions(publicClient, startBlock, currentBlock);
+      const englishService = await getAuctionService("English");
+      const auctions = await englishService.getLastNAuctions(publicClient, 50);
       return auctions;
     } catch (error) {
       console.error("Error fetching English auctions:", error);
@@ -48,11 +48,11 @@ export default function AuctionsPage() {
   const fetchLinearDutchAuctions = async () => {
     if (!publicClient) return [];
     try {
-      const linearDutchService = getAuctionService("Linear");
-      console.log("Fetching Linear Dutch auctions...");
-      const currentBlock = await publicClient.getBlockNumber();
-      const startBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
-      const auctions = await linearDutchService.getAllAuctions(publicClient, startBlock, currentBlock);
+      const linearDutchService = await getAuctionService("Linear");
+      const auctions = await linearDutchService.getLastNAuctions(
+        publicClient,
+        50
+      );
       return auctions;
     } catch (error) {
       console.error("Error fetching Linear Dutch auctions:", error);
@@ -63,11 +63,11 @@ export default function AuctionsPage() {
   const fetchExponentialDutchAuctions = async () => {
     if (!publicClient) return [];
     try {
-      const exponentialDutchService = getAuctionService("Exponential");
-      console.log("Fetching Exponential Dutch auctions...");
-      const currentBlock = await publicClient.getBlockNumber();
-      const startBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
-      const auctions = await exponentialDutchService.getAllAuctions(publicClient, startBlock, currentBlock);
+      const exponentialDutchService = await getAuctionService("Exponential");
+      const auctions = await exponentialDutchService.getLastNAuctions(
+        publicClient,
+        50
+      );
       return auctions;
     } catch (error) {
       console.error("Error fetching Exponential Dutch auctions:", error);
@@ -78,12 +78,11 @@ export default function AuctionsPage() {
   const fetchLogarithmicDutchAuctions = async () => {
     if (!publicClient) return [];
     try {
-      const logarithmicDutchService = getAuctionService("Logarithmic");
-      console.log("Fetching Logarithmic Dutch auctions...");
-      const currentBlock = await publicClient.getBlockNumber();
-      const startBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
-      const auctions = await logarithmicDutchService.getAllAuctions(publicClient, startBlock, currentBlock);
-      console.log("Fetched Logarithmic Dutch auctions:", auctions);
+      const logarithmicDutchService = await getAuctionService("Logarithmic");
+      const auctions = await logarithmicDutchService.getLastNAuctions(
+        publicClient,
+        50
+      );
       return auctions;
     } catch (error) {
       console.error("Error fetching Logarithmic Dutch auctions:", error);
@@ -94,12 +93,8 @@ export default function AuctionsPage() {
   const fetchVickreyAuctions = async () => {
     if (!publicClient) return [];
     try {
-      const vickreyService = getAuctionService("Vickrey");
-      console.log("Fetching Vickrey auctions...");
-      const currentBlock = await publicClient.getBlockNumber();
-      const startBlock = currentBlock > BigInt(10000) ? currentBlock - BigInt(10000) : BigInt(0);
-      const auctions = await vickreyService.getAllAuctions(publicClient, startBlock, currentBlock);
-      console.log("Fetched Vickrey auctions:", auctions);
+      const vickreyService = await getAuctionService("Vickrey");
+      const auctions = await vickreyService.getLastNAuctions(publicClient, 50);
       return auctions;
     } catch (error) {
       console.error("Error fetching Vickrey auctions:", error);
@@ -111,18 +106,32 @@ export default function AuctionsPage() {
     if (!publicClient) return;
     setIsLoading(true);
     try {
-      const [allPayAuctions, englishAuctions, linearDutchAuctions, exponentialDutchAuctions, logarithmicDutchAuctions, vickreyAuctions] = await Promise.all([
+      const [
+        allPayAuctions,
+        englishAuctions,
+        linearDutchAuctions,
+        exponentialDutchAuctions,
+        logarithmicDutchAuctions,
+        vickreyAuctions,
+      ] = await Promise.all([
         fetchAllPayAuctions(),
         fetchEnglishAuctions(),
         fetchLinearDutchAuctions(),
         fetchExponentialDutchAuctions(),
         fetchLogarithmicDutchAuctions(),
-        fetchVickreyAuctions()
+        fetchVickreyAuctions(),
       ]);
-      setFetchedAuctions([...allPayAuctions, ...englishAuctions, ...linearDutchAuctions, ...exponentialDutchAuctions, ...logarithmicDutchAuctions, ...vickreyAuctions]);
+      const allAuctions = [
+        ...allPayAuctions,
+        ...englishAuctions,
+        ...linearDutchAuctions,
+        ...exponentialDutchAuctions,
+        ...logarithmicDutchAuctions,
+        ...vickreyAuctions,
+      ].filter((auction): auction is Auction => auction !== null);
+      setFetchedAuctions(allAuctions);
     } catch (error) {
       console.error("Error fetching auctions:", error);
-      // setFetchedAuctions(mockAuctions);
     } finally {
       setIsLoading(false);
     }
@@ -147,7 +156,30 @@ export default function AuctionsPage() {
       selectedStatus.length === 0 || selectedStatus.includes(status);
     return matchesSearch && matchesType && matchesStatus;
   });
-  console.log("Filtered Auctions:", filteredAuctions);
+
+  if (auctionId) {
+    const decoded = decode(auctionId);
+    return (
+      <AuctionDetail protocol={decoded.protocol} id={BigInt(decoded.id)} />
+    );
+  }
+
+  if (!publicClient) {
+    return (
+      <div className="container w-screen py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto z-10">
+          <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 text-center">
+            <h2 className="text-3xl font-bold">Connect Your Wallet</h2>
+            <p className="text-muted-foreground max-w-md">
+              Please connect your wallet to browse and participate in auctions.
+            </p>
+            <ConnectButton />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container w-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto z-10">
@@ -164,7 +196,10 @@ export default function AuctionsPage() {
           {isLoading ? (
             <div className="text-center py-10">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-              <p className="mt-4">Loading All-Pay, English, Linear Dutch, Exponential Dutch, Logarithmic Dutch, and Vickrey Auctions...</p>
+              <p className="mt-4">
+                Loading All-Pay, English, Linear Dutch, Exponential Dutch,
+                Logarithmic Dutch, and Vickrey Auctions...
+              </p>
             </div>
           ) : (
             <AuctionGrid auctions={filteredAuctions} />
@@ -172,5 +207,20 @@ export default function AuctionsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AuctionsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="text-center py-10">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4">Loading...</p>
+        </div>
+      }
+    >
+      <AuctionsContent />
+    </Suspense>
   );
 }

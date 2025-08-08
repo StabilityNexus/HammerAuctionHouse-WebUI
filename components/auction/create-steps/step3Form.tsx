@@ -26,17 +26,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ArrowRight, HelpCircle } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { z, ZodType } from "zod";
 import { DecayPreviewChart } from "../decay-preview-chart";
 import { getTokenName } from "@/lib/auction-service";
 import { usePublicClient } from "wagmi";
+import { AuctionFormData } from "@/app/create/page";
 
 interface Step3Form {
   currentStep: number;
-  formData: any;
+  formData: AuctionFormData;
   goToPrevStep: () => void;
   goToNextStep: () => void;
-  updateFormData: (data: any) => void;
+  updateFormData: (data: Partial<AuctionFormData>) => void;
 }
 
 export function Step3Form({
@@ -159,6 +160,7 @@ export function Step3Form({
     minBid?: string;
   };
 
+
   // Auction type selection tab
   const auctionTypes = [
     {
@@ -186,10 +188,10 @@ export function Step3Form({
     },
   ];
 
-  const defaultValues: any = React.useMemo(() => {
+  const defaultValues: FormValues = React.useMemo(() => {
     if (formData.type === "dutch") {
       return {
-        type: "dutch",
+        type: "dutch" as const,
         subtype: formData.subtype || "linear",
         startPrice: formData.startPrice || "0.1",
         reservePrice: formData.reservePrice || "0",
@@ -213,7 +215,7 @@ export function Step3Form({
     }
     // english/all-pay
     return {
-      type: formData.type || "english",
+      type: (formData.type as "english" | "all-pay") || "english",
       startPrice: formData.startPrice || "0.1",
       minBidDelta: formData.minBidDelta || "0.05",
       deadlineExtension: formData.deadlineExtension || "60",
@@ -224,7 +226,7 @@ export function Step3Form({
   }, [formData]);
 
   const form_3 = useForm<FormValues>({
-    resolver: zodResolver(formSchema as any),
+    resolver: zodResolver(formSchema as ZodType<FormValues>),
     defaultValues,
   });
 
@@ -245,7 +247,7 @@ export function Step3Form({
   }, [form_3, formData, updateFormData]);
 
   const onSubmit = (data: FormValues) => {
-    let update: any = { ...data };
+    const update: Partial<AuctionFormData> = { ...data };
     if (data.type === "vickrey") {
       update.commitDuration = getDurationInSeconds(
         data.commitDays || "0",
@@ -266,7 +268,6 @@ export function Step3Form({
         data.minutes || "0"
       );
     }
-    console.log("Step 2 form submission data:", update);
     updateFormData(update);
     goToNextStep();
   };
@@ -275,8 +276,6 @@ export function Step3Form({
 
   const watchedValues = form_3.watch();
   const dutchSubtype = watchedValues.subtype || formData.subtype || "linear";
-  console.log("Current auction type:", auctionType);
-  console.log("Dutch subtype:", dutchSubtype);
   const dutchStartPrice =
     watchedValues.startPrice || formData.startPrice || "0";
   const dutchReservePrice =
