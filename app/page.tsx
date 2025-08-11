@@ -11,12 +11,60 @@ import {
   TrendingUp,
   Lock,
   ScrollText,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { HeroBackground } from "@/components/hero-background";
 import { HowItWorksSection } from "@/components/how-it-works";
+import { useEffect, useState } from "react";
+import { usePublicClient } from "wagmi";
+import { getAuctionService } from "@/lib/auction-service";
+import { Auction } from "@/lib/mock-data";
+import { formatDistanceToNow } from "date-fns";
+import { formatEther } from "viem";
 
 export default function Home() {
+  const [featuredAuctions, setFeaturedAuctions] = useState<
+    Array<Auction | null>
+  >([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const publicClient = usePublicClient();
+
+  // Fetch latest auctions from logarithmic, vickrey and english
+  useEffect(() => {
+    const fetchLatestAuctions = async () => {
+      if (!publicClient) return;
+      setIsLoading(true);
+      try {
+        const logarithmicService = await getAuctionService("Exponential");
+        const vickreyService = await getAuctionService("Vickrey");
+        const englishService = await getAuctionService("English");
+
+        const [logarithmicAuction, vickreyAuction, englishAuction] =
+          await Promise.all([
+            logarithmicService.getLastNAuctions(publicClient, 1),
+            vickreyService.getLastNAuctions(publicClient, 1),
+            englishService.getLastNAuctions(publicClient, 1),
+          ]);
+
+        const latestAuctions = [
+          ...(logarithmicAuction.length > 0 ? [logarithmicAuction[0]] : []),
+          ...(vickreyAuction.length > 0 ? [vickreyAuction[0]] : []),
+          ...(englishAuction.length > 0 ? [englishAuction[0]] : []),
+        ].filter((auction): auction is Auction => auction !== null);
+
+        setFeaturedAuctions(latestAuctions);
+      } catch (error) {
+        console.error("Error fetching featured auctions:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLatestAuctions();
+  }, [publicClient]);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -52,7 +100,7 @@ export default function Home() {
     },
     {
       icon: Globe,
-      title: "Global Access",
+      title: "Permissionless Global Access",
       description:
         "Participate in auctions from anywhere in the world with just a Web3 wallet. No intermediaries, no restrictions.",
     },
@@ -70,13 +118,11 @@ export default function Home() {
     },
     {
       icon: Lock,
-      title: "Auction ERC-20 & ERC-721 Tokens",
+      title: "ERC-20 & ERC-721 Supported",
       description:
         "Create auctions for both fungible (ERC-20) and non-fungible (ERC-721) tokens with complete transparency and trust.",
     },
   ];
-
-
 
   return (
     <div className="flex flex-col">
@@ -92,19 +138,18 @@ export default function Home() {
             variants={itemVariants}
             className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6"
           >
-            Own the Future of Auctions.
-            <span className="block text-primary">
-              On-Chain. Transparent. Yours.
-            </span>
+            Hammer Auction House
           </motion.h1>
 
           <motion.p
             variants={itemVariants}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8"
           >
-            Hammer Auction House brings the transparency and security of blockchain to
-            auctions, creating a seamless platform for buying and selling
-            digital assets.
+            Participate in the future of auctions.
+            <br />
+            HAH brings the transparency and security of blockchains to auction,
+            <br />
+            providing a seamless platform for buying and selling digital assets.
           </motion.p>
 
           <motion.div
@@ -139,48 +184,127 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 bg-muted/20  flex items-center justify-center">
-        <div className="container px-4 ">
+      <section className="py-16 bg-muted/20 flex items-center justify-center">
+        <div className="container px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Featured Auctions</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Discover unique digital assets from creators around the world.
+            <h2 className="text-3xl font-bold mb-4">Featured Auctions</h2>{" "}
+            <p className="text-muted-foreground max-w-3xl mx-auto">
+              Check out our latest english, vickrey, and logarithmic dutch
+              auctions
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <Link href={`/auctions/${i}`} key={i} className="group">
-                <motion.div
-                  whileHover={{ y: -5 }}
-                  className="relative bg-card rounded-xl overflow-hidden shadow-md transition-all hover:shadow-lg"
-                >
-                  <div className="aspect-square relative overflow-hidden">
-                    <Image
-                      src={`https://images.pexels.com/photos/315${
-                        i + 940
-                      }/pexels-photo-315${
-                        i + 940
-                      }.jpeg?auto=compress&cs=tinysrgb&w=800`}
-                      alt={`Featured auction ${i}`}
-                      className="object-cover transition-transform group-hover:scale-105"
-                      fill
-                    />
-                    <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
-                    <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <div className="px-2 py-1 bg-primary/90 text-primary-foreground rounded-md text-sm w-fit mb-2">
-                        Ending Soon
+            {isLoading ? (
+              <div className="col-span-3 text-center py-10">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="mt-4">Loading featured auctions...</p>
+              </div>
+            ) : featuredAuctions.length > 0 ? (
+              featuredAuctions.map((auction) => {
+                if (!auction) return null;
+                const status =
+                  Number(auction.deadline) * 1000 - Date.now() > 0
+                    ? "active"
+                    : "ended";
+                const statusConfig =
+                  status === "active"
+                    ? {
+                        text: "Active",
+                        bgColor: "bg-green-500",
+                        textColor: "text-green-500",
+                        bgOpacity: "bg-opacity-10",
+                      }
+                    : {
+                        text: "Ended",
+                        bgColor: "bg-gray-500",
+                        textColor: "text-gray-500",
+                        bgOpacity: "bg-opacity-10",
+                      };
+
+                return (
+                  <Link
+                    href={`/auctions?id=${auction.id}`}
+                    key={auction.id}
+                    className="group"
+                  >
+                    <motion.div
+                      whileHover={{ y: -5 }}
+                      className="relative bg-card rounded-xl overflow-hidden shadow-md transition-all hover:shadow-lg border"
+                    >
+                      <div className="aspect-square relative overflow-hidden">
+                        <Image
+                          src={auction.imgUrl}
+                          alt={auction.name}
+                          className="object-cover transition-transform group-hover:scale-105"
+                          fill
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div className="absolute bottom-4 left-4 right-4 text-white">
+                          <Badge
+                            className={`px-2 py-1 ${statusConfig.bgColor} ${statusConfig.bgOpacity} ${statusConfig.textColor}`}
+                          >
+                            {statusConfig.text}
+                          </Badge>
+                          <div className="flex items-center justify-between gap-2 mt-2">
+                            <h3 className="text-lg font-bold">
+                              {auction.name}
+                            </h3>
+                            <Badge
+                              variant="outline"
+                              className="capitalize text-white border-white/20"
+                            >
+                              {auction.protocol}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between mt-2">
+                            <p className="text-white/90 text-sm">
+                              {BigInt(auction.auctionType) === BigInt(1)
+                                ? `${Number(
+                                    formatEther(
+                                      auction.auctionedTokenIdOrAmount
+                                    )
+                                  ).toFixed(4)} ${
+                                    auction.auctionedTokenName || "Items"
+                                  }`
+                                : `#${auction.auctionedTokenIdOrAmount.toString()} ${
+                                    auction.auctionedTokenName || "NFT"
+                                  }`}
+                            </p>
+                            <div className="flex items-center text-sm text-white/75 gap-1">
+                              <Clock className="h-3.5 w-3.5" />
+                              <span>
+                                {status === "active"
+                                  ? `Ends ${formatDistanceToNow(
+                                      Number(auction.deadline) * 1000,
+                                      { addSuffix: true }
+                                    )}`
+                                  : `Ended ${formatDistanceToNow(
+                                      Number(auction.deadline) * 1000,
+                                      { addSuffix: true }
+                                    )}`}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="mt-2 pt-2 border-t border-white/20 text-sm text-white/75">
+                            By{" "}
+                            {`${auction.auctioneer.substring(
+                              0,
+                              6
+                            )}...${auction.auctioneer.substring(38)}`}
+                          </div>
+                        </div>
                       </div>
-                      <h3 className="text-lg font-bold">
-                        Digital Masterpiece #{i}
-                      </h3>
-                      <p className="text-white/90 text-sm">
-                        Current bid: {1 + i * 0.5}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              </Link>
-            ))}
+                    </motion.div>
+                  </Link>
+                );
+              })
+            ) : (
+              <div className="col-span-3 text-center py-10">
+                <p className="text-muted-foreground">
+                  No featured auctions available
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="mt-12 text-center">
@@ -207,7 +331,9 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl font-bold mb-4">Why Choose Hammer Auction House?</h2>
+            <h2 className="text-3xl font-bold mb-4">
+              Why Choose Hammer Auction House?
+            </h2>
             <p className="text-muted-foreground max-w-3xl mx-auto">
               Experience the future of auctions with cutting-edge blockchain
               technology and user-centric design.
@@ -241,7 +367,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
     </div>
   );
 }

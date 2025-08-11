@@ -24,13 +24,13 @@ import {
 import { getDurationInSeconds } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ArrowRight, HelpCircle } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z, ZodType } from "zod";
 import { DecayPreviewChart } from "../decay-preview-chart";
-import { getTokenName } from "@/lib/auction-service";
-import { usePublicClient } from "wagmi";
 import { AuctionFormData } from "@/app/create/page";
+import { TokenPicker, TokenObject } from "@/components/token-picker";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Step3Form {
   currentStep: number;
@@ -47,31 +47,20 @@ export function Step3Form({
   goToPrevStep,
   goToNextStep,
 }: Step3Form) {
-  const biddingTokenAddress = formData.biddingTokenAddress;
-  const [tokenSymbol,setTokenSymbol] = useState("");
-  const client = usePublicClient();
-  const fetchBiddingTokenSymbol = async()=>{
-    if(!client) return;
-    try {
-      const symbol = await getTokenName(client,biddingTokenAddress);
-      setTokenSymbol(symbol);
-    } catch (error) {
-      console.error("Error occured while fetching token symbol: ",error);
-    }
-  }
-
-  useEffect(()=>{
-    fetchBiddingTokenSymbol();
-  },[client]);
-
   const durationFields = {
     days: z.string().optional(),
     hours: z.string().optional(),
     minutes: z.string().optional(),
   };
 
+  const [tokenName, setTokenName] = useState("Token");
+  const [tokenSymbol, setTokenSymbol] = useState("To");
+  const [tokenDecimals, setTokenDecimals] = useState(18);
+  const [tokenURL,setTokenURL] = useState("/placeholder.svg");
+
   const englishAllPaySchema = z.object({
     type: z.enum(["english", "all-pay"]),
+    biddingTokenAddress: z.string().min(1, "Bidding token address is required"),
     startPrice: z
       .string()
       .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -94,6 +83,9 @@ export function Step3Form({
     .object({
       type: z.literal("dutch"),
       subtype: z.enum(["linear", "exponential", "logarithmic"]),
+      biddingTokenAddress: z
+        .string()
+        .min(1, "Bidding token address is required"),
       startPrice: z
         .string()
         .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -117,6 +109,7 @@ export function Step3Form({
 
   const vickreySchema = z.object({
     type: z.literal("vickrey"),
+    biddingTokenAddress: z.string().min(1, "Bidding token address is required"),
     commitDays: z.string().optional(),
     commitHours: z.string().optional(),
     commitMinutes: z.string().optional(),
@@ -143,6 +136,7 @@ export function Step3Form({
   type FormValues = {
     type: "english" | "all-pay" | "dutch" | "vickrey";
     subtype?: "linear" | "exponential" | "logarithmic";
+    biddingTokenAddress: string;
     startPrice?: string;
     minBidDelta?: string;
     deadlineExtension?: string;
@@ -159,7 +153,6 @@ export function Step3Form({
     revealMinutes?: string;
     minBid?: string;
   };
-
 
   // Auction type selection tab
   const auctionTypes = [
@@ -193,6 +186,7 @@ export function Step3Form({
       return {
         type: "dutch" as const,
         subtype: formData.subtype || "linear",
+        biddingTokenAddress: formData.biddingTokenAddress || "",
         startPrice: formData.startPrice || "0.1",
         reservePrice: formData.reservePrice || "0",
         decayFactor: formData.decayFactor || "",
@@ -204,6 +198,7 @@ export function Step3Form({
     if (formData.type === "vickrey") {
       return {
         type: "vickrey",
+        biddingTokenAddress: formData.biddingTokenAddress || "",
         commitDays: formData.commitDays || "1",
         commitHours: formData.commitHours || "0",
         commitMinutes: formData.commitMinutes || "0",
@@ -216,6 +211,7 @@ export function Step3Form({
     // english/all-pay
     return {
       type: (formData.type as "english" | "all-pay") || "english",
+      biddingTokenAddress: formData.biddingTokenAddress || "",
       startPrice: formData.startPrice || "0.1",
       minBidDelta: formData.minBidDelta || "0.05",
       deadlineExtension: formData.deadlineExtension || "60",
@@ -297,40 +293,89 @@ export function Step3Form({
           <div className="grid grid-cols-2 gap-3">
             {auctionTypes.map((type) => (
               <button
-          key={type.value}
-          type="button"
-          className={`border rounded-lg p-4 text-left transition-all ${
-            auctionType === type.value
-              ? "border-primary bg-primary/5"
-              : "hover:border-primary/50"
-          }`}
-          onClick={() => {
-            form_3.setValue(
-              "type",
-              type.value as "english" | "all-pay" | "dutch" | "vickrey"
-            );
+                key={type.value}
+                type="button"
+                className={`border rounded-lg p-4 text-left transition-all ${
+                  auctionType === type.value
+                    ? "border-primary bg-primary/5"
+                    : "hover:border-primary/50"
+                }`}
+                onClick={() => {
+                  form_3.setValue(
+                    "type",
+                    type.value as "english" | "all-pay" | "dutch" | "vickrey"
+                  );
 
-            // Immediately update formData with the new auction type
-            const currentFormData = form_3.getValues();
-            const update = {
-              ...currentFormData,
-              type: type.value as
-                | "english"
-                | "all-pay"
-                | "dutch"
-                | "vickrey",
-            };
-            updateFormData(update);
-          }}
+                  // Immediately update formData with the new auction type
+                  const currentFormData = form_3.getValues();
+                  const update = {
+                    ...currentFormData,
+                    type: type.value as
+                      | "english"
+                      | "all-pay"
+                      | "dutch"
+                      | "vickrey",
+                  };
+                  updateFormData(update);
+                }}
               >
-          <div className="font-medium mb-1">{type.label}</div>
-          <div className="text-xs text-muted-foreground">
-            {type.description}
-          </div>
+                <div className="font-medium mb-1">{type.label}</div>
+                <div className="text-xs text-muted-foreground">
+                  {type.description}
+                </div>
               </button>
             ))}
           </div>
         </div>
+
+        <FormField
+          control={form_3.control}
+          name="biddingTokenAddress"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Bidding Token Address (ERC20)</FormLabel>
+              <Tabs defaultValue="picker" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="picker">Select Token</TabsTrigger>
+                  <TabsTrigger value="manual">Manual Input</TabsTrigger>
+                </TabsList>
+                <TabsContent value="picker" className="mt-0">
+                  <TokenPicker
+                    selected={
+                      field.value
+                        ? {
+                            address: field.value,
+                            symbol: tokenSymbol, // This will be updated when token is selected
+                            name: tokenName,
+                            decimals: tokenDecimals,
+                            icon: tokenURL,
+                          }
+                        : null
+                    }
+                    onSelect={(token: TokenObject) => {
+                      field.onChange(token.address);
+                      setTokenName(token.name);
+                      setTokenSymbol(token.symbol);
+                      setTokenURL(token.icon);
+                      setTokenDecimals(token.decimals);
+                    }}
+                    className="w-full"
+                  />
+                </TabsContent>
+                <TabsContent value="manual" className="mt-0">
+                  <FormControl>
+                    <Input
+                      placeholder="Enter token address (0x...)"
+                      {...field}
+                      className="h-12"
+                    />
+                  </FormControl>
+                </TabsContent>
+              </Tabs>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         {/* English/All-Pay */}
         {(auctionType === "english" || auctionType === "all-pay") && (
@@ -340,7 +385,7 @@ export function Step3Form({
               name="startPrice"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Start Price ({tokenSymbol})</FormLabel>
+                  <FormLabel>Start Price</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" min="0.01" {...field} />
                   </FormControl>
@@ -354,7 +399,7 @@ export function Step3Form({
               render={({ field }) => (
                 <FormItem>
                   <div className="flex items-center gap-1">
-                    <FormLabel>Minimum Bid Increment ({tokenSymbol})</FormLabel>
+                    <FormLabel>Minimum Bid Increment</FormLabel>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
@@ -507,7 +552,7 @@ export function Step3Form({
               name="startPrice"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Start Price ({tokenSymbol})</FormLabel>
+                  <FormLabel>Start Price</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" min="0.01" {...field} />
                   </FormControl>
@@ -520,7 +565,7 @@ export function Step3Form({
               name="reservePrice"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Reserve Price ({tokenSymbol})</FormLabel>
+                  <FormLabel>Reserve Price</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -628,7 +673,7 @@ export function Step3Form({
         {auctionType === "vickrey" && (
           <>
             <div className="flex items-center gap-1 font-semibold mb-2">
-              Minimum Bid ({tokenSymbol})
+              Minimum Bid
               <Tooltip>
                 <TooltipTrigger asChild>
                   <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />

@@ -173,8 +173,8 @@ function transformFormDataToParams(formData: AuctionFormData, auctionType: Aucti
 
 const steps = [
   "Basic Information",
+  "Auctioned Token",
   "Auction Settings",
-  "Token Setup",
   "Review & Submit",
 ];
 

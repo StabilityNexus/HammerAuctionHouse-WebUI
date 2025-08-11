@@ -183,7 +183,7 @@ function AuctionsContent() {
   return (
     <div className="container w-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto z-10">
-        <h1 className="text-3xl font-bold mb-6">Browse Auctions</h1>
+        {/* <h1 className="text-3xl font-bold mb-6">Browse Auctions</h1> */}
         <AuctionFilter
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
