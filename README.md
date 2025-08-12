@@ -13,7 +13,7 @@
 <!-- Organization Name -->
 <div align="center">
 
-[![Static Badge](https://img.shields.io/badge/Stability_Nexus-/HAH-228B22?style=for-the-badge&labelColor=FFC517)](https://www.dummy-url.com/)
+[![Static Badge](https://img.shields.io/badge/Stability_Nexus-/HAH-228B22?style=for-the-badge&labelColor=FFC517)](https://hah.stability.nexus/)
 
 <!-- Correct deployed url to be added -->
 
@@ -52,7 +52,7 @@
 <h1>Hammer Auction House Platform with Multi-Protocol Support</h1>
 </div>
 
-[Hammer Auction House](https://www.dummy-url.com) is a decentralized auction platform that redefines digital asset trading on blockchain. Supporting multiple auction mechanisms through smart contracts, it provides a secure and transparent environment for trading digital assets.
+[Hammer Auction House](https://hah.stability.nexus/) is a decentralized auction platform that redefines digital asset trading on blockchain. Supporting multiple auction mechanisms through smart contracts, it provides a secure and transparent environment for trading digital assets.
 
 The platform is powered by smart contracts ([HammerAuctionHouse-Solidity](https://github.com/Stability-Nexus/HammerAuctionHouse-Solidity)) that implement:
 

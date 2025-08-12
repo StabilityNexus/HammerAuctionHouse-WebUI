@@ -7,12 +7,12 @@ import {
   Settings,
   Search,
   Wallet,
-  Award,
   ShieldCheck,
   BadgeCheck,
   Info,
   Users,
   Gavel,
+  ListCheck,
 } from "lucide-react";
 import {
   Tooltip,
@@ -51,7 +51,13 @@ interface StepCardProps {
   delay?: number;
 }
 
-function StepCard({ icon, title, description, tooltip, delay = 0 }: StepCardProps) {
+function StepCard({
+  icon,
+  title,
+  description,
+  tooltip,
+  delay = 0,
+}: StepCardProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -66,12 +72,12 @@ function StepCard({ icon, title, description, tooltip, delay = 0 }: StepCardProp
     >
       <div className="bg-card/30 backdrop-blur-md border rounded-xl p-6 h-full transition-all duration-300 hover:bg-card/50 hover:shadow-lg hover:shadow-primary/5">
         <div className="flex flex-col gap-4">
-          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/15 flex items-center justify-center text-primary transition-transform group-hover:scale-110">
-            {icon}
-          </div>
-          
-          <div>
-            <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/15 flex items-center justify-center text-primary transition-transform group-hover:scale-110">
+              {icon}
+            </div>
+
+            <div className="text-lg font-semibold mb-2 flex items-center gap-2">
               {title}
               {tooltip && (
                 <TooltipProvider>
@@ -87,7 +93,10 @@ function StepCard({ icon, title, description, tooltip, delay = 0 }: StepCardProp
                   </Tooltip>
                 </TooltipProvider>
               )}
-            </h3>
+            </div>
+          </div>
+
+          <div>
             <p className="text-muted-foreground">{description}</p>
           </div>
         </div>
@@ -102,20 +111,22 @@ export function HowItWorksSection() {
 
   const auctioneerSteps = [
     {
+      icon: <ListCheck className="h-6 w-6" />,
+      title: "Choose Auction Type",
+      description:
+        "Select from English, Dutch, All-Pay, or Vickrey auction formats to suit your needs.",
+    },
+    {
       icon: <Settings className="h-6 w-6" />,
       title: "Configure & Preview",
-      description: "Set your auction parameters including start price, duration, and type. Preview how your auction will behave before going live.",
-      tooltip: "Choose from English, Dutch, All-Pay, or Vickrey auction formats",
+      description:
+        "Set your auction parameters including start price, duration, and type. Preview how your auction will behave before going live.",
     },
     {
       icon: <ShieldCheck className="h-6 w-6" />,
       title: "Deploy Securely",
-      description: "Deploy your auction contract on-chain with automated security checks and verification.",
-    },
-    {
-      icon: <Award className="h-6 w-6" />,
-      title: "Manage & Complete",
-      description: "Track bids, communicate with bidders, and finalize the auction when complete.",
+      description:
+        "Deploy your auction contract on-chain with automated security checks and verification.",
     },
   ];
 
@@ -123,29 +134,29 @@ export function HowItWorksSection() {
     {
       icon: <Search className="h-6 w-6" />,
       title: "Discover Auctions",
-      description: "Browse active auctions with advanced filtering and search capabilities.",
+      description:
+        "Browse active auctions with advanced filtering and search capabilities.",
     },
     {
       icon: <Wallet className="h-6 w-6" />,
       title: "Place Bids",
-      description: "Connect your wallet and place bids with real-time price updates.",
+      description:
+        "Connect your wallet and place bids with real-time price updates.",
       tooltip: "Supports MetaMask, WalletConnect, and other popular wallets",
     },
     {
       icon: <BadgeCheck className="h-6 w-6" />,
       title: "Win & Collect",
-      description: "If you win, claim your NFT or ERC20 tokens automatically with proof of ownership on the blockchain.",
+      description:
+        "If you win, claim your NFT or ERC20 tokens automatically with proof of ownership on the blockchain.",
     },
   ];
 
   return (
     <section className="py-24 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background to-background" />
-      
-      <div
-        ref={sectionRef}
-        className="container px-4 relative"
-      >
+
+      <div ref={sectionRef} className="container px-4 relative">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -154,8 +165,8 @@ export function HowItWorksSection() {
         >
           <h2 className="text-3xl font-bold mb-4">How It Works</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Whether you&apos;re selling or bidding, Hammer Auction House makes it easy to participate
-            in secure, transparent blockchain auctions.
+            Whether you&apos;re selling or bidding, Hammer Auction House makes
+            it easy to participate in secure, transparent blockchain auctions.
           </p>
         </motion.div>
 
@@ -176,11 +187,7 @@ export function HowItWorksSection() {
 
             <div className="grid grid-cols-1 gap-6">
               {auctioneerSteps.map((step, index) => (
-                <StepCard
-                  key={index}
-                  {...step}
-                  delay={index * 0.1}
-                />
+                <StepCard key={index} {...step} delay={index * 0.1} />
               ))}
             </div>
           </div>
@@ -201,11 +208,7 @@ export function HowItWorksSection() {
 
             <div className="grid grid-cols-1 gap-6">
               {bidderSteps.map((step, index) => (
-                <StepCard
-                  key={index}
-                  {...step}
-                  delay={index * 0.1 + 0.3}
-                />
+                <StepCard key={index} {...step} delay={index * 0.1 + 0.3} />
               ))}
             </div>
           </div>

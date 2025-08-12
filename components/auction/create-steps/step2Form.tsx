@@ -14,6 +14,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+
 interface Step2Form {
   currentStep: number;
   formData: AuctionFormData;
@@ -31,9 +32,6 @@ export function Step2Form({
 }: Step2Form) {
   const formSchema = z
     .object({
-      biddingTokenAddress: z
-        .string()
-        .min(1, "Bidding token address is required"),
       auctionType: z.enum(["NFT", "ERC20"]),
       auctionedTokenAddress: z
         .string()
@@ -61,7 +59,6 @@ export function Step2Form({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      biddingTokenAddress: formData.biddingTokenAddress || "",
       auctionType: formData.auctionType || "NFT",
       auctionedTokenAddress: formData.auctionedTokenAddress || "",
       tokenId: formData.tokenId || "",
@@ -83,8 +80,7 @@ export function Step2Form({
         <div className="bg-muted/50 rounded-lg p-4 mb-6">
           <h3 className="font-medium mb-2">Token Setup</h3>
           <p className="text-sm text-muted-foreground">
-            Specify the asset being auctioned (NFT or ERC20) and the ERC20 token
-            to be used for bidding.
+            Specify the asset being auctioned (NFT or ERC20).
           </p>
         </div>
 
@@ -177,19 +173,6 @@ export function Step2Form({
             )}
           />
         )}
-        <FormField
-          control={form.control}
-          name="biddingTokenAddress"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Bidding Token Address (ERC20)</FormLabel>
-              <FormControl>
-                <Input placeholder="0x..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         <div className="flex justify-between mt-8 pt-4 border-t">
           <Button
             variant="outline"

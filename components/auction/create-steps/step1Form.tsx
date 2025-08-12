@@ -28,7 +28,7 @@ export function Step1Form({
   updateFormData,
   currentStep,
   goToPrevStep,
-  goToNextStep
+  goToNextStep,
 }: Step1Form) {
   const formSchema_1 = z.object({
     title: z.string().min(5, "Title must be at least 5 characters").max(100),
@@ -100,7 +100,10 @@ export function Step1Form({
           name="imageUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Artwork Image</FormLabel>
+              <FormLabel>Auction Image</FormLabel>
+              <p className="text-sm text-muted-foreground mb-2">
+                Recommended image size: 592 x 592 pixels
+              </p>
               <FormControl>
                 <Input
                   type="url"
