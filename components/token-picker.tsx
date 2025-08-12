@@ -44,24 +44,20 @@ export interface TokenPickerProps {
   disabled?: boolean;
 }
 
-// Custom hook for token search with debouncing and caching
 function useTokenSearch(dataUrl = "/data/tokens.json", maxResults?: number) {
   const [tokens, setTokens] = useState<TokenObject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
-  // Cache for tokens to avoid refetching
   const tokensCache = React.useRef<TokenObject[] | null>(null);
 
-  // Debounce query
   const [debouncedQuery, setDebouncedQuery] = useState("");
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 250);
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Fetch tokens on mount
   useEffect(() => {
     if (tokensCache.current) {
       setTokens(tokensCache.current);
@@ -87,7 +83,6 @@ function useTokenSearch(dataUrl = "/data/tokens.json", maxResults?: number) {
       });
   }, [dataUrl]);
 
-  // Filter tokens with prioritized results
   const filteredTokens = useMemo(() => {
     if (!debouncedQuery.trim()) {
       return maxResults ? tokens.slice(0, maxResults) : tokens;
@@ -95,7 +90,6 @@ function useTokenSearch(dataUrl = "/data/tokens.json", maxResults?: number) {
 
     const lowerQuery = debouncedQuery.toLowerCase();
 
-    // Categorize matches by priority
     const exactSymbol: TokenObject[] = [];
     const startsWithSymbol: TokenObject[] = [];
     const startsWithName: TokenObject[] = [];
@@ -108,19 +102,16 @@ function useTokenSearch(dataUrl = "/data/tokens.json", maxResults?: number) {
       const lowerSymbol = token.symbol.toLowerCase();
       const lowerAddress = token.address.toLowerCase();
 
-      // Exact symbol match (highest priority)
       if (lowerSymbol === lowerQuery) {
         exactSymbol.push(token);
         return;
       }
 
-      // Address match
       if (lowerAddress.includes(lowerQuery)) {
         addressMatch.push(token);
         return;
       }
 
-      // Starts with matches
       if (lowerSymbol.startsWith(lowerQuery)) {
         startsWithSymbol.push(token);
         return;
@@ -131,7 +122,6 @@ function useTokenSearch(dataUrl = "/data/tokens.json", maxResults?: number) {
         return;
       }
 
-      // Includes matches
       if (lowerSymbol.includes(lowerQuery)) {
         includesSymbol.push(token);
         return;
@@ -166,7 +156,6 @@ function useTokenSearch(dataUrl = "/data/tokens.json", maxResults?: number) {
   };
 }
 
-// Highlight matched text component
 function HighlightMatch({ text, query }: { text: string; query: string }) {
   if (!query.trim()) return <>{text}</>;
 
@@ -194,7 +183,6 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
   );
 }
 
-// Token item component
 function TokenItem({
   token,
   query,
@@ -259,7 +247,6 @@ function TokenItem({
   );
 }
 
-// Main TokenPicker component
 export function TokenPicker({
   selected,
   onSelect,
@@ -276,14 +263,12 @@ export function TokenPicker({
   );
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  // Focus input when modal opens
   useEffect(() => {
     if (open && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [open]);
 
-  // Reset query when modal closes
   useEffect(() => {
     if (!open) {
       setQuery("");

@@ -56,7 +56,7 @@ export function Step3Form({
   const [tokenName, setTokenName] = useState("Token");
   const [tokenSymbol, setTokenSymbol] = useState("To");
   const [tokenDecimals, setTokenDecimals] = useState(18);
-  const [tokenURL,setTokenURL] = useState("/placeholder.svg");
+  const [tokenURL, setTokenURL] = useState("/placeholder.svg");
 
   const englishAllPaySchema = z.object({
     type: z.enum(["english", "all-pay"]),
@@ -336,8 +336,18 @@ export function Step3Form({
               <FormLabel>Bidding Token Address (ERC20)</FormLabel>
               <Tabs defaultValue="picker" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="picker">Select Token</TabsTrigger>
-                  <TabsTrigger value="manual">Manual Input</TabsTrigger>
+                  <TabsTrigger
+                    value="picker"
+                    className="hover:bg-muted data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black"
+                  >
+                    Select Token
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="manual"
+                    className="hover:bg-muted data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black"
+                  >
+                    Enter Token Contract Address
+                  </TabsTrigger>
                 </TabsList>
                 <TabsContent value="picker" className="mt-0">
                   <TokenPicker
