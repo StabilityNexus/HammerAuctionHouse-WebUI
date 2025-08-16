@@ -8,7 +8,7 @@ import { Auction } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { User, PlusCircle} from "lucide-react";
 import Link from "next/link";
-import { useAccount, usePublicClient } from "wagmi";
+import { useAccount, useChainId, usePublicClient } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { decode, loadList } from "@/lib/storage";
 import { getAuctionService } from "@/lib/auction-service";
@@ -24,14 +24,16 @@ export default function Dashboard() {
   const [isLoadingBids, setIsLoadingBids] = useState(false);
   const [isLoadingWatchlist, setIsLoadingWatchlist] = useState(false);
   const publicClient = usePublicClient();
-  
+  const chainId = useChainId();
+  const account = useAccount();
+  const storeLocation = String(chainId) + account.address;
   const fetchCreatedAuctions = async () =>{
     setIsLoadingCreated(true);
     try {
-      const auctions = loadList("CreatedAuctions");
+      const auctions = loadList(storeLocation+"CreatedAuctions");
       const fetchedAuctions = await Promise.all(
         auctions.map(async (auctionData) => {
-          const service = await getAuctionService(decode(auctionData).protocol);
+          const service = await getAuctionService(decode(auctionData).protocol,chainId);
           const auction = await service.getAuction(BigInt(decode(auctionData).id),publicClient);
           if(auction.auctioneer==emptyAddress){return;}
           return auction;
@@ -48,10 +50,10 @@ export default function Dashboard() {
   const fetchBiddedAuctions = async () =>{
     setIsLoadingBids(true);
     try {
-      const auctions = loadList("Bids");
+      const auctions = loadList(storeLocation+"Bids");
       const fetchedAuctions = await Promise.all(
         auctions.map(async (auctionData) => {
-          const service = await getAuctionService(decode(auctionData).protocol);
+          const service = await getAuctionService(decode(auctionData).protocol,chainId);
           const auction = await service.getAuction(BigInt(decode(auctionData).id),publicClient);
           if(auction.auctioneer==emptyAddress){return;}
           return auction;
@@ -68,10 +70,10 @@ export default function Dashboard() {
   const fetchWatchedAuctions = async () =>{
     setIsLoadingWatchlist(true);
     try {
-      const auctions = loadList("WishList");
+      const auctions = loadList(storeLocation+"WishList");
       const fetchedAuctions = await Promise.all(
         auctions.map(async (auctionData) => {
-          const service = await getAuctionService(decode(auctionData).protocol);
+          const service = await getAuctionService(decode(auctionData).protocol,chainId);
           const auction = await service.getAuction(BigInt(decode(auctionData).id),publicClient);
           if(auction.auctioneer==emptyAddress){return;}
           return auction;

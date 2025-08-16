@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
@@ -12,6 +12,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   usePublicClient,
+  useChainId,
 } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
@@ -183,6 +184,8 @@ export default function CreateAuction() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const publicClient = usePublicClient();
+  const chainId = useChainId();
+  const account = useAccount();
   const [formData, setFormData] = useState({
     //Unified form data structure
     title: "",
@@ -259,14 +262,15 @@ export default function CreateAuction() {
             auctionType = "English";
         }
 
-        const auctionService = await getAuctionService(auctionType);
+        const auctionService = await getAuctionService(auctionType,chainId);
         const lastAuction = await auctionService.getLastNAuctions(publicClient,1);
         if(lastAuction[0] === null){
           return ;
         }
         const auctionId = lastAuction.length > 0 ? decode(lastAuction[0].id).id : "";
         if(lastAuction.length > 0 && lastAuction[0].auctioneer === address){
-          append("CreatedAuctions",lastAuction[0].protocol,auctionId)
+          const storeLocation = String(chainId) + account.address + "CreatedAuctions"; 
+          append(storeLocation,lastAuction[0].protocol,auctionId)
         }
         setIsSubmitted(true);
         setIsSubmitting(false);
@@ -323,10 +327,11 @@ export default function CreateAuction() {
           auctionType = "English";
       }
 
-      const auctionService = await getAuctionService(auctionType);
+      const auctionService = await getAuctionService(auctionType,chainId);
 
       // Prepare auction parameters based on type
       const params = transformFormDataToParams(formData, auctionType);
+      console.log("Auction Params:", params);
       await auctionService.createAuction(writeContract, params);
     } catch (error) {
       console.error("Error creating auction:", error);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useWriteContract } from "wagmi";
+import { useChainId, useWriteContract } from "wagmi";
 import { getAuctionService } from "@/lib/auction-service";
 import { Button } from "../ui/button";
 import { formatEther } from "viem";
@@ -21,7 +21,7 @@ export function DutchAuctionPrice({
   const [currentPrice, setCurrentPrice] = useState<bigint>(BigInt(0));
   const [isLoading, setIsLoading] = useState(false);
   const { writeContract } = useWriteContract();
-
+  const chainId = useChainId();
   // Check if this is a reverse Dutch auction
   const isReverseDutchAuction = [
     "Linear",
@@ -38,7 +38,7 @@ export function DutchAuctionPrice({
       }
 
       try {
-        const dutchService = await getAuctionService(protocol);
+        const dutchService = await getAuctionService(protocol,chainId);
         if (dutchService.getCurrentPrice) {
           const price = await dutchService.getCurrentPrice(auctionId);
           setCurrentPrice(price);
@@ -71,7 +71,7 @@ export function DutchAuctionPrice({
 
     setIsLoading(true);
     try {
-      const dutchService = await getAuctionService(protocol);
+      const dutchService = await getAuctionService(protocol,chainId);
       await dutchService.withdrawItem(writeContract, auctionId);
       onBuyout();
     } catch (error) {

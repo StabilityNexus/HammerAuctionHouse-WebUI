@@ -11,7 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionInfo } from "../auction-info";
 import { BidHistory } from "../bid-history";
 import { decode } from "@/lib/storage";
-import { useAccount, UsePublicClientReturnType } from "wagmi";
+import { useAccount, useChainId, UsePublicClientReturnType } from "wagmi";
+import { RANGE_LIMIT } from "@/lib/contract-data";
 
 interface AllPayDetailProps {
   currentAuction: Auction;
@@ -27,16 +28,18 @@ export function AllPayDetail({
   const [isLoadingBids, setIsLoadingBids] = useState(false);
   const [currentBid, setCurrentBid] = useState(BigInt(0));
   const { address: userAddress, isConnected } = useAccount();
+  const chainId = useChainId();
   const fetchBidsFromContract = useCallback(async () => {
     if (!publicClient) return;
     setIsLoadingBids(true);
     try {
-      const auctionService = await getAuctionService(currentAuction.protocol);
+      const auctionService = await getAuctionService(currentAuction.protocol,chainId);
       const currentBlock = await publicClient.getBlockNumber();
       const fromBlock =
-        currentBlock > BigInt(10000000)
-          ? currentBlock - BigInt(10000000)
+        currentBlock > RANGE_LIMIT[chainId]
+          ? currentBlock - RANGE_LIMIT[chainId]
           : BigInt(0);
+      console.log(`Fetching bids for auction ${auctionId} from block ${fromBlock} to ${currentBlock}`);
       if (auctionService.getBidHistory === undefined) {
         return;
       }
@@ -48,6 +51,7 @@ export function AllPayDetail({
       );
       if (bidHistory != undefined) {
         setBids(bidHistory.filter((bid): bid is Bid => bid !== undefined));
+        console.log("Fetched bids:", bids);
       }
     } catch (err) {
       console.error(
@@ -62,7 +66,7 @@ export function AllPayDetail({
   const fetchCurrentBid = async () => {
     if (!publicClient || !userAddress) return;
     try {
-      const auctionService = await getAuctionService("AllPay");
+      const auctionService = await getAuctionService("AllPay",chainId);
       if (auctionService && auctionService.getCurrentBid) {
         const currentBid = await auctionService.getCurrentBid(
           publicClient,

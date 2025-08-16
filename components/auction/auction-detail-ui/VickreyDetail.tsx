@@ -11,7 +11,8 @@ import { getAuctionService } from "@/lib/auction-service";
 import { BidVariationChart } from "../bid-variation-chart";
 import { BidHistory } from "../bid-history";
 import { decode } from "@/lib/storage";
-import { UsePublicClientReturnType } from "wagmi";
+import { useChainId, UsePublicClientReturnType } from "wagmi";
+import { RANGE_LIMIT } from "@/lib/contract-data";
 
 interface VickreyDetailProps {
   currentAuction: Auction;
@@ -25,6 +26,7 @@ export function VickreyDetail({
   const auctionId = decode(currentAuction.id).id;
   const [bids, setBids] = useState<Bid[]>([]);
   const [isLoadingBids, setIsLoadingBids] = useState(false);
+  const chainId = useChainId();
   const fetchBidsFromContract = useCallback(async () => {
     if (
       !publicClient ||
@@ -33,11 +35,11 @@ export function VickreyDetail({
       return;
     setIsLoadingBids(true);
     try {
-      const auctionService = await getAuctionService(currentAuction.protocol);
+      const auctionService = await getAuctionService(currentAuction.protocol,chainId);
       const currentBlock = await publicClient.getBlockNumber();
       const fromBlock =
-        currentBlock > BigInt(10000000)
-          ? currentBlock - BigInt(10000000)
+        currentBlock > RANGE_LIMIT[chainId]
+          ? currentBlock - RANGE_LIMIT[chainId]
           : BigInt(0);
       if(auctionService.getBidHistory === undefined) {
         return;

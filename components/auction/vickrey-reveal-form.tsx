@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, AlertCircle, CheckCircle } from "lucide-react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId } from "wagmi";
 import { getAuctionService } from "@/lib/auction-service";
 
 interface VickreyRevealFormProps {
@@ -30,7 +30,7 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
   const [success, setSuccess] = useState(false);
   const [commitmentData, setCommitmentData] = useState<CommitmentData | null>(null);
   const [autoFilled, setAutoFilled] = useState(false);
-
+  const chainId = useChainId();
   const { address } = useAccount();
   const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
   
@@ -98,7 +98,7 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
     setIsRevealing(true);
 
     try {
-      const vickreyService = await getAuctionService("Vickrey");
+      const vickreyService = await getAuctionService("Vickrey",chainId);
       const bidAmountWei = BigInt(Math.floor(parseFloat(bidAmount) * 1e18));
       
       await vickreyService.revealBid!(

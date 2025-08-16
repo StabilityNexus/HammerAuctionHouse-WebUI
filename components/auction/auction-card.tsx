@@ -10,14 +10,9 @@ import { Auction } from "@/lib/mock-data";
 import { formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import {
-  remove,
-  append,
-  isPresent,
-  decode,
-} from "@/lib/storage";
-import { useAccount } from "wagmi";
-import {formatEther } from "viem";
+import { remove, append, isPresent, decode } from "@/lib/storage";
+import { useAccount, useChainId } from "wagmi";
+import { formatEther } from "viem";
 
 interface AuctionCardProps {
   auction: Auction;
@@ -27,18 +22,22 @@ export function AuctionCard({ auction }: AuctionCardProps) {
   const { isConnected, address } = useAccount();
   const [isWatched, setIsWatched] = useState(false);
   const auctionId = decode(auction.id).id;
+  const chainId = useChainId();
+  const account = useAccount();
+  const storeLocation = String(chainId) + account.address + "WishList";
   useEffect(() => {
-    setIsWatched(!!address && isPresent("WishList",auction.protocol, auctionId));
+    setIsWatched(
+      !!address && isPresent(storeLocation, auction.protocol, auctionId)
+    );
   }, [address, auction]);
 
-
+  console.log("AuctionCard rendered for auction:", auction);
   let status = "";
   if (Number(auction.deadline) * 1000 - Date.now() > 0) {
     status = "active";
   } else {
     status = "ended";
   }
-  
 
   // Determine auction status text and color
   let statusConfig = {
@@ -62,13 +61,12 @@ export function AuctionCard({ auction }: AuctionCardProps) {
     e.stopPropagation();
     if (!isConnected) return;
     if (isWatched) {
-      remove("WishList",auction.protocol, auctionId);
+      remove(storeLocation, auction.protocol, auctionId);
     } else {
-      append("WishList",auction.protocol, auctionId);
+      append(storeLocation, auction.protocol, auctionId);
     }
     setIsWatched(!isWatched);
   };
-
 
   return (
     <motion.div
@@ -128,9 +126,12 @@ export function AuctionCard({ auction }: AuctionCardProps) {
             <div>
               <p className="text-muted-foreground text-sm">Auctioned Item</p>
               <p className="font-medium text-lg">
-                {BigInt(auction.auctionType) === BigInt(1) 
-                  ? Number(formatEther(auction.auctionedTokenIdOrAmount)).toFixed(4)
-                  : `#${auction.auctionedTokenIdOrAmount.toString()}`}{" "}{auction.auctionedTokenName || "Item"}
+                {BigInt(auction.auctionType) === BigInt(1)
+                  ? Number(
+                      formatEther(auction.auctionedTokenIdOrAmount)
+                    ).toFixed(4)
+                  : `#${auction.auctionedTokenIdOrAmount.toString()}`}{" "}
+                {auction.auctionedTokenName || "Item"}
               </p>
             </div>
 

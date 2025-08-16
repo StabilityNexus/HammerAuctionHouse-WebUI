@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { FixedSizeList as List } from "react-window";
 import {
   Search,
   X,
@@ -23,138 +24,29 @@ import {
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
 export interface TokenObject {
-  address: string;
+  contract_address: string;
   symbol: string;
   name: string;
-  decimals: number;
-  icon: string;
+  image: string;
+  id?: string;
 }
 
 export interface TokenPickerProps {
   selected?: TokenObject | null;
   onSelect: (token: TokenObject) => void;
   placeholder?: string;
-  dataUrl?: string;
   maxResults?: number;
   className?: string;
   disabled?: boolean;
+  chainId: number;
 }
 
-function useTokenSearch(dataUrl = "/data/tokens.json", maxResults?: number) {
-  const [tokens, setTokens] = useState<TokenObject[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
+import { useTokenList } from "@/hooks/use-token-list";
 
-  const tokensCache = React.useRef<TokenObject[] | null>(null);
-
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query), 250);
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  useEffect(() => {
-    if (tokensCache.current) {
-      setTokens(tokensCache.current);
-      setLoading(false);
-      return;
-    }
-
-    fetch(dataUrl)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Failed to fetch tokens: ${response.statusText}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        tokensCache.current = data;
-        setTokens(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, [dataUrl]);
-
-  const filteredTokens = useMemo(() => {
-    if (!debouncedQuery.trim()) {
-      return maxResults ? tokens.slice(0, maxResults) : tokens;
-    }
-
-    const lowerQuery = debouncedQuery.toLowerCase();
-
-    const exactSymbol: TokenObject[] = [];
-    const startsWithSymbol: TokenObject[] = [];
-    const startsWithName: TokenObject[] = [];
-    const includesSymbol: TokenObject[] = [];
-    const includesName: TokenObject[] = [];
-    const addressMatch: TokenObject[] = [];
-
-    tokens.forEach((token) => {
-      const lowerName = token.name.toLowerCase();
-      const lowerSymbol = token.symbol.toLowerCase();
-      const lowerAddress = token.address.toLowerCase();
-
-      if (lowerSymbol === lowerQuery) {
-        exactSymbol.push(token);
-        return;
-      }
-
-      if (lowerAddress.includes(lowerQuery)) {
-        addressMatch.push(token);
-        return;
-      }
-
-      if (lowerSymbol.startsWith(lowerQuery)) {
-        startsWithSymbol.push(token);
-        return;
-      }
-
-      if (lowerName.startsWith(lowerQuery)) {
-        startsWithName.push(token);
-        return;
-      }
-
-      if (lowerSymbol.includes(lowerQuery)) {
-        includesSymbol.push(token);
-        return;
-      }
-
-      if (lowerName.includes(lowerQuery)) {
-        includesName.push(token);
-        return;
-      }
-    });
-
-    // Combine results in priority order
-    const results = [
-      ...exactSymbol,
-      ...startsWithSymbol,
-      ...startsWithName,
-      ...includesSymbol,
-      ...includesName,
-      ...addressMatch,
-    ];
-
-    return maxResults ? results.slice(0, maxResults) : results;
-  }, [tokens, debouncedQuery, maxResults]);
-
-  return {
-    tokens,
-    filteredTokens,
-    loading,
-    error,
-    query,
-    setQuery,
-  };
-}
+import { useTokenSearch } from "@/hooks/use-token-search";
 
 function HighlightMatch({ text, query }: { text: string; query: string }) {
   if (!query.trim()) return <>{text}</>;
@@ -183,7 +75,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
   );
 }
 
-function TokenItem({
+const TokenItem = React.memo(function TokenItem({
   token,
   query,
   isSelected,
@@ -194,21 +86,23 @@ function TokenItem({
   isSelected: boolean;
   onSelect: (token: TokenObject) => void;
 }) {
+  const handleClick = React.useCallback(() => {
+    onSelect(token);
+  }, [onSelect, token]);
+
   return (
-    <motion.button
-      onClick={() => onSelect(token)}
+    <button
+      onClick={handleClick}
       className={cn(
-        "w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-300",
+        "w-full flex items-center gap-3 p-3 rounded-lg",
         "hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30",
-        "group relative overflow-hidden",
+        "group relative overflow-hidden hover:scale-[1.005] active:scale-[0.995] transition-transform",
         isSelected && "bg-primary/5 ring-1 ring-primary/20"
       )}
-      whileHover={{ scale: 1.005 }}
-      whileTap={{ scale: 0.995 }}
     >
       <Avatar className="w-10 h-10 ring-1 ring-border/50 transition-transform duration-300 group-hover:scale-105">
         <AvatarImage
-          src={token.icon || "/placeholder.svg"}
+          src={token.image || "/placeholder.svg"}
           alt={`${token.name} icon`}
         />
         <AvatarFallback className="bg-muted text-muted-foreground text-sm font-medium">
@@ -218,18 +112,21 @@ function TokenItem({
 
       <div className="flex-1 min-w-0 text-left">
         <div className="flex items-center gap-2 mb-1">
-          <span className="font-medium truncate">
-            <HighlightMatch text={token.name} query={query} />
-          </span>
+          <div className="max-w-[180px] min-w-0 truncate">
+            <span className="font-medium block truncate">
+              <HighlightMatch text={token.name} query={query} />
+            </span>
+          </div>
           <Badge
             variant="secondary"
-            className="bg-muted/50 hover:bg-muted/50 text-xs font-medium"
+            className="bg-muted/50 hover:bg-muted/50 text-xs font-medium flex-shrink-0"
           >
             <HighlightMatch text={token.symbol.toUpperCase()} query={query} />
           </Badge>
         </div>
         <div className="text-muted-foreground text-sm font-mono truncate opacity-80">
-          {token.address.slice(0, 8)}...{token.address.slice(-6)}
+          {token.contract_address.slice(0, 8)}...
+          {token.contract_address.slice(-6)}
         </div>
       </div>
 
@@ -237,31 +134,54 @@ function TokenItem({
         <div className="w-1.5 h-1.5 rounded-full bg-primary absolute right-4 opacity-80" />
       )}
 
-      <motion.div
-        className="absolute inset-0 bg-primary/5 pointer-events-none"
-        initial={false}
-        animate={{ opacity: isSelected ? 1 : 0 }}
-        transition={{ duration: 0.2 }}
-      />
-    </motion.button>
+      {isSelected && (
+        <div
+          className="absolute inset-0 bg-primary/5 pointer-events-none transition-opacity duration-200"
+          style={{ opacity: isSelected ? 1 : 0 }}
+        />
+      )}
+    </button>
   );
-}
+});
+
+// After the TokenItem component and before TokenPicker
+const VirtualizedTokenItem = React.memo(({ index, style, data }: any) => {
+  const token = data.items[index];
+  return (
+    <div style={style}>
+      <TokenItem
+        token={token}
+        query={data.query}
+        isSelected={data.selectedAddress === token.contract_address}
+        onSelect={data.onSelect}
+      />
+    </div>
+  );
+});
 
 export function TokenPicker({
   selected,
   onSelect,
   placeholder = "Search tokens",
-  dataUrl = "/data/tokens.json",
-  maxResults,
+  chainId,
   className,
   disabled = false,
 }: TokenPickerProps) {
   const [open, setOpen] = useState(false);
-  const { filteredTokens, loading, error, query, setQuery } = useTokenSearch(
-    dataUrl,
-    maxResults
-  );
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const {
+    tokens,
+    loading: tokensLoading,
+    error: tokensError,
+  } = useTokenList(chainId);
+
+  const {
+    tokens: filteredTokens,
+    loading,
+    error,
+    query,
+    setQuery,
+  } = useTokenSearch(tokens);
 
   useEffect(() => {
     if (open && inputRef.current) {
@@ -297,7 +217,7 @@ export function TokenPicker({
             <div className="flex items-center gap-3">
               <Avatar className="w-6 h-6 ring-1 ring-border/50">
                 <AvatarImage
-                  src={selected.icon || "/placeholder.svg"}
+                  src={selected.image || "/placeholder.svg"}
                   alt={`${selected.name} icon`}
                 />
                 <AvatarFallback className="text-xs font-medium bg-muted">
@@ -363,7 +283,7 @@ export function TokenPicker({
           <Separator className="bg-border/50" />
 
           <div className="p-2">
-            {loading ? (
+            {tokensLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="flex flex-col items-center gap-3">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -372,12 +292,39 @@ export function TokenPicker({
                   </span>
                 </div>
               </div>
-            ) : error ? (
+            ) : tokensError ? (
               <div className="flex items-center justify-center py-12">
-                <div className="flex flex-col items-center gap-3 text-destructive">
+                <div className="flex flex-col items-center gap-3 text-muted-foreground">
                   <AlertCircle className="w-8 h-8" />
-                  <span className="text-sm">Failed to load tokens</span>
-                  <span className="text-xs text-muted-foreground">{error}</span>
+                  {tokensError.includes("manually input") ? (
+                    <>
+                      <span className="text-sm font-medium">
+                        Testnet:{" "}
+                        {chainId == 63 ? "ETC Testnet" : "Citrea's Testnet"} (
+                        {chainId})
+                      </span>
+                      <span className="text-xs text-center max-w-[280px]">
+                        Token Selection is not supported in testnets.
+                      </span>
+                      <span className="text-xs text-center max-w-[280px]">
+                        {tokensError}
+                      </span>
+                    </>
+                  ) : tokensError.includes("not supported") ? (
+                    <>
+                      <span className="text-sm font-medium">
+                        Chain Not Supported
+                      </span>
+                      <span className="text-xs text-center">{tokensError}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-sm">Failed to load tokens</span>
+                      <span className="text-xs text-muted-foreground">
+                        {tokensError}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             ) : filteredTokens.length === 0 ? (
@@ -391,28 +338,22 @@ export function TokenPicker({
                 </div>
               </div>
             ) : (
-              <ScrollArea className="h-80">
-                <div className="space-y-1 p-2">
-                  <AnimatePresence>
-                    {filteredTokens.map((token, index) => (
-                      <motion.div
-                        key={token.address}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2, delay: index * 0.03 }}
-                      >
-                        <TokenItem
-                          token={token}
-                          query={query}
-                          isSelected={selected?.address === token.address}
-                          onSelect={handleSelect}
-                        />
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </ScrollArea>
+              <div className="h-80">
+                <List
+                  height={320}
+                  width="100%"
+                  itemCount={filteredTokens.length}
+                  itemSize={76} // Height of each TokenItem
+                  itemData={{
+                    items: filteredTokens,
+                    query,
+                    selectedAddress: selected?.contract_address,
+                    onSelect: handleSelect,
+                  }}
+                >
+                  {VirtualizedTokenItem}
+                </List>
+              </div>
             )}
           </div>
 

@@ -10,6 +10,7 @@ import {
   useAccount,
   useWriteContract,
   useWaitForTransactionReceipt,
+  useChainId,
 } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { VickreyAuctionService } from "@/lib/services/vickrey-auction-service";
@@ -38,6 +39,7 @@ export function VickreyCommitForm({ auction }: VickreyCommitFormProps) {
   const [commitment, setCommitment] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const auctionId = decode(auction.id).id;
+  const chainId = useChainId();
 
   const {
     writeContract,
@@ -111,7 +113,7 @@ export function VickreyCommitForm({ auction }: VickreyCommitFormProps) {
 
     setIsSubmitting(true);
     try {
-      const vickreyService = new VickreyAuctionService();
+      const vickreyService = new VickreyAuctionService(chainId);
       await vickreyService.commitBid(
         writeContract,
         BigInt(auctionId),

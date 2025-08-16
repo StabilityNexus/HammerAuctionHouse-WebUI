@@ -24,7 +24,8 @@ export function BidHistory({ bids, auctionProtocol }: BidHistoryProps) {
   const sortedBids = [...bids].sort((a, b) => b.timestamp - a.timestamp);
   
   // Get unique bidders
-  const highestBid = Math.max(...bids.map(bid => bid.amount));
+  const highestBid = (auctionProtocol!="Vickrey"? Math.max(...bids.map(bid => bid.amount)) : 0);
+
 
   return (
     <div className="space-y-4">
@@ -61,11 +62,6 @@ export function BidHistory({ bids, auctionProtocol }: BidHistoryProps) {
                     {isHighestBid && (
                       <Badge variant="secondary" className="text-xs bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
                         Winner
-                      </Badge>
-                    )}
-                    {auctionProtocol === "AllPay" && (
-                      <Badge variant="outline" className="text-xs border-gray-300 dark:border-gray-700">
-                        Paid
                       </Badge>
                     )}
                   </div>

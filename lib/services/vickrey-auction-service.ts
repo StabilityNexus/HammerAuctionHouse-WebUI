@@ -6,10 +6,14 @@ import { Auction, Bid } from "../mock-data";
 import { generateCode } from "../storage";
 import { AUCTION_CONTRACTS, VICKREY_ABI } from "../contract-data";
 import { WriteContractMutate } from "wagmi/query";
-import {UsePublicClientReturnType } from "wagmi";
+import { UsePublicClientReturnType } from "wagmi";
 
 export class VickreyAuctionService implements IAuctionService {
-  contractAddress: Address = AUCTION_CONTRACTS.Vickrey as `0x${string}`;
+  contractAddress: Address;
+
+  constructor(chainId: number) {
+    this.contractAddress = AUCTION_CONTRACTS[chainId].Vickrey as `0x${string}`;
+  }
 
   private async mapAuctionData({ client, auctionData }: mappedData): Promise<Auction | null> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 16) {

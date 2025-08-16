@@ -43,6 +43,7 @@ export interface Auction {
   startTime?: bigint;
   availableFunds?: bigint
   currentPrice?: bigint;
+  settlePrice?: bigint;
 }
 
 // export function getAuctionById(id: string): Auction | undefined {
