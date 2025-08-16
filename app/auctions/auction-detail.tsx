@@ -21,7 +21,6 @@ import { LinearDetail } from "@/components/auction/auction-detail-ui/LinearDetai
 import { ExponentialDetail } from "@/components/auction/auction-detail-ui/ExponentialDetail";
 import { LogarithmicDetail } from "@/components/auction/auction-detail-ui/LogarithmicDetail";
 import { VickreyDetail } from "@/components/auction/auction-detail-ui/VickreyDetail";
-import { chain } from "lodash";
 
 interface AuctionDetailProps {
   protocol: AuctionType;

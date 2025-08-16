@@ -1,4 +1,3 @@
-import { bigint } from "zod";
 
 export const ALLPAY_ABI = [
   {

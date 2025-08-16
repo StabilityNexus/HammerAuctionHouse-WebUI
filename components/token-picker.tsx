@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FixedSizeList as List } from "react-window";
 import {
@@ -145,7 +145,20 @@ const TokenItem = React.memo(function TokenItem({
 });
 
 // After the TokenItem component and before TokenPicker
-const VirtualizedTokenItem = React.memo(({ index, style, data }: any) => {
+interface VirtualizedItemData {
+  items: TokenObject[];
+  query: string;
+  selectedAddress?: string;
+  onSelect: (token: TokenObject) => void;
+}
+
+interface VirtualizedItemProps {
+  index: number;
+  style: React.CSSProperties;
+  data: VirtualizedItemData;
+}
+
+const VirtualizedTokenItem = React.memo(({ index, style, data }: VirtualizedItemProps) => {
   const token = data.items[index];
   return (
     <div style={style}>
@@ -158,6 +171,8 @@ const VirtualizedTokenItem = React.memo(({ index, style, data }: any) => {
     </div>
   );
 });
+
+VirtualizedTokenItem.displayName = 'VirtualizedTokenItem';
 
 export function TokenPicker({
   selected,
@@ -177,8 +192,6 @@ export function TokenPicker({
 
   const {
     tokens: filteredTokens,
-    loading,
-    error,
     query,
     setQuery,
   } = useTokenSearch(tokens);
