@@ -7,16 +7,11 @@ enum AuctionProtocol {
   Exponential = '5',
   Vickrey = '6',
 }
-enum Storage {
-  WishList = 'Wishlist',
-  CreatedAuctions = 'CreatedAuctions',
-  Bids = 'Bids',
-}
 
 // Read raw string (comma‑separated fixed codes) from localStorage
-function _read(storage: keyof typeof Storage) {
+function _read(storage: string) {
   if (typeof window === 'undefined') return '';
-  return localStorage.getItem(Storage[storage]) || '';
+  return localStorage.getItem(storage) || '';
 }
 
 export function generateCode(protocol: keyof typeof AuctionProtocol, id: string) {
@@ -25,16 +20,16 @@ export function generateCode(protocol: keyof typeof AuctionProtocol, id: string)
   return `${AuctionProtocol[protocol]}${id.padStart(6, '0')}`;
 }
 
-function _write(storage: keyof typeof Storage, raw: string) {
+function _write(storage: string, raw: string) {
   if (typeof window === 'undefined') return '';
   try {
-    localStorage.setItem(Storage[storage], raw)
+    localStorage.setItem(storage, raw)
   } catch {
     console.error('Failed to save wishlist to localStorage:', raw);
   }
 }
 
-export function append(storage: keyof typeof Storage, protocol: keyof typeof AuctionProtocol, id: string) {
+export function append(storage: string, protocol: keyof typeof AuctionProtocol, id: string) {
   const existing = _read(storage);
   const raw = generateCode(protocol, id);
   const list = existing ? existing.split(',') : [];
@@ -43,7 +38,7 @@ export function append(storage: keyof typeof Storage, protocol: keyof typeof Auc
   _write(storage, newRaw);
 }
 
-export function remove(storage: keyof typeof Storage, protocol: keyof typeof AuctionProtocol, id: string) {
+export function remove(storage: string, protocol: keyof typeof AuctionProtocol, id: string) {
   const existing = _read(storage);
   const raw = generateCode(protocol, id);
   const newRaw = existing
@@ -62,7 +57,7 @@ export function decode(code: string) {
   return { protocol: protocolName, id };
 }
 
-export function isPresent(storage: keyof typeof Storage, protocol: keyof typeof AuctionProtocol, id: string) {
+export function isPresent(storage: string, protocol: keyof typeof AuctionProtocol, id: string) {
   const raw = _read(storage);
   if (!raw) return false;
   const code = generateCode(protocol, id);
@@ -71,7 +66,7 @@ export function isPresent(storage: keyof typeof Storage, protocol: keyof typeof 
 
 
 // Read into array of codes
-export function loadList(storage: keyof typeof Storage) {
+export function loadList(storage: string) {
   const raw = _read(storage)
   if (!raw) return []
   return raw.split(',').filter(code => code.length > 0)

@@ -1,3 +1,4 @@
+
 export const ALLPAY_ABI = [
   {
     "inputs": [
@@ -1001,7 +1002,32 @@ export const EXPONENTIAL_DUTCH_ABI = [
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
         "indexed": false,
+        "internalType": "address",
+        "name": "bidder",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bidAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "bidPlaced",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
         "internalType": "uint256",
         "name": "auctionId",
         "type": "uint256"
@@ -1009,7 +1035,7 @@ export const EXPONENTIAL_DUTCH_ABI = [
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amount",
+        "name": "amountWithdrawn",
         "type": "uint256"
       }
     ],
@@ -1020,7 +1046,7 @@ export const EXPONENTIAL_DUTCH_ABI = [
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "auctionId",
         "type": "uint256"
@@ -1028,13 +1054,13 @@ export const EXPONENTIAL_DUTCH_ABI = [
       {
         "indexed": false,
         "internalType": "address",
-        "name": "winner",
+        "name": "withdrawer",
         "type": "address"
       },
       {
         "indexed": false,
         "internalType": "address",
-        "name": "auctionedToken",
+        "name": "auctionedTokenAddress",
         "type": "address"
       },
       {
@@ -1136,6 +1162,11 @@ export const EXPONENTIAL_DUTCH_ABI = [
         "type": "uint256"
       },
       {
+        "internalType": "uint256",
+        "name": "settlePrice",
+        "type": "uint256"
+      },
+      {
         "internalType": "address",
         "name": "winner",
         "type": "address"
@@ -1154,25 +1185,6 @@ export const EXPONENTIAL_DUTCH_ABI = [
         "internalType": "bool",
         "name": "isClaimed",
         "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getCurrentPrice",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1238,6 +1250,59 @@ export const EXPONENTIAL_DUTCH_ABI = [
     ],
     "name": "createAuction",
     "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getCurrentPrice",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "name": "onERC721Received",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -1516,6 +1581,11 @@ export const LINEAR_DUTCH_ABI = [
       {
         "internalType": "uint256",
         "name": "reservedPrice",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "settlePrice",
         "type": "uint256"
       },
       {
@@ -1944,6 +2014,11 @@ export const LOGARITHMIC_DUTCH_ABI = [
       {
         "internalType": "uint256",
         "name": "scalingFactor",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "settlePrice",
         "type": "uint256"
       },
       {
@@ -2615,11 +2690,87 @@ export const VICKREY_ABI = [
   }
 ] as const;
 
-export const AUCTION_CONTRACTS = {
-  English: "0x454094B29146D815dea199a7Ce5A14945AE66a77",
-  AllPay: "0x00Ac82D482e3B918C22706D429a25c91324aF45b",
-  Exponential: "0x4dE6AbeccaE5F63C8963616e42397ab41ac1840a",
-  Linear: "0xF54f9f0918A33772DC0984F058dd0aeed8fE4230",
-  Logarithmic: "0x49933A3d25CBaBB45907BF76Cac575489939C9FB",
-  Vickrey: "0x064653920116B009431b6f194119dA5DDA3a948E",
+export interface ChainContracts {
+  English: string;
+  AllPay: string;
+  Linear: string;
+  Exponential: string;
+  Logarithmic: string;
+  Vickrey: string;
+}
+
+export const RANGE_LIMIT: Record<number, bigint> = {
+  1: BigInt(0),
+  61: BigInt(0),
+  137: BigInt(0),
+  56: BigInt(0),
+  8453: BigInt(0),
+  5115: BigInt(999),
+  63: BigInt(10000000),
+}
+
+export const AUCTION_CONTRACTS: Record<number, ChainContracts> = {
+  // Ethereum Mainnet
+  1: {
+    English: "0x...",
+    AllPay: "0x...",
+    Linear: "0x...",
+    Exponential: "0x...",
+    Logarithmic: "0x...",
+    Vickrey: "0x...",
+  },
+  // Ethereum Classic
+  61: {
+    English: "0x...",
+    AllPay: "0x...",
+    Linear: "0x...",
+    Exponential: "0x...",
+    Logarithmic: "0x...",
+    Vickrey: "0x...",
+  },
+  // Polygon
+  137: {
+    English: "0x...",
+    AllPay: "0x...",
+    Linear: "0x...",
+    Exponential: "0x...",
+    Logarithmic: "0x...",
+    Vickrey: "0x...",
+  },
+  // BSC
+  56: {
+    English: "0x...",
+    AllPay: "0x...",
+    Linear: "0x...",
+    Exponential: "0x...",
+    Logarithmic: "0x...",
+    Vickrey: "0x...",
+  },
+  // Base
+  8453: {
+    English: "0x...",
+    AllPay: "0x...",
+    Linear: "0x...",
+    Exponential: "0x...",
+    Logarithmic: "0x...",
+    Vickrey: "0x...",
+  },
+  // ETC Testnet
+  63: {
+    English: "0x6B8419316646d750c8f812249541F01A69783498",
+    AllPay: "0x0cA32365cD9157cB5846B66ABd17136618bC4F99",
+    Linear: "0x5F02Bf7cee31ffe8050dc096d6ADc3c80319dE90",
+    Exponential: "0x25ddf5F3d7ea3061752a0F5Cb43088D44a62E20e",
+    Logarithmic: "0x46Bf2a057d051c2eA0ba9b0D90AeB1796308146A",
+    Vickrey: "0x08f14f4c030c60826742Fa5C64915b312473B061",
+  },
+  // Citera Testnet
+  5115: {
+    English: "0xb082b7D4734FD7aaCB13De6cf281f6E631fF219E",
+    AllPay: "0x389DbA9d0f77fec16835C0BfBd2442A748681F80",
+    Linear: "0x8972e8Fe7E263f146A972FFc24DD2Ac9D3251B08",
+    Exponential: "0xc82016DDc188a024EeB0873007f75f5FC7Bc8d55",
+    Logarithmic: "0xD0CC7d8CC2C369597a042772d22D3e84CE8d4D99",
+    Vickrey: "0xEf5c73B00A263bA71c6318Ead9A345b1d61B3D0d",
+  },
 };

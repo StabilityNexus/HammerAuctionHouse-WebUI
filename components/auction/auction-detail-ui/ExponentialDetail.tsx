@@ -1,5 +1,5 @@
-import { Auction} from "@/lib/mock-data";
-import { motion} from "framer-motion";
+import { Auction } from "@/lib/mock-data";
+import { motion } from "framer-motion";
 import { formatEther } from "viem";
 import { CountdownTimer } from "../countdown-timer";
 import { BidForm } from "../bid-form";
@@ -11,10 +11,7 @@ interface ExponentialDetailProps {
   currentAuction: Auction;
 }
 
-export function ExponentialDetail({
-  currentAuction,
-}: ExponentialDetailProps) {
-
+export function ExponentialDetail({ currentAuction }: ExponentialDetailProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -35,9 +32,12 @@ export function ExponentialDetail({
           <div>
             <p className="text-sm text-muted-foreground mb-1">Asset</p>
             <p className="text-3xl font-bold">
-              {BigInt(currentAuction.auctionType) === BigInt(1) 
-                  ? Number(formatEther(currentAuction.auctionedTokenIdOrAmount)).toFixed(4)
-                  : `#${currentAuction.auctionedTokenIdOrAmount.toString()}`}{" "}{currentAuction.auctionedTokenName || "Item"}
+              {BigInt(currentAuction.auctionType) === BigInt(1)
+                ? Number(
+                    formatEther(currentAuction.auctionedTokenIdOrAmount)
+                  ).toFixed(4)
+                : `#${currentAuction.auctionedTokenIdOrAmount.toString()}`}{" "}
+              {currentAuction.auctionedTokenName || "Item"}
             </p>
           </div>
 
@@ -53,9 +53,11 @@ export function ExponentialDetail({
               }
             />
             {Date.now() >= Number(currentAuction.deadline) * 1000 && (
-                <p className="text-sm font-medium text-muted-foreground">
-                    {currentAuction.isClaimed ? "Asset has been claimed" : "Asset has not been claimed yet"}
-                </p>
+              <p className="text-sm font-medium text-muted-foreground">
+                {currentAuction.isClaimed
+                  ? "Asset has been claimed"
+                  : "Asset has not been claimed yet"}
+              </p>
             )}
           </div>
         </div>
@@ -72,7 +74,9 @@ export function ExponentialDetail({
               {currentAuction.winner != currentAuction.auctioneer ? (
                 <p className="text-muted-foreground">
                   Sold to: {currentAuction.winner.substring(0, 6)}...
-                  {currentAuction.winner.substring(38)}
+                  {currentAuction.winner.substring(38)} at{" "}
+                  {Number(formatEther(currentAuction.settlePrice!)).toFixed(4)}{" "}
+                  {currentAuction.biddingTokenName}
                 </p>
               ) : (
                 <p className="text-muted-foreground">

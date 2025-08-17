@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { HeroBackground } from "@/components/hero-background";
 import { HowItWorksSection } from "@/components/how-it-works";
 import { useEffect, useState } from "react";
-import { usePublicClient } from "wagmi";
+import { useChainId, usePublicClient } from "wagmi";
 import { getAuctionService } from "@/lib/auction-service";
 import { Auction } from "@/lib/mock-data";
 import { formatDistanceToNow } from "date-fns";
@@ -30,6 +30,7 @@ export default function Home() {
   >([]);
   const [isLoading, setIsLoading] = useState(true);
   const publicClient = usePublicClient();
+  const chainId = useChainId();
 
   // Fetch latest auctions from logarithmic, vickrey and english
   useEffect(() => {
@@ -37,9 +38,9 @@ export default function Home() {
       if (!publicClient) return;
       setIsLoading(true);
       try {
-        const logarithmicService = await getAuctionService("Exponential");
-        const vickreyService = await getAuctionService("Vickrey");
-        const englishService = await getAuctionService("English");
+        const logarithmicService = await getAuctionService("Exponential",chainId);
+        const vickreyService = await getAuctionService("Vickrey",chainId);
+        const englishService = await getAuctionService("English",chainId);
 
         const [logarithmicAuction, vickreyAuction, englishAuction] =
           await Promise.all([

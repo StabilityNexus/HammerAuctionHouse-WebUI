@@ -11,9 +11,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { useChainId } from "wagmi";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TokenPicker, TokenObject } from "@/components/token-picker";
 
 interface Step2Form {
   currentStep: number;
@@ -30,6 +33,11 @@ export function Step2Form({
   goToPrevStep,
   goToNextStep,
 }: Step2Form) {
+  const chainId = useChainId();
+  const [tokenName, setTokenName] = useState("Token");
+  const [tokenSymbol, setTokenSymbol] = useState("To");
+  const [tokenURL, setTokenURL] = useState("/placeholder.svg");
+
   const formSchema = z
     .object({
       auctionType: z.enum(["NFT", "ERC20"]),
@@ -120,58 +128,119 @@ export function Step2Form({
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="auctionedTokenAddress"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {auctionType === "NFT"
-                  ? "NFT Contract Address"
-                  : "ERC20 Token Address"}
-              </FormLabel>
-              <FormControl>
-                <Input placeholder="0x..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         {auctionType === "NFT" && (
-          <FormField
-            control={form.control}
-            name="tokenId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>NFT Token ID</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter NFT Token ID" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div>
+            <FormField
+              control={form.control}
+              name="auctionedTokenAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>NFT Contract Address</FormLabel>
+                  <FormControl>
+                    <Input placeholder="0x..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <br />
+            <FormField
+              control={form.control}
+              name="tokenId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>NFT Token ID</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter NFT Token ID" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         )}
+
         {auctionType === "ERC20" && (
-          <FormField
-            control={form.control}
-            name="tokenAmount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>ERC20 Token Amount</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Enter amount to auction"
-                    type="number"
-                    min="0"
-                    step="any"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div>
+            <FormField
+              control={form.control}
+              name="auctionedTokenAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ERC20 Token Address</FormLabel>
+                  <Tabs defaultValue="picker" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                      <TabsTrigger
+                        value="picker"
+                        className="hover:bg-muted data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black"
+                      >
+                        Select Token
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="manual"
+                        className="hover:bg-muted data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black"
+                      >
+                        Enter Token Contract Address
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="picker" className="mt-0">
+                      <TokenPicker
+                        selected={
+                          field.value
+                            ? {
+                                contract_address: field.value,
+                                symbol: tokenSymbol,
+                                name: tokenName,
+                                image: tokenURL,
+                              }
+                            : null
+                        }
+                        onSelect={(token: TokenObject) => {
+                          field.onChange(token.contract_address);
+                          setTokenName(token.name);
+                          setTokenSymbol(token.symbol);
+                          setTokenURL(token.image);
+                        }}
+                        chainId={chainId}
+                        className="w-full"
+                      />
+                    </TabsContent>
+                    <TabsContent value="manual" className="mt-0">
+                      <FormControl>
+                        <Input
+                          placeholder="Enter token address (0x...)"
+                          {...field}
+                          className="h-12"
+                        />
+                      </FormControl>
+                    </TabsContent>
+                  </Tabs>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <br />
+            <FormField
+              control={form.control}
+              name="tokenAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ERC20 Token Amount</FormLabel>
+
+                  <FormControl>
+                    <Input
+                      placeholder="Enter amount to auction"
+                      type="number"
+                      min="0"
+                      step="any"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         )}
         <div className="flex justify-between mt-8 pt-4 border-t">
           <Button

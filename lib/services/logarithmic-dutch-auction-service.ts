@@ -11,9 +11,12 @@ import { WriteContractMutate } from "wagmi/query";
 export interface LogarithmicDutchAuctionParams extends DutchAuctionParams {
   decayFactor: bigint; // Logarithmic decay factor (scaled by 10^5)
 }
-
 export class LogarithmicDutchAuctionService implements IAuctionService {
-  contractAddress: Address = AUCTION_CONTRACTS.Logarithmic as `0x${string}`;
+  contractAddress: Address;
+
+  constructor(chainId: number) {
+    this.contractAddress = AUCTION_CONTRACTS[chainId].Logarithmic as `0x${string}`;
+  }
 
   private async mapAuctionData({ client, auctionData }: mappedData): Promise<Auction | null> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 18) {
@@ -44,10 +47,11 @@ export class LogarithmicDutchAuctionService implements IAuctionService {
       reservedPrice: auctionData[11],
       decayFactor: auctionData[12],
       scalingFactor: auctionData[13],
-      winner: auctionData[14],
-      deadline: auctionData[15],
-      duration: auctionData[16],
-      isClaimed: auctionData[17],
+      winner: auctionData[15],
+      deadline: auctionData[16],
+      duration: auctionData[17],
+      isClaimed: auctionData[18],
+      settlePrice: auctionData[14],
       // Placeholders
       currentPrice: BigInt(0),
       highestBid: BigInt(0),

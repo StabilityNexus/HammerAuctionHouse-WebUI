@@ -31,6 +31,7 @@ import { DecayPreviewChart } from "../decay-preview-chart";
 import { AuctionFormData } from "@/app/create/page";
 import { TokenPicker, TokenObject } from "@/components/token-picker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useChainId } from "wagmi";
 
 interface Step3Form {
   currentStep: number;
@@ -52,10 +53,9 @@ export function Step3Form({
     hours: z.string().optional(),
     minutes: z.string().optional(),
   };
-
+  const chainId = useChainId();
   const [tokenName, setTokenName] = useState("Token");
   const [tokenSymbol, setTokenSymbol] = useState("To");
-  const [tokenDecimals, setTokenDecimals] = useState(18);
   const [tokenURL, setTokenURL] = useState("/placeholder.svg");
 
   const englishAllPaySchema = z.object({
@@ -354,21 +354,20 @@ export function Step3Form({
                     selected={
                       field.value
                         ? {
-                            address: field.value,
-                            symbol: tokenSymbol, // This will be updated when token is selected
+                            contract_address: field.value,
+                            symbol: tokenSymbol,
                             name: tokenName,
-                            decimals: tokenDecimals,
-                            icon: tokenURL,
+                            image: tokenURL,
                           }
                         : null
                     }
                     onSelect={(token: TokenObject) => {
-                      field.onChange(token.address);
+                      field.onChange(token.contract_address);
                       setTokenName(token.name);
                       setTokenSymbol(token.symbol);
-                      setTokenURL(token.icon);
-                      setTokenDecimals(token.decimals);
+                      setTokenURL(token.image);
                     }}
+                    chainId={chainId}
                     className="w-full"
                   />
                 </TabsContent>

@@ -21,6 +21,7 @@ import {
   useAccount,
   useWriteContract,
   useWaitForTransactionReceipt,
+  useChainId,
 } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { getAuctionService } from "@/lib/auction-service";
@@ -38,13 +39,14 @@ export function BidForm({ auction }: BidFormProps) {
   const [bidAmount, setBidAmount] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const account  = useAccount();
   const {
     writeContract,
     data: hash,
     isPending,
     error: writeError,
   } = useWriteContract();
-
+  const chainId = useChainId();
   const {
     isLoading: isConfirming,
     isSuccess: isConfirmed,
@@ -105,7 +107,7 @@ export function BidForm({ auction }: BidFormProps) {
         Date.now() < Number(auction.deadline) * 1000
       ) {
         try {
-          const auctionService = await getAuctionService(auction.protocol);
+          const auctionService = await getAuctionService(auction.protocol,chainId);
           if (auctionService.getCurrentPrice) {
             const price = await auctionService.getCurrentPrice(
               BigInt(auctionId)
@@ -170,7 +172,7 @@ export function BidForm({ auction }: BidFormProps) {
 
     setIsSubmitting(true);
     try {
-      const auctionService = await getAuctionService(auction.protocol);
+      const auctionService = await getAuctionService(auction.protocol,chainId);
       if (isReverseDutchAuction) {
         await auctionService.withdrawItem(
           writeContract,
@@ -190,7 +192,8 @@ export function BidForm({ auction }: BidFormProps) {
           BigInt(auction.auctionType || 0)
         );
       }
-      append("Bids", auction.protocol, auctionId);
+      const storeLocation = String(chainId) + account.address + "Bids"; 
+      append(storeLocation, auction.protocol, auctionId);
     } catch (error) {
       console.error("Error submitting bid:", error);
       setIsSubmitting(false);
@@ -346,7 +349,7 @@ export function BidForm({ auction }: BidFormProps) {
                   Raise Bid Amount
                 </label>
                 <span className="text-xs text-muted-foreground">
-                  {auction.highestBid?"Min. bid": "Min. increment"}
+                  {auction.highestBid?"Min. increment: ": "Min. Bid: "}
                   {minRaise} {auction.biddingTokenName || "ETH"}
                 </span>
               </div>

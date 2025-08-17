@@ -11,10 +11,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionInfo } from "../auction-info";
 import { BidHistory } from "../bid-history";
 import { decode } from "@/lib/storage";
-import { useAccount, UsePublicClientReturnType } from "wagmi";
+import { useAccount, useChainId, UsePublicClientReturnType } from "wagmi";
+import { RANGE_LIMIT } from "@/lib/contract-data";
 interface EnglishDetailProps {
-    currentAuction: Auction;
-    publicClient: UsePublicClientReturnType;
+  currentAuction: Auction;
+  publicClient: UsePublicClientReturnType;
 }
 
 export function EnglishDetail({
@@ -24,20 +25,24 @@ export function EnglishDetail({
   const [bids, setBids] = useState<Bid[]>([]);
   const [isLoadingBids, setIsLoadingBids] = useState(false);
   const auctionId = decode(currentAuction.id).id;
-  const [currentBid,setCurrentBid] = useState(BigInt(0));
+  const [currentBid, setCurrentBid] = useState(BigInt(0));
   const { address: userAddress, isConnected } = useAccount();
+  const chainId = useChainId();
   const fetchBidsFromContract = useCallback(async () => {
     if (!publicClient) return;
     setIsLoadingBids(true);
     try {
-      const auctionService = await getAuctionService(currentAuction.protocol);
+      const auctionService = await getAuctionService(
+        currentAuction.protocol,
+        chainId
+      );
       const currentBlock = await publicClient.getBlockNumber();
       const fromBlock =
-        currentBlock > BigInt(10000000)
-          ? currentBlock - BigInt(10000000)
+        currentBlock > RANGE_LIMIT[chainId]
+          ? currentBlock - RANGE_LIMIT[chainId]
           : BigInt(0);
-      if(auctionService.getBidHistory===undefined){
-        return ; 
+      if (auctionService.getBidHistory === undefined) {
+        return;
       }
       const bidHistory = await auctionService.getBidHistory(
         publicClient,
@@ -45,7 +50,7 @@ export function EnglishDetail({
         fromBlock,
         currentBlock
       );
-      if(bidHistory != undefined){
+      if (bidHistory != undefined) {
         setBids(bidHistory.filter((bid): bid is Bid => bid !== undefined));
       }
     } catch (err) {
@@ -57,11 +62,11 @@ export function EnglishDetail({
       setIsLoadingBids(false);
     }
   }, [publicClient, currentAuction]);
-  
+
   const fetchCurrentBid = async () => {
     if (!publicClient || !userAddress) return;
     try {
-      const auctionService = await getAuctionService("English");
+      const auctionService = await getAuctionService("English", chainId);
       if (auctionService && auctionService.getCurrentBid) {
         const currentBid = await auctionService.getCurrentBid(
           publicClient,
@@ -80,7 +85,6 @@ export function EnglishDetail({
       fetchCurrentBid();
     }
   }, [fetchBidsFromContract]);
-
 
   return (
     <motion.div
@@ -123,9 +127,11 @@ export function EnglishDetail({
               }
             />
             {Date.now() >= Number(currentAuction.deadline) * 1000 && (
-                <p className="text-sm font-medium text-muted-foreground">
-                    {currentAuction.isClaimed ? "Asset has been claimed" : "Asset has not been claimed yet"}
-                </p>
+              <p className="text-sm font-medium text-muted-foreground">
+                {currentAuction.isClaimed
+                  ? "Asset has been claimed"
+                  : "Asset has not been claimed yet"}
+              </p>
             )}
           </div>
         </div>

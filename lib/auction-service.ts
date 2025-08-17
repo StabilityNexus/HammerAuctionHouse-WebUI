@@ -59,6 +59,7 @@ export interface DutchAuctionParams extends BaseAuctionParams {
   reservedPrice: bigint;
   decayFactor?: bigint;
   duration: bigint;
+  settlePrice?: bigint;
 }
 
 export interface VickreyAuctionParams extends BaseAuctionParams {
@@ -101,54 +102,54 @@ export interface IAuctionService {
 }
 
 // Factory function to get the appropriate auction service
-export async function getAuctionService(auctionType: AuctionType): Promise<IAuctionService> {
+export async function getAuctionService(auctionType: AuctionType, chainId: number): Promise<IAuctionService> {
   switch (auctionType) {
     case "AllPay":
-      return await getAllPayAuctionService();
+      return await getAllPayAuctionService(chainId);
     case "English":
-      return await getEnglishAuctionService();
+      return await getEnglishAuctionService(chainId);
     case "Linear":
-      return await getLinearDutchAuctionService();
+      return await getLinearDutchAuctionService(chainId);
     case "Exponential":
-      return await getExponentialDutchAuctionService();
+      return await getExponentialDutchAuctionService(chainId);
     case "Logarithmic":
-      return await getLogarithmicDutchAuctionService();
+      return await getLogarithmicDutchAuctionService(chainId);
     case "Vickrey":
-      return await getVickreyAuctionService();
+      return await getVickreyAuctionService(chainId);
     default:
       throw new Error(`Unsupported auction type: ${auctionType}`);
   }
 }
 
 // Lazy imports to avoid circular dependencies
-async function getAllPayAuctionService(): Promise<IAuctionService> {
+async function getAllPayAuctionService(chainId: number): Promise<IAuctionService> {
   const { AllPayAuctionService } = await import("./services/allpay-auction-service");
-  return new AllPayAuctionService();
+  return new AllPayAuctionService(chainId);
 }
 
-async function getEnglishAuctionService(): Promise<IAuctionService> {
+async function getEnglishAuctionService(chainId: number): Promise<IAuctionService> {
   const { EnglishAuctionService } = await import("./services/english-auction-service");
-  return new EnglishAuctionService();
+  return new EnglishAuctionService(chainId);
 }
 
-async function getLinearDutchAuctionService(): Promise<IAuctionService> {
+async function getLinearDutchAuctionService(chainId: number): Promise<IAuctionService> {
   const { LinearDutchAuctionService } = await import("./services/linear-dutch-auction-service");
-  return new LinearDutchAuctionService();
+  return new LinearDutchAuctionService(chainId);
 }
 
-async function getExponentialDutchAuctionService(): Promise<IAuctionService> {
+async function getExponentialDutchAuctionService(chainId: number): Promise<IAuctionService> {
   const { ExponentialDutchAuctionService } = await import("./services/exponential-dutch-auction-service");
-  return new ExponentialDutchAuctionService();
+  return new ExponentialDutchAuctionService(chainId);
 }
 
-async function getLogarithmicDutchAuctionService(): Promise<IAuctionService> {
+async function getLogarithmicDutchAuctionService(chainId: number): Promise<IAuctionService> {
   const { LogarithmicDutchAuctionService } = await import("./services/logarithmic-dutch-auction-service");
-  return new LogarithmicDutchAuctionService();
+  return new LogarithmicDutchAuctionService(chainId);
 }
 
-async function getVickreyAuctionService(): Promise<IAuctionService> {
+async function getVickreyAuctionService(chainId: number): Promise<IAuctionService> {
   const { VickreyAuctionService } = await import("./services/vickrey-auction-service");
-  return new VickreyAuctionService();
+  return new VickreyAuctionService(chainId);
 }
 
 // Utility functions

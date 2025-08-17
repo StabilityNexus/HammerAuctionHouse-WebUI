@@ -9,7 +9,11 @@ import { UsePublicClientReturnType } from "wagmi";
 import { WriteContractMutate } from "wagmi/query";
 
 export class LinearDutchAuctionService implements IAuctionService {
-  contractAddress: Address = AUCTION_CONTRACTS.Linear as `0x${string}`;
+  contractAddress: Address;
+
+  constructor(chainId: number) {
+    this.contractAddress = AUCTION_CONTRACTS[chainId].Linear as `0x${string}`;
+  }
 
   private async mapAuctionData({ client, auctionData }: mappedData): Promise<Auction | null> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 16) {
@@ -38,10 +42,11 @@ export class LinearDutchAuctionService implements IAuctionService {
       startingPrice: auctionData[9],
       availableFunds: auctionData[10],
       reservedPrice: auctionData[11],
-      winner: auctionData[12],
-      deadline: auctionData[13],
-      duration: auctionData[14],
-      isClaimed: auctionData[15],
+      settlePrice: auctionData[12],
+      winner: auctionData[13],
+      deadline: auctionData[14],
+      duration: auctionData[15],
+      isClaimed: auctionData[16],
       //Placeholders
       currentPrice: BigInt(0),
       highestBid: BigInt(0),

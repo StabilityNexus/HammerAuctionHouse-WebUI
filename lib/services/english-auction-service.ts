@@ -9,9 +9,12 @@ import { getTokenName } from "../auction-service";
 import { AUCTION_CONTRACTS, ENGLISH_ABI } from "../contract-data";
 import { UsePublicClientReturnType } from "wagmi";
 import { WriteContractMutate } from "wagmi/query";
-
 export class EnglishAuctionService implements IAuctionService {
-  contractAddress: Address = AUCTION_CONTRACTS.English as `0x${string}`;
+  contractAddress: Address;
+
+  constructor(chainId: number) {
+    this.contractAddress = AUCTION_CONTRACTS[chainId].English as `0x${string}`;
+  }
   async getAuctionCounter(): Promise<bigint> {
     try {
       const data = await readContracts(wagmi_config, {
@@ -30,7 +33,7 @@ export class EnglishAuctionService implements IAuctionService {
     }
   }
 
-  async getLastNAuctions(client:UsePublicClientReturnType,n: number = 10): Promise<(Auction | null)[]> {
+  async getLastNAuctions(client: UsePublicClientReturnType, n: number = 10): Promise<(Auction | null)[]> {
     try {
       const counter = await this.getAuctionCounter();
       if (counter === BigInt(0)) {
@@ -91,7 +94,7 @@ export class EnglishAuctionService implements IAuctionService {
         writeContract,
         params.auctionedToken,
         this.contractAddress,
-        (params.auctionType === BigInt(0)?params.auctionedTokenIdOrAmount:parseEther(String(params.auctionedTokenIdOrAmount))),
+        (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
       await writeContract({
@@ -104,7 +107,7 @@ export class EnglishAuctionService implements IAuctionService {
           params.imgUrl,
           Number(params.auctionType),
           params.auctionedToken,
-          (params.auctionType === BigInt(0)?params.auctionedTokenIdOrAmount:parseEther(String(params.auctionedTokenIdOrAmount))),
+          (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
           params.biddingToken,
           params.startingBid,
           params.minBidDelta,
@@ -185,7 +188,7 @@ export class EnglishAuctionService implements IAuctionService {
         ]
       });
       const auctionData = data[0].result;
-      const mappedAuction = await this.mapAuctionData({client: publicClient,auctionData: auctionData});
+      const mappedAuction = await this.mapAuctionData({ client: publicClient, auctionData: auctionData });
       if (!mappedAuction) {
         throw new Error(`Invalid auction data for ID ${auctionId}`);
       }
@@ -196,7 +199,7 @@ export class EnglishAuctionService implements IAuctionService {
     }
   }
 
-  private async mapAuctionData({client,auctionData}: mappedData): Promise<Auction | null> {
+  private async mapAuctionData({ client, auctionData }: mappedData): Promise<Auction | null> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 17) {
       console.warn("Invalid auction data:", auctionData);
       return null;
@@ -204,7 +207,7 @@ export class EnglishAuctionService implements IAuctionService {
 
     let auctionedTokenName = "Unknown Token";
     let biddingTokenName = "Unknown Token";
-    
+
     if (client) {
       try {
         auctionedTokenName = await getTokenName(client, auctionData[6]);
@@ -249,8 +252,8 @@ export class EnglishAuctionService implements IAuctionService {
     endBlock: bigint
   ): Promise<(Bid | undefined)[]> {
     try {
-      if(!client){
-        return [] ;
+      if (!client) {
+        return [];
       }
       const logs = await client.getLogs({
         address: this.contractAddress,
@@ -270,8 +273,8 @@ export class EnglishAuctionService implements IAuctionService {
           id: `${auctionId}-${index}`,
           auctionId: auctionId.toString(),
           bidder: log.args.bidder,
-          amount: Number(log.args.bidAmount) / 1e18, 
-          timestamp: Number(block.timestamp)*1e3
+          amount: Number(log.args.bidAmount) / 1e18,
+          timestamp: Number(block.timestamp) * 1e3
         };
       }));
       return bids;
@@ -300,21 +303,21 @@ export class EnglishAuctionService implements IAuctionService {
     }
   }
 
-  async getCurrentBid(client: UsePublicClientReturnType,auctionId: bigint,userAddress: Address): Promise<bigint>{
-      try {
-        if(!client){
-          return BigInt(0);
-        }
-        const result = await client.readContract({
-          address: this.contractAddress,
-          abi: ENGLISH_ABI,
-          functionName: 'bids',
-          args: [auctionId,userAddress]
-        })
-        return result;
-      } catch (error) {
-        console.error("Error occured while fetching user's cureent bid: ",error);
-        throw error;
+  async getCurrentBid(client: UsePublicClientReturnType, auctionId: bigint, userAddress: Address): Promise<bigint> {
+    try {
+      if (!client) {
+        return BigInt(0);
       }
+      const result = await client.readContract({
+        address: this.contractAddress,
+        abi: ENGLISH_ABI,
+        functionName: 'bids',
+        args: [auctionId, userAddress]
+      })
+      return result;
+    } catch (error) {
+      console.error("Error occured while fetching user's cureent bid: ", error);
+      throw error;
     }
+  }
 }

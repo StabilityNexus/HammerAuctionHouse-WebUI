@@ -1,14 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion} from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowLeft, Info, Wallet, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { Auction, AuctionType } from "@/lib/mock-data";
 import { getAuctionService } from "@/lib/auction-service";
-import { usePublicClient, useAccount, useWriteContract } from "wagmi";
+import {
+  usePublicClient,
+  useAccount,
+  useWriteContract,
+  useChainId,
+} from "wagmi";
 import { toast } from "sonner";
 import { AllPayDetail } from "@/components/auction/auction-detail-ui/AllPayDetail";
 import { EnglishDetail } from "@/components/auction/auction-detail-ui/EnglishDetail";
@@ -24,7 +29,6 @@ interface AuctionDetailProps {
 
 export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
   const [currentAuction, setCurrentAuction] = useState<Auction | null>(null);
-  // const [bids, setBids] = useState<Bid[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isWithdrawingFunds, setIsWithdrawingFunds] = useState(false);
@@ -32,6 +36,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
   const publicClient = usePublicClient();
   const { address: userAddress, isConnected } = useAccount();
   const { writeContract } = useWriteContract();
+  const chainId = useChainId();
   const getVickreyPhase = (auction: Auction) => {
     if (auction.protocol !== "Vickrey") return null;
 
@@ -53,7 +58,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const auctionService = await getAuctionService(protocol);
+      const auctionService = await getAuctionService(protocol, chainId);
       const auctionData = await auctionService.getAuction(
         BigInt(id),
         publicClient
@@ -82,7 +87,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     }
     try {
       setIsWithdrawingFunds(true);
-      const auctionService = await getAuctionService(protocol);
+      const auctionService = await getAuctionService(protocol, chainId);
       await auctionService.withdrawFunds(writeContract, BigInt(id));
       toast.success("Withdrawal transaction submitted!");
     } catch (error) {
@@ -91,7 +96,15 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     } finally {
       setIsWithdrawingFunds(false);
     }
-  }, [currentAuction, userAddress, isConnected, protocol, id, writeContract]);
+  }, [
+    currentAuction,
+    userAddress,
+    isConnected,
+    protocol,
+    id,
+    writeContract,
+    chainId,
+  ]);
 
   const handleWithdrawItem = useCallback(async () => {
     if (!currentAuction || !userAddress || !isConnected) {
@@ -113,7 +126,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     }
     try {
       setIsWithdrawingItem(true);
-      const auctionService = await getAuctionService(protocol);
+      const auctionService = await getAuctionService(protocol, chainId);
       await auctionService.withdrawItem(writeContract, BigInt(id));
       toast.success("Item withdrawal transaction submitted!");
     } catch (error) {
@@ -129,6 +142,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     protocol,
     id,
     writeContract,
+    chainId,
   ]);
 
   // Handle transaction confirmations
@@ -323,9 +337,6 @@ function WinnerBanner({
 
   const isWinner = userAddress?.toLowerCase() === auction.winner?.toLowerCase();
 
-  if(userAddress?.toLowerCase() === auction.auctioneer.toLowerCase()) {
-    return ;
-  }
   return (
     <div className="mb-6">
       <motion.div
@@ -359,7 +370,9 @@ function WinnerBanner({
                   : "text-gray-800 dark:text-gray-200"
               }`}
             >
-              {isWinner ? "Congratulations! You won the auction!" : "Auction Ended"}
+              {isWinner
+                ? "Congratulations! You won the auction!"
+                : "Auction Ended"}
             </h3>
             <p
               className={`mt-1 text-sm ${
@@ -384,15 +397,15 @@ function WinnerBanner({
               <Package className="h-4 w-4 mr-2" />
               {isWithdrawing ? "Withdrawing..." : "Withdraw Item"}
             </Button>
-          ) : !isWinner && (
-            <Button
-              asChild
-              className="shrink-0 dark:bg-white bg-black dark:text-black text-white hover:bg-gray-800 dark:hover:bg-gray-100"
-            >
-              <Link href="/auctions">
-                Browse More Auctions
-              </Link>
-            </Button>
+          ) : (
+            !isWinner && (
+              <Button
+                asChild
+                className="shrink-0 dark:bg-white bg-black dark:text-black text-white hover:bg-gray-800 dark:hover:bg-gray-100"
+              >
+                <Link href="/auctions">Browse More Auctions</Link>
+              </Button>
+            )
           )}
         </div>
       </motion.div>

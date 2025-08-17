@@ -12,6 +12,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   usePublicClient,
+  useChainId,
 } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import {
@@ -28,41 +29,42 @@ import { AuctionType } from "@/lib/mock-data";
 import { Address } from "viem";
 import { getDurationInSeconds } from "@/lib/utils";
 import { append, decode } from "@/lib/storage";
-export interface AuctionFormData{
-    title: string,
-    description: string,
-    imageUrl: string,
-    type: string,
-    subtype: "linear" | "exponential" | "logarithmic" | undefined,
-    startPrice: string,
-    reservePrice: string,
-    duration: bigint,
-    days: string,
-    hours: string,
-    minutes: string,
-    minBidDelta: string,
-    deadlineExtension: string,
-    decayFactor: string,
-    commitDays: string,
-    commitHours: string,
-    commitMinutes: string,
-    revealDays: string,
-    revealHours: string,
-    revealMinutes: string,
-    commitDuration: bigint,
-    revealDuration: bigint,
-    minBid: string,
-    tokenAddress: string,
-    biddingTokenAddress: string,
-    auctionedTokenAddress: string,
-    auctionType: "NFT" | "ERC20" | undefined, 
-    tokenId: string,
-    tokenAmount: string,
+export interface AuctionFormData {
+  title: string;
+  description: string;
+  imageUrl: string;
+  type: string;
+  subtype: "linear" | "exponential" | "logarithmic" | undefined;
+  startPrice: string;
+  reservePrice: string;
+  duration: bigint;
+  days: string;
+  hours: string;
+  minutes: string;
+  minBidDelta: string;
+  deadlineExtension: string;
+  decayFactor: string;
+  commitDays: string;
+  commitHours: string;
+  commitMinutes: string;
+  revealDays: string;
+  revealHours: string;
+  revealMinutes: string;
+  commitDuration: bigint;
+  revealDuration: bigint;
+  minBid: string;
+  tokenAddress: string;
+  biddingTokenAddress: string;
+  auctionedTokenAddress: string;
+  auctionType: "NFT" | "ERC20" | undefined;
+  tokenId: string;
+  tokenAmount: string;
 }
 
-
-
-function transformFormDataToParams(formData: AuctionFormData, auctionType: AuctionType) {
+function transformFormDataToParams(
+  formData: AuctionFormData,
+  auctionType: AuctionType
+) {
   const baseParams = {
     name: formData.title,
     description: formData.description,
@@ -162,7 +164,7 @@ function transformFormDataToParams(formData: AuctionFormData, auctionType: Aucti
         ...baseParams,
         bidCommitDuration: commitDuration,
         bidRevealDuration: revealDuration,
-        minBid: minBid
+        minBid: minBid,
       } as VickreyAuctionParams;
     }
 
@@ -183,6 +185,8 @@ export default function CreateAuction() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const publicClient = usePublicClient();
+  const chainId = useChainId();
+  const account = useAccount();
   const [formData, setFormData] = useState({
     //Unified form data structure
     title: "",
@@ -233,7 +237,7 @@ export default function CreateAuction() {
   // Handle transaction confirmation
   useEffect(() => {
     if (isConfirmed) {
-      (async () => {        
+      (async () => {
         let auctionType: AuctionType;
         switch (formData.type) {
           case "all-pay":
@@ -259,14 +263,20 @@ export default function CreateAuction() {
             auctionType = "English";
         }
 
-        const auctionService = await getAuctionService(auctionType);
-        const lastAuction = await auctionService.getLastNAuctions(publicClient,1);
-        if(lastAuction[0] === null){
-          return ;
+        const auctionService = await getAuctionService(auctionType, chainId);
+        const lastAuction = await auctionService.getLastNAuctions(
+          publicClient,
+          1
+        );
+        if (lastAuction[0] === null) {
+          return;
         }
-        const auctionId = lastAuction.length > 0 ? decode(lastAuction[0].id).id : "";
-        if(lastAuction.length > 0 && lastAuction[0].auctioneer === address){
-          append("CreatedAuctions",lastAuction[0].protocol,auctionId)
+        const auctionId =
+          lastAuction.length > 0 ? decode(lastAuction[0].id).id : "";
+        if (lastAuction.length > 0 && lastAuction[0].auctioneer === address) {
+          const storeLocation =
+            String(chainId) + account.address + "CreatedAuctions";
+          append(storeLocation, lastAuction[0].protocol, auctionId);
         }
         setIsSubmitted(true);
         setIsSubmitting(false);
@@ -323,10 +333,11 @@ export default function CreateAuction() {
           auctionType = "English";
       }
 
-      const auctionService = await getAuctionService(auctionType);
+      const auctionService = await getAuctionService(auctionType, chainId);
 
       // Prepare auction parameters based on type
       const params = transformFormDataToParams(formData, auctionType);
+      console.log("Auction Params:", params);
       await auctionService.createAuction(writeContract, params);
     } catch (error) {
       console.error("Error creating auction:", error);

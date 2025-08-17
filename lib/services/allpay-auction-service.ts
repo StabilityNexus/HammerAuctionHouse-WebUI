@@ -11,7 +11,11 @@ import { UsePublicClientReturnType } from "wagmi";
 import { WriteContractMutate } from "wagmi/query";
 
 export class AllPayAuctionService implements IAuctionService {
-  contractAddress: Address = AUCTION_CONTRACTS.AllPay as `0x${string}`;
+  contractAddress: Address;
+
+  constructor(chainId: number) {
+    this.contractAddress = AUCTION_CONTRACTS[chainId].AllPay as `0x${string}`;
+  }
 
   private async mapAuctionData({ client, auctionData }: mappedData): Promise<Auction | null> {
     if (!auctionData || !Array.isArray(auctionData) || auctionData.length < 17) {
@@ -271,7 +275,6 @@ export class AllPayAuctionService implements IAuctionService {
         fromBlock: startBlock,
         toBlock: endBlock,
       });
-
       const bids = await Promise.all(logs.map(async (log, index: number) => {
         const block = await client.getBlock({ blockNumber: log.blockNumber });
         if (log.args.bidAmount === undefined || log.args.bidder === undefined) {

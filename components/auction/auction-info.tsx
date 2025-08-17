@@ -81,23 +81,35 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
     },
   ];
 
-  if (!auction.protocol.toLowerCase().includes("vickrey")) {
+  if (
+    auction.protocol.toLowerCase().includes("AllPay") ||
+    auction.protocol.toLowerCase().includes("English")
+  ) {
     infoItems.push({
-      label: auction.protocol.toLowerCase().includes("dutch")
-        ? "Initial Price"
-        : "Start Price",
+      label: "Starting Bid",
       value: `${auction.startingBid ? Number(auction.startingBid) / 1e18 : 0} ${
         auction.biddingTokenName || "ETH"
       }`,
     });
   }
 
-  // Add Dutch auction specific information
-  if (auction.protocol.toLowerCase().includes("dutch")) {
+  if (
+    auction.protocol.toLowerCase().includes("linear") ||
+    auction.protocol.toLowerCase().includes("exponential") ||
+    auction.protocol.toLowerCase().includes("logarithmic")
+  ) {
     infoItems.push({
       label: "Reserve Price",
       value: `${
         auction.reservedPrice ? Number(auction.reservedPrice) / 1e18 : 0
+      } ${auction.biddingTokenName || "ETH"}`,
+      tooltip: "The minimum price at which the item can be sold",
+    });
+
+    infoItems.push({
+      label: "Start Price",
+      value: `${
+        auction.startingPrice ? Number(auction.startingPrice) / 1e18 : 0
       } ${auction.biddingTokenName || "ETH"}`,
       tooltip: "The minimum price at which the item can be sold",
     });
@@ -114,10 +126,7 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
       if (auction.decayFactor) {
         infoItems.push({
           label: "Decay Factor",
-          value:
-            auction.protocol === "Exponential"
-              ? (Number(auction.decayFactor) / 1e5).toFixed(5)
-              : auction.decayFactor.toString(),
+          value: (Number(auction.decayFactor) / 1e5).toFixed(3),
           tooltip:
             auction.protocol === "Exponential"
               ? "The exponential decay rate factor (scaled by 10^5). Higher values mean faster price decay."
@@ -125,6 +134,10 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
         });
       }
     }
+  }
+
+  // Add Dutch auction specific information
+  if (auction.protocol.toLowerCase().includes("dutch")) {
   }
 
   // Add auction-type specific parameters
@@ -139,15 +152,6 @@ export function AuctionInfo({ auction }: AuctionInfoProps) {
       }`,
       tooltip:
         "The minimum amount by which each new bid must exceed the current highest bid",
-    });
-  }
-
-  if (auction.protocol === "AllPay") {
-    infoItems.push({
-      label: "Payment Model",
-      value: "All bidders pay",
-      tooltip:
-        "In AllPay auctions, every bidder must pay their bid amount, regardless of winning",
     });
   }
 
