@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { AuctionGrid } from "@/components/auction/auction-grid";
 import { AuctionFilter } from "@/components/auction/auction-filter";
-import { AuctionType, Auction } from "@/lib/mock-data";
+import { AuctionType, Auction } from "@/lib/types";
 import { useChainId, usePublicClient } from "wagmi";
 import { getAuctionService } from "@/lib/auction-service";
 import { decode } from "@/lib/storage";

@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { HelpCircle, Copy, CheckCircle2 } from "lucide-react";
-import { Auction } from "@/lib/mock-data";
+import { Auction } from "@/lib/types";
 import { format } from "date-fns";
 import React from "react";
 

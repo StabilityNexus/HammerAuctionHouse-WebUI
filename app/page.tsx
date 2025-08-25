@@ -20,7 +20,7 @@ import { HowItWorksSection } from "@/components/how-it-works";
 import { useEffect, useState } from "react";
 import { useChainId, usePublicClient } from "wagmi";
 import { getAuctionService } from "@/lib/auction-service";
-import { Auction } from "@/lib/mock-data";
+import { Auction } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 import { formatEther } from "viem";
 

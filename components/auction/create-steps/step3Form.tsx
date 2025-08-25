@@ -117,6 +117,7 @@ export function Step3Form({
     revealHours: z.string().optional(),
     revealMinutes: z.string().optional(),
     minBid: z.string().min(1, "Minimum bid is required").default("0"),
+    commitFee: z.string().default("0"),
   });
 
   const formSchema = React.useMemo(() => {
@@ -152,6 +153,7 @@ export function Step3Form({
     revealHours?: string;
     revealMinutes?: string;
     minBid?: string;
+    commitFee?: string;
   };
 
   // Auction type selection tab
@@ -206,6 +208,7 @@ export function Step3Form({
         revealHours: formData.revealHours || "0",
         revealMinutes: formData.revealMinutes || "0",
         minBid: formData.minBid || "0",
+        commitFee: formData.commitFee || "0",
       };
     }
     // english/all-pay
@@ -698,6 +701,34 @@ export function Step3Form({
               <FormField
                 control={form_3.control}
                 name="minBid"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input type="number" step="0.01" min="0" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="flex items-center gap-1 font-semibold mb-2">
+              Commit Fee
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    Fee required to commit a bid. This will be refunded at time
+                    of reveal.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="flex gap-2 mb-4">
+              <FormField
+                control={form_3.control}
+                name="commitFee"
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>

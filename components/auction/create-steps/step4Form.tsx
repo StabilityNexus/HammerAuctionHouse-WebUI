@@ -4,7 +4,7 @@ import { getTokenName } from "@/lib/auction-service";
 import { formatDuration } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { usePublicClient } from "wagmi";
+import { useAccount, usePublicClient } from "wagmi";
 
 interface Step4Form {
   currentStep: number;
@@ -29,6 +29,8 @@ export function Step4Form({
   const tokenType = formData.auctionType;
   const biddingTokenAddress = formData.biddingTokenAddress;
   const auctionedTokenAddress = formData.auctionedTokenAddress;
+  const {chain} = useAccount();
+  const nativeTokenSymbol = chain?.nativeCurrency.symbol;
     const [bidTokenSymbol,setBidTokenSymbol] = useState("");
     const [auctionedTokenSymbol,setAuctionedTokenSymbol] = useState("");
     const client = usePublicClient();
@@ -122,6 +124,10 @@ export function Step4Form({
               <div className="text-muted-foreground">Minimum Bid</div>
               <div className="font-medium">
                 {formData.minBid} {bidTokenSymbol}
+              </div>
+              <div className="text-muted-foreground">Commit Fee</div>
+              <div className="font-medium">
+                {formData.commitFee} {nativeTokenSymbol}
               </div>
               <div className="text-muted-foreground">Commit Period</div>
               <div className="font-medium">

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuctionGrid } from "@/components/auction/auction-grid";
-import { Auction } from "@/lib/mock-data";
+import { Auction } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { User, PlusCircle} from "lucide-react";
 import Link from "next/link";

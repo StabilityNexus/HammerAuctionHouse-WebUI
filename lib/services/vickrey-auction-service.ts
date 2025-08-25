@@ -2,7 +2,7 @@ import { Address, erc20Abi, erc721Abi, keccak256, encodePacked, parseEther, pars
 import { Config, readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
 import { getTokenName, IAuctionService, mappedData, VickreyAuctionParams } from "../auction-service";
-import { Auction, Bid } from "../mock-data";
+import { Auction, Bid } from "../types";
 import { generateCode } from "../storage";
 import { AUCTION_CONTRACTS, VICKREY_ABI } from "../contract-data";
 import { WriteContractMutate } from "wagmi/query";
@@ -10,7 +10,6 @@ import { UsePublicClientReturnType } from "wagmi";
 
 export class VickreyAuctionService implements IAuctionService {
   contractAddress: Address;
-
   constructor(chainId: number) {
     this.contractAddress = AUCTION_CONTRACTS[chainId].Vickrey as `0x${string}`;
   }
@@ -59,6 +58,9 @@ export class VickreyAuctionService implements IAuctionService {
       highestBid: BigInt(0),
       deadline: auctionData[14],
       deadlineExtension: BigInt(0),
+      commitFee: auctionData[16],
+      accumulatedCommitFee: auctionData[18],
+      protocolFee: auctionData[17]
     };
   }
 
@@ -148,7 +150,6 @@ export class VickreyAuctionService implements IAuctionService {
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
 
-
       await writeContract({
         address: this.contractAddress,
         abi: VICKREY_ABI,
@@ -163,7 +164,8 @@ export class VickreyAuctionService implements IAuctionService {
           params.biddingToken,
           parseEther(String(params.minBid)), // Use the parsed minBid value
           BigInt(params.bidCommitDuration),
-          BigInt(params.bidRevealDuration)
+          BigInt(params.bidRevealDuration),
+          BigInt(params.commitFee)
         ],
       });
     } catch (error) {
@@ -210,12 +212,12 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async withdrawFunds(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
+  async withdraw(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
     try {
       await writeContract({
         address: this.contractAddress,
         abi: VICKREY_ABI,
-        functionName: "withdrawFunds",
+        functionName: "withdraw",
         args: [auctionId],
       });
     } catch (error) {
@@ -224,12 +226,12 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async withdrawItem(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
+  async claim(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
     try {
       await writeContract({
         address: this.contractAddress,
         abi: VICKREY_ABI,
-        functionName: "withdrawItem",
+        functionName: "claim",
         args: [auctionId],
       });
     } catch (error) {

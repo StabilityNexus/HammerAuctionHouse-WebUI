@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Clock, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Auction } from "@/lib/mock-data";
+import { Auction } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";

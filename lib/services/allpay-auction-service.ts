@@ -2,7 +2,7 @@ import { Address, erc20Abi, erc721Abi, formatEther, parseAbiItem } from "viem";
 import { Config, readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
 import { IAuctionService, AllPayAuctionParams, getTokenName, mappedData } from "../auction-service";
-import { Auction, Bid } from "../mock-data";
+import { Auction, Bid } from "../types";
 import { parseEther } from "ethers";
 import { generateCode } from "../storage";
 import { ALLPAY_ABI } from "../contract-data";
@@ -49,7 +49,8 @@ export class AllPayAuctionService implements IAuctionService {
       deadlineExtension: auctionData[15],
       isClaimed: auctionData[16] as boolean,
       auctionedTokenName: auctionedTokenName,
-      biddingTokenName: biddingTokenName // Add token name
+      biddingTokenName: biddingTokenName, // Add token name
+      protocolFee: auctionData[17]
     };
   }
 
@@ -118,8 +119,8 @@ export class AllPayAuctionService implements IAuctionService {
   async placeBid(
     writeContract: WriteContractMutate<Config, unknown>,
     auctionId: bigint,
-    bidAmount: bigint,
     biddingTokenAddress: Address,
+    bidAmount: bigint,
   ): Promise<void> {
     try {
       await this.approveToken(
@@ -132,7 +133,7 @@ export class AllPayAuctionService implements IAuctionService {
       writeContract({
         address: this.contractAddress,
         abi: ALLPAY_ABI,
-        functionName: "placeBid",
+        functionName: "bid",
         args: [auctionId, bidAmount],
       });
     } catch (error) {
@@ -141,12 +142,12 @@ export class AllPayAuctionService implements IAuctionService {
     }
   }
 
-  async withdrawFunds(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
+  async withdraw(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
     try {
       await writeContract({
         address: this.contractAddress,
         abi: ALLPAY_ABI,
-        functionName: "withdrawFunds",
+        functionName: "withdraw",
         args: [auctionId],
       });
     } catch (error) {
@@ -155,12 +156,12 @@ export class AllPayAuctionService implements IAuctionService {
     }
   }
 
-  async withdrawItem(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
+  async claim(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
     try {
       await writeContract({
         address: this.contractAddress,
         abi: ALLPAY_ABI,
-        functionName: "withdrawItem",
+        functionName: "claim",
         args: [auctionId],
       });
     } catch (error) {

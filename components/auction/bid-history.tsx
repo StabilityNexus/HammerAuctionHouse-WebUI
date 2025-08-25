@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Bid, AuctionType } from "@/lib/mock-data";
+import { Bid, AuctionType } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
