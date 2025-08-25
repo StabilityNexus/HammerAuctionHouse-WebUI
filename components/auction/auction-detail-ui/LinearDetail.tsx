@@ -1,4 +1,4 @@
-import { Auction } from "@/lib/mock-data";
+import { Auction } from "@/lib/types";
 import { motion } from "framer-motion";
 import { formatEther } from "viem";
 import { CountdownTimer } from "../countdown-timer";

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Auction } from "@/lib/mock-data";
+import { Auction } from "@/lib/types";
 import { Info, AlertCircle, Check } from "lucide-react";
 import {
   AlertDialog,
@@ -174,10 +174,10 @@ export function BidForm({ auction }: BidFormProps) {
     try {
       const auctionService = await getAuctionService(auction.protocol,chainId);
       if (isReverseDutchAuction) {
-        await auctionService.withdrawItem(
+        await auctionService.placeBid!(
           writeContract,
           BigInt(auctionId),
-          auction.biddingToken
+          auction.biddingToken as Address
         );
       } else {
         // For other auction types, place a bid
@@ -187,9 +187,8 @@ export function BidForm({ auction }: BidFormProps) {
         await auctionService.placeBid(
           writeContract,
           BigInt(auctionId),
-          BigInt(Math.floor(parseFloat(bidAmount) * 1e18)),
           auction.biddingToken as Address,
-          BigInt(auction.auctionType || 0)
+          BigInt(Math.floor(parseFloat(bidAmount) * 1e18))
         );
       }
       const storeLocation = String(chainId) + account.address + "Bids"; 

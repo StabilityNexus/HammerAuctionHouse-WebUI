@@ -1,7 +1,7 @@
 "use client";
 
 import { AuctionCard } from "@/components/auction/auction-card";
-import { Auction } from "@/lib/mock-data";
+import { Auction } from "@/lib/types";
 
 interface AuctionGridProps {
   auctions: Auction[];

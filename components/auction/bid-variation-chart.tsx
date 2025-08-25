@@ -12,7 +12,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Bid } from "@/lib/mock-data";
+import { Bid } from "@/lib/types";
 
 interface BidVariationChartProps {
   bids: Bid[];

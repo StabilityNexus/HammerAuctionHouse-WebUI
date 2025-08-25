@@ -25,8 +25,8 @@ import {
 } from "@/lib/auction-service";
 import { ExponentialDutchAuctionParams } from "@/lib/services/exponential-dutch-auction-service";
 import { LogarithmicDutchAuctionParams } from "@/lib/services/logarithmic-dutch-auction-service";
-import { AuctionType } from "@/lib/mock-data";
-import { Address } from "viem";
+import { AuctionType } from "@/lib/types";
+import { Address, parseEther } from "viem";
 import { getDurationInSeconds } from "@/lib/utils";
 import { append, decode } from "@/lib/storage";
 export interface AuctionFormData {
@@ -59,6 +59,7 @@ export interface AuctionFormData {
   auctionType: "NFT" | "ERC20" | undefined;
   tokenId: string;
   tokenAmount: string;
+  commitFee: string;
 }
 
 function transformFormDataToParams(
@@ -159,12 +160,14 @@ function transformFormDataToParams(
           );
 
       const minBid = formData.minBid ? BigInt(formData.minBid) : BigInt(0);
+      const commitFee = formData.commitFee ? parseEther(formData.commitFee) : BigInt(0)
 
       return {
         ...baseParams,
         bidCommitDuration: commitDuration,
         bidRevealDuration: revealDuration,
         minBid: minBid,
+        commitFee: commitFee
       } as VickreyAuctionParams;
     }
 
@@ -213,6 +216,7 @@ export default function CreateAuction() {
     commitDuration: BigInt(0),
     revealDuration: BigInt(0),
     minBid: "0",
+    commitFee: "0",
     // Token fields
     tokenAddress: "",
     biddingTokenAddress: "0x0000000000000000000000000000000000000000", // ETH placeholder

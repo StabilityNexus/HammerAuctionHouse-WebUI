@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { useChainId, useWriteContract } from "wagmi";
+import { useChainId, usePublicClient, useWriteContract } from "wagmi";
 import { getAuctionService } from "@/lib/auction-service";
 import { Button } from "../ui/button";
-import { formatEther } from "viem";
-import { AuctionType } from "@/lib/mock-data";
+import { Address, formatEther } from "viem";
+import { AuctionType } from "@/lib/types";
 
 interface DutchAuctionPriceProps {
   auctionId: bigint;
@@ -22,6 +22,7 @@ export function DutchAuctionPrice({
   const [isLoading, setIsLoading] = useState(false);
   const { writeContract } = useWriteContract();
   const chainId = useChainId();
+  const client = usePublicClient();
   // Check if this is a reverse Dutch auction
   const isReverseDutchAuction = [
     "Linear",
@@ -72,7 +73,9 @@ export function DutchAuctionPrice({
     setIsLoading(true);
     try {
       const dutchService = await getAuctionService(protocol,chainId);
-      await dutchService.withdrawItem(writeContract, auctionId);
+      const auction = await dutchService.getAuction(auctionId,client);
+      const biddingToken = auction.biddingToken as Address;
+      await dutchService.placeBid!(writeContract,auctionId,biddingToken);
       onBuyout();
     } catch (error) {
       console.error("Error buying out auction:", error);

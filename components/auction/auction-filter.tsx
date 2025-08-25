@@ -20,7 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { AuctionType } from "@/lib/mock-data";
+import { AuctionType } from "@/lib/types";
 
 interface AuctionFilterProps {
   searchQuery: string;

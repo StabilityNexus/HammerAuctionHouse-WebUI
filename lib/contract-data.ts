@@ -4,6 +4,17 @@ export const ALLPAY_ABI = [
     "inputs": [
       {
         "internalType": "address",
+        "name": "_protocolParametersAddress",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "token",
         "type": "address"
       }
@@ -91,53 +102,15 @@ export const ALLPAY_ABI = [
         "internalType": "uint256",
         "name": "deadlineExtension",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "protocolFee",
+        "type": "uint256"
       }
     ],
     "name": "AuctionCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "bidder",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "bidAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "bidPlaced",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amountWithdrawn",
-        "type": "uint256"
-      }
-    ],
-    "name": "fundsWithdrawn",
     "type": "event"
   },
   {
@@ -168,7 +141,51 @@ export const ALLPAY_ABI = [
         "type": "uint256"
       }
     ],
-    "name": "itemWithdrawn",
+    "name": "Claimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountWithdrawn",
+        "type": "uint256"
+      }
+    ],
+    "name": "Withdrawn",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "bidder",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bidAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "bidPlaced",
     "type": "event"
   },
   {
@@ -278,9 +295,32 @@ export const ALLPAY_ABI = [
         "internalType": "bool",
         "name": "isClaimed",
         "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "protocolFee",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "bidIncrement",
+        "type": "uint256"
+      }
+    ],
+    "name": "bid",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -305,6 +345,19 @@ export const ALLPAY_ABI = [
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "claim",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -410,40 +463,9 @@ export const ALLPAY_ABI = [
         "internalType": "uint256",
         "name": "auctionId",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "bidAmount",
-        "type": "uint256"
       }
     ],
-    "name": "placeBid",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawFunds",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawItem",
+    "name": "withdraw",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -455,6 +477,17 @@ export const ENGLISH_ABI = [
     "inputs": [
       {
         "internalType": "address",
+        "name": "_protocolParametersAddress",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "token",
         "type": "address"
       }
@@ -542,53 +575,15 @@ export const ENGLISH_ABI = [
         "internalType": "uint256",
         "name": "deadlineExtension",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "protocolFee",
+        "type": "uint256"
       }
     ],
     "name": "AuctionCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "bidder",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "bidAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "bidPlaced",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amountWithdrawn",
-        "type": "uint256"
-      }
-    ],
-    "name": "fundsWithdrawn",
     "type": "event"
   },
   {
@@ -619,7 +614,51 @@ export const ENGLISH_ABI = [
         "type": "uint256"
       }
     ],
-    "name": "itemWithdrawn",
+    "name": "Claimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountWithdrawn",
+        "type": "uint256"
+      }
+    ],
+    "name": "Withdrawn",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "bidder",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bidAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "bidPlaced",
     "type": "event"
   },
   {
@@ -729,6 +768,11 @@ export const ENGLISH_ABI = [
         "internalType": "bool",
         "name": "isClaimed",
         "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "protocolFee",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -738,24 +782,31 @@ export const ENGLISH_ABI = [
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "auctionId",
         "type": "uint256"
       },
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "bids",
-    "outputs": [
-      {
         "internalType": "uint256",
-        "name": "",
+        "name": "bidAmount",
         "type": "uint256"
       }
     ],
-    "stateMutability": "view",
+    "name": "bid",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "claim",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -861,40 +912,9 @@ export const ENGLISH_ABI = [
         "internalType": "uint256",
         "name": "auctionId",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "bidAmount",
-        "type": "uint256"
       }
     ],
-    "name": "placeBid",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawFunds",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawItem",
+    "name": "withdraw",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -906,6 +926,17 @@ export const EXPONENTIAL_DUTCH_ABI = [
     "inputs": [
       {
         "internalType": "address",
+        "name": "_protocolParametersAddress",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "token",
         "type": "address"
       }
@@ -979,7 +1010,7 @@ export const EXPONENTIAL_DUTCH_ABI = [
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "reservedPrice",
+        "name": "minPrice",
         "type": "uint256"
       },
       {
@@ -993,53 +1024,15 @@ export const EXPONENTIAL_DUTCH_ABI = [
         "internalType": "uint256",
         "name": "deadline",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "protocolFee",
+        "type": "uint256"
       }
     ],
     "name": "AuctionCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "bidder",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "bidAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "bidPlaced",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amountWithdrawn",
-        "type": "uint256"
-      }
-    ],
-    "name": "fundsWithdrawn",
     "type": "event"
   },
   {
@@ -1070,7 +1063,51 @@ export const EXPONENTIAL_DUTCH_ABI = [
         "type": "uint256"
       }
     ],
-    "name": "itemWithdrawn",
+    "name": "Claimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountWithdrawn",
+        "type": "uint256"
+      }
+    ],
+    "name": "Withdrawn",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "bidder",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bidAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "bidPlaced",
     "type": "event"
   },
   {
@@ -1153,7 +1190,7 @@ export const EXPONENTIAL_DUTCH_ABI = [
       },
       {
         "internalType": "uint256",
-        "name": "reservedPrice",
+        "name": "minPrice",
         "type": "uint256"
       },
       {
@@ -1185,9 +1222,40 @@ export const EXPONENTIAL_DUTCH_ABI = [
         "internalType": "bool",
         "name": "isClaimed",
         "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "protocolFee",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "bid",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "claim",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -1234,7 +1302,7 @@ export const EXPONENTIAL_DUTCH_ABI = [
       },
       {
         "internalType": "uint256",
-        "name": "reservedPrice",
+        "name": "minPrice",
         "type": "uint256"
       },
       {
@@ -1303,32 +1371,6 @@ export const EXPONENTIAL_DUTCH_ABI = [
         "type": "bytes4"
       }
     ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawFunds",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawItem",
-    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   }
@@ -1339,6 +1381,17 @@ export const LINEAR_DUTCH_ABI = [
     "inputs": [
       {
         "internalType": "address",
+        "name": "_protocolParametersAddress",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "token",
         "type": "address"
       }
@@ -1412,7 +1465,7 @@ export const LINEAR_DUTCH_ABI = [
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "reservedPrice",
+        "name": "minPrice",
         "type": "uint256"
       },
       {
@@ -1420,53 +1473,15 @@ export const LINEAR_DUTCH_ABI = [
         "internalType": "uint256",
         "name": "deadline",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "protocolFee",
+        "type": "uint256"
       }
     ],
     "name": "AuctionCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "bidder",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "bidAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "bidPlaced",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amountWithdrawn",
-        "type": "uint256"
-      }
-    ],
-    "name": "fundsWithdrawn",
     "type": "event"
   },
   {
@@ -1497,7 +1512,51 @@ export const LINEAR_DUTCH_ABI = [
         "type": "uint256"
       }
     ],
-    "name": "itemWithdrawn",
+    "name": "Claimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountWithdrawn",
+        "type": "uint256"
+      }
+    ],
+    "name": "Withdrawn",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "bidder",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bidAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "bidPlaced",
     "type": "event"
   },
   {
@@ -1580,7 +1639,7 @@ export const LINEAR_DUTCH_ABI = [
       },
       {
         "internalType": "uint256",
-        "name": "reservedPrice",
+        "name": "minPrice",
         "type": "uint256"
       },
       {
@@ -1607,9 +1666,40 @@ export const LINEAR_DUTCH_ABI = [
         "internalType": "bool",
         "name": "isClaimed",
         "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "protocolFee",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "bid",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "claim",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -1656,7 +1746,7 @@ export const LINEAR_DUTCH_ABI = [
       },
       {
         "internalType": "uint256",
-        "name": "reservedPrice",
+        "name": "minPrice",
         "type": "uint256"
       },
       {
@@ -1722,36 +1812,21 @@ export const LINEAR_DUTCH_ABI = [
     ],
     "stateMutability": "nonpayable",
     "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawFunds",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawItem",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
   }
 ] as const;
 
 export const LOGARITHMIC_DUTCH_ABI = [
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_protocolParametersAddress",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
   {
     "inputs": [
       {
@@ -1829,7 +1904,7 @@ export const LOGARITHMIC_DUTCH_ABI = [
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "reservedPrice",
+        "name": "minPrice",
         "type": "uint256"
       },
       {
@@ -1843,53 +1918,15 @@ export const LOGARITHMIC_DUTCH_ABI = [
         "internalType": "uint256",
         "name": "deadline",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "protocolFee",
+        "type": "uint256"
       }
     ],
     "name": "AuctionCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "bidder",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "bidAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "bidPlaced",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amountWithdrawn",
-        "type": "uint256"
-      }
-    ],
-    "name": "fundsWithdrawn",
     "type": "event"
   },
   {
@@ -1920,7 +1957,51 @@ export const LOGARITHMIC_DUTCH_ABI = [
         "type": "uint256"
       }
     ],
-    "name": "itemWithdrawn",
+    "name": "Claimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountWithdrawn",
+        "type": "uint256"
+      }
+    ],
+    "name": "Withdrawn",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "bidder",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "bidAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "bidPlaced",
     "type": "event"
   },
   {
@@ -2003,7 +2084,7 @@ export const LOGARITHMIC_DUTCH_ABI = [
       },
       {
         "internalType": "uint256",
-        "name": "reservedPrice",
+        "name": "minPrice",
         "type": "uint256"
       },
       {
@@ -2040,9 +2121,40 @@ export const LOGARITHMIC_DUTCH_ABI = [
         "internalType": "bool",
         "name": "isClaimed",
         "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "protocolFee",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "bid",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "claim",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -2089,7 +2201,7 @@ export const LOGARITHMIC_DUTCH_ABI = [
       },
       {
         "internalType": "uint256",
-        "name": "reservedPrice",
+        "name": "minPrice",
         "type": "uint256"
       },
       {
@@ -2160,36 +2272,21 @@ export const LOGARITHMIC_DUTCH_ABI = [
     ],
     "stateMutability": "nonpayable",
     "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawFunds",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawItem",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
   }
 ] as const;
 
 export const VICKREY_ABI = [
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_protocolParametersAddress",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
   {
     "inputs": [
       {
@@ -2269,6 +2366,12 @@ export const VICKREY_ABI = [
         "internalType": "uint256",
         "name": "bidRevealEnd",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "protocolFee",
+        "type": "uint256"
       }
     ],
     "name": "AuctionCreated",
@@ -2311,17 +2414,23 @@ export const VICKREY_ABI = [
       {
         "indexed": false,
         "internalType": "address",
-        "name": "bidder",
+        "name": "withdrawer",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "auctionedTokenAddress",
         "type": "address"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "bidAmount",
+        "name": "auctionedTokenIdOrAmount",
         "type": "uint256"
       }
     ],
-    "name": "bidPlaced",
+    "name": "Claimed",
     "type": "event"
   },
   {
@@ -2340,7 +2449,7 @@ export const VICKREY_ABI = [
         "type": "uint256"
       }
     ],
-    "name": "fundsWithdrawn",
+    "name": "Withdrawn",
     "type": "event"
   },
   {
@@ -2355,23 +2464,17 @@ export const VICKREY_ABI = [
       {
         "indexed": false,
         "internalType": "address",
-        "name": "withdrawer",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "auctionedTokenAddress",
+        "name": "bidder",
         "type": "address"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "auctionedTokenIdOrAmount",
+        "name": "bidAmount",
         "type": "uint256"
       }
     ],
-    "name": "itemWithdrawn",
+    "name": "bidPlaced",
     "type": "event"
   },
   {
@@ -2476,6 +2579,21 @@ export const VICKREY_ABI = [
         "internalType": "bool",
         "name": "isClaimed",
         "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "commitFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "protocolFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "accumulatedCommitFee",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -2503,6 +2621,19 @@ export const VICKREY_ABI = [
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "auctionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "claim",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -2598,6 +2729,11 @@ export const VICKREY_ABI = [
         "internalType": "uint256",
         "name": "bidRevealDuration",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "commitFee",
+        "type": "uint256"
       }
     ],
     "name": "createAuction",
@@ -2670,20 +2806,7 @@ export const VICKREY_ABI = [
         "type": "uint256"
       }
     ],
-    "name": "withdrawFunds",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "auctionId",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawItem",
+    "name": "withdraw",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -2757,12 +2880,12 @@ export const AUCTION_CONTRACTS: Record<number, ChainContracts> = {
   },
   // ETC Testnet
   63: {
-    English: "0x6B8419316646d750c8f812249541F01A69783498",
-    AllPay: "0x0cA32365cD9157cB5846B66ABd17136618bC4F99",
-    Linear: "0x5F02Bf7cee31ffe8050dc096d6ADc3c80319dE90",
-    Exponential: "0x25ddf5F3d7ea3061752a0F5Cb43088D44a62E20e",
-    Logarithmic: "0x46Bf2a057d051c2eA0ba9b0D90AeB1796308146A",
-    Vickrey: "0x08f14f4c030c60826742Fa5C64915b312473B061",
+    English: "0x45faE5bfD2d28dF9dF3Dc32a29E58326AE6dA6e6",
+    AllPay: "0x357C830BD548b730315682c816Bab3Ba94490a23",
+    Linear: "0x43f19713A812cbBcbDF58F93270261EFb04047a9",
+    Exponential: "0x76A5ef90eac5dd9B99F87470935c8bcDE7dd02B4",
+    Logarithmic: "0xCDBaCcca9c5aD8845cB001D7D8d8D01996316B56",
+    Vickrey: "0xD730e5cdd245856e49fc52493221701e2903cC98",
   },
   // Citera Testnet
   5115: {

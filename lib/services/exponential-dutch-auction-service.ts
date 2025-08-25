@@ -2,7 +2,7 @@ import { Address, erc20Abi, erc721Abi, parseEther } from "viem";
 import { Config, readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
 import { IAuctionService, DutchAuctionParams, getTokenName, mappedData } from "../auction-service";
-import { Auction } from "../mock-data";
+import { Auction } from "../types";
 import { generateCode } from "../storage";
 import { AUCTION_CONTRACTS, EXPONENTIAL_DUTCH_ABI } from "../contract-data";
 import { UsePublicClientReturnType } from "wagmi";
@@ -13,7 +13,6 @@ export interface ExponentialDutchAuctionParams extends DutchAuctionParams {
 }
 export class ExponentialDutchAuctionService implements IAuctionService {
   contractAddress: Address;
-
   constructor(chainId: number) {
     this.contractAddress = AUCTION_CONTRACTS[chainId].Exponential as `0x${string}`;
   }
@@ -54,7 +53,8 @@ export class ExponentialDutchAuctionService implements IAuctionService {
       currentPrice: BigInt(0),
       highestBid: BigInt(0),
       auctionedTokenName: auctionedTokenName,
-      biddingTokenName: biddingTokenName
+      biddingTokenName: biddingTokenName,
+      protocolFee: auctionData[18]
     };
   }
 
@@ -155,20 +155,7 @@ export class ExponentialDutchAuctionService implements IAuctionService {
     }
   }
 
-  async withdrawFunds(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
-    try {
-      await writeContract({
-        address: this.contractAddress as `0x${string}`,
-        abi: EXPONENTIAL_DUTCH_ABI,
-        functionName: "withdrawFunds",
-        args: [auctionId],
-      });
-    } catch (error) {
-      console.error("Error withdrawing funds:", error);
-      throw error;
-    }
-  }
-  async withdrawItem(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, biddingToken: string): Promise<void> {
+  async placeBid(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, biddingToken: string): Promise<void> {
     try {
       const currentPrice = await this.getCurrentPrice(auctionId);
       await this.approveToken(
@@ -181,12 +168,25 @@ export class ExponentialDutchAuctionService implements IAuctionService {
       await writeContract({
         address: this.contractAddress as `0x${string}`,
         abi: EXPONENTIAL_DUTCH_ABI,
-        functionName: "withdrawItem",
+        functionName: "bid",
         args: [auctionId],
       });
     } catch (error) {
       console.error("Error withdrawing item:", error);
       throw error;
+    }
+  }
+
+  async claim(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void>{
+    try {
+      await writeContract({
+        address: this.contractAddress as `0x${string}`,
+        abi: EXPONENTIAL_DUTCH_ABI,
+        functionName: "claim",
+        args: [auctionId],
+      });
+    } catch (error) {
+      console.error("Error claiming the assest: ",error);
     }
   }
 

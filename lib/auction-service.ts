@@ -1,6 +1,6 @@
 // Auction Service - Unified API for all auction protocols
 import { Address } from "viem";
-import { AuctionType, Auction, Bid } from "./mock-data";
+import { AuctionType, Auction, Bid } from "./types";
 import { Config, UsePublicClientReturnType } from "wagmi";
 import { WriteContractMutate } from "wagmi/query";
 
@@ -22,6 +22,10 @@ export interface AuctionData {
   bidCommitDuration?: bigint;
   bidRevealDuration?: bigint;
   minBid?: bigint;
+  protocolFee: bigint;
+  commitFee?: bigint;
+  accumulatedCommitFee?: bigint;
+  settlePrice?: bigint;
 }
 
 export interface mappedData {
@@ -66,6 +70,7 @@ export interface VickreyAuctionParams extends BaseAuctionParams {
   bidCommitDuration: bigint;
   bidRevealDuration: bigint;
   minBid: bigint;
+  commitFee: bigint;
 }
 
 // Union type for all auction parameters
@@ -80,24 +85,15 @@ export type AuctionParams =
 export interface IAuctionService {
   contractAddress: Address;
   createAuction(writeContract: WriteContractMutate<Config, unknown>, params: Partial<AuctionParams>): Promise<void>;
-  placeBid?(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, bidAmount: bigint, tokenAddress: Address, auctionType: bigint): Promise<void>;
-  withdrawFunds(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void>;
-  withdrawItem(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, biddingToken?: string): Promise<void>;
+  placeBid?(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, tokenAddress: Address,bidAmount?: bigint): Promise<void>;
+  withdraw?(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void>;
+  claim(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, biddingToken?: string): Promise<void>;
   getAuction(auctionId: bigint, client: UsePublicClientReturnType): Promise<Auction>;
   getBidHistory?(client: UsePublicClientReturnType, auctionId: bigint, startBlock: bigint, endBlock: bigint): Promise<(undefined | Bid)[]>;
-
-  //Continue from here
-  // New counter-based methods
   getAuctionCounter(): Promise<bigint>;
   getLastNAuctions(client: UsePublicClientReturnType, n?: number): Promise<(Auction | null)[]>;
-
-  // Dutch auction specific methods
   getCurrentPrice?(auctionId: bigint): Promise<bigint>;
-
-  //Vickrey Auction specific methods
   revealBid?(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, bidAmount: bigint, salt: string): Promise<void>;
-
-  //AllPay & English specific methods
   getCurrentBid?(client: UsePublicClientReturnType, auctionId: bigint, userAddress: Address): Promise<bigint>;
 }
 

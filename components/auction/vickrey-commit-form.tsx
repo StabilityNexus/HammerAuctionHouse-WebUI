@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Auction } from "@/lib/mock-data";
+import { Auction } from "@/lib/types";
 import { Info, Lock, Hash } from "lucide-react";
 import {
   useAccount,
@@ -27,6 +27,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { decode } from "@/lib/storage";
+import { formatEther } from "ethers";
 
 interface VickreyCommitFormProps {
   auction: Auction;
@@ -40,6 +41,9 @@ export function VickreyCommitForm({ auction }: VickreyCommitFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const auctionId = decode(auction.id).id;
   const chainId = useChainId();
+  const { chain } = useAccount();
+  const nativeTokenSymbol = chain?.nativeCurrency.symbol;
+  const commitFee = formatEther(auction.commitFee!)
 
   const {
     writeContract,
@@ -165,7 +169,7 @@ export function VickreyCommitForm({ auction }: VickreyCommitFormProps) {
               <strong>Important:</strong> Save your bid amount and salt securely
               - you&apos;ll need them to reveal your bid later!
             </p>
-            <p>Commit fee: 0.001 ETH (refunded upon reveal)</p>
+            <p>Commit fee: {commitFee} {" "} {nativeTokenSymbol} (refunded upon reveal)</p>
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { Auction, Bid } from "@/lib/mock-data";
+import { Auction, Bid } from "@/lib/types";
 import { motion } from "framer-motion";
 import { formatEther } from "viem";
 import { CountdownTimer } from "../countdown-timer";
@@ -39,7 +39,6 @@ export function AllPayDetail({
         currentBlock > RANGE_LIMIT[chainId]
           ? currentBlock - RANGE_LIMIT[chainId]
           : BigInt(0);
-      console.log(`Fetching bids for auction ${auctionId} from block ${fromBlock} to ${currentBlock}`);
       if (auctionService.getBidHistory === undefined) {
         return;
       }

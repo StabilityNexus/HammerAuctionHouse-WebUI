@@ -6,7 +6,7 @@ import { ArrowLeft, Info, Wallet, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { Auction, AuctionType } from "@/lib/mock-data";
+import { Auction, AuctionType } from "@/lib/types";
 import { getAuctionService } from "@/lib/auction-service";
 import {
   usePublicClient,
@@ -88,7 +88,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     try {
       setIsWithdrawingFunds(true);
       const auctionService = await getAuctionService(protocol, chainId);
-      await auctionService.withdrawFunds(writeContract, BigInt(id));
+      await auctionService.withdraw!(writeContract, BigInt(id));
       toast.success("Withdrawal transaction submitted!");
     } catch (error) {
       console.error("Error withdrawing funds:", error);
@@ -127,7 +127,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
     try {
       setIsWithdrawingItem(true);
       const auctionService = await getAuctionService(protocol, chainId);
-      await auctionService.withdrawItem(writeContract, BigInt(id));
+      await auctionService.claim(writeContract, BigInt(id));
       toast.success("Item withdrawal transaction submitted!");
     } catch (error) {
       console.error("Error withdrawing item:", error);
@@ -241,7 +241,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
             </div>
           </div>
           {/* Withdrawal Buttons */}
-          {isConnected && (
+          {isConnected && !(currentAuction.protocol in ["Exponential" , "Logarithmic" , "Linear"]) && (
             <div className="mt-6 space-y-3">
               {/* Withdraw Funds Button - Only for auctioneer */}
               {userAddress?.toLowerCase() ===
