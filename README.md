@@ -49,7 +49,7 @@
 ---
 
 <div align="center">
-<h1>Hammer Auction House Platform with Multi-Protocol Support</h1>
+<h1>Hammer Auction House</h1>
 </div>
 
 [Hammer Auction House](https://hah.stability.nexus/) is a decentralized auction platform that redefines digital asset trading on blockchain. Supporting multiple auction mechanisms through smart contracts, it provides a secure and transparent environment for trading digital assets.
