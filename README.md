@@ -13,7 +13,7 @@
 <!-- Organization Name -->
 <div align="center">
 
-[![Static Badge](https://img.shields.io/badge/Stability_Nexus-/HAH-228B22?style=for-the-badge&labelColor=FFC517)](https://hah.stability.nexus/)
+[![Static Badge](https://img.shields.io/badge/Stability_Nexus-/Hammer Auction House-228B22?style=for-the-badge&labelColor=FFC517)](https://hammer-auctions.stability.nexus/)
 
 <!-- Correct deployed url to be added -->
 
