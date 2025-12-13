@@ -18,9 +18,14 @@ export function ModeToggle() {
   // Avoid SSR mismatch
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className="h-9 w-9" aria-hidden>
-        <span className="sr-only">Toggle theme</span>
-      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-9 w-9"
+        type="button"
+        disabled
+        aria-label="Toggle theme"
+      />
     );
   }
 
