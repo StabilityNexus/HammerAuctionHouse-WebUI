@@ -6,11 +6,6 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
-        userAgent: '*',
-        allow: '/',
-        disallow: ['/api/', '/dashboard/'],
-      },
-      {
         userAgent: 'GPTBot',
         disallow: '/',
       },
@@ -29,6 +24,11 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: 'Google-Extended',
         disallow: '/',
+      },
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: ['/api/', '/dashboard/'],
       },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,

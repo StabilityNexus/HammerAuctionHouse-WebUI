@@ -13,7 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: `${BASE_URL}/auctions`,
       lastModified: new Date(),
-      changeFrequency: 'hourly',
+      changeFrequency: 'daily',
       priority: 0.9,
     },
     {
@@ -21,12 +21,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/dashboard`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.7,
     },
   ]
 }
