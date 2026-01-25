@@ -292,7 +292,7 @@ export class EnglishAuctionService implements IAuctionService {
       }
       return BigInt(0);
     } catch (error) {
-      console.error("Error occured while fetching user's current bid: ", error);
+      console.error("Error occurred while fetching user's current bid: ", error);
       throw error;
     }
   }
