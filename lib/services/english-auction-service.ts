@@ -26,12 +26,17 @@ export class EnglishAuctionService implements IAuctionService {
 
     if (client) {
       try {
-        auctionedTokenName = await getTokenName(client, auctionData[6]);
-        biddingTokenName = await getTokenName(client, auctionData[8]);
-      } catch (error) {
-        console.warn("Error fetching token names:", error);
-      }
-    }
+  
+        [auctionedTokenName, biddingTokenName] = await Promise.all([
+        getTokenName(client, auctionData[6]),
+        getTokenName(client, auctionData[8])
+        
+      ]);
+    } 
+    catch (error) {
+    console.warn("Error fetching token names:", error);
+  }
+}
 
     return {
       protocol: "English",
