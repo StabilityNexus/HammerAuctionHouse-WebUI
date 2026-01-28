@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { safeLocalStorage } from "@/lib/browser-utils";
 
 // This is a mock implementation of a wallet hook
 // In a real application, this would use RainbowKit and Wagmi
@@ -17,23 +18,21 @@ export function useWallet() {
     const addr = generateRandomAddress();
     setAddress(addr);
     setIsConnected(true);
-    localStorage.setItem("wallet_connected", "true");
-    localStorage.setItem("wallet_address", addr);
+    safeLocalStorage.setItem("wallet_connected", "true");
+    safeLocalStorage.setItem("wallet_address", addr);
   }, [generateRandomAddress]);
 
   const disconnect = useCallback(() => {
     setAddress("");
     setIsConnected(false);
-    localStorage.removeItem("wallet_connected");
-    localStorage.removeItem("wallet_address");
+    safeLocalStorage.removeItem("wallet_connected");
+    safeLocalStorage.removeItem("wallet_address");
   }, []);
 
   // Load wallet state from localStorage
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    
-    const isWalletConnected = localStorage.getItem("wallet_connected") === "true";
-    const savedAddress = localStorage.getItem("wallet_address");
+    const isWalletConnected = safeLocalStorage.getItem("wallet_connected") === "true";
+    const savedAddress = safeLocalStorage.getItem("wallet_address");
     
     if (isWalletConnected && savedAddress) {
       setIsConnected(true);

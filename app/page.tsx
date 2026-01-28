@@ -137,7 +137,7 @@ export default function Home() {
         >
           <motion.h1
             variants={itemVariants}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6"
+            className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-6 drop-shadow-2xl heading-shadow"
           >
             Hammer Auction House
           </motion.h1>
@@ -157,12 +157,12 @@ export default function Home() {
             variants={itemVariants}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Button size="lg" asChild>
+            <Button size="lg" asChild className="shadow-lg drop-shadow-md hover:shadow-xl transition-shadow">
               <Link href="/auctions" className="px-8">
                 Browse Auctions
               </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
+            <Button size="lg" variant="outline" asChild className="shadow-lg drop-shadow-md hover:shadow-xl transition-shadow">
               <Link href="/create" className="px-8">
                 Create Auction
               </Link>
