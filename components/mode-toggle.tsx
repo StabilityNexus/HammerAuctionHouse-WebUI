@@ -1,38 +1,62 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
+/**
+ * Simple 2-state theme toggle (light <-> dark).
+ */
 export function ModeToggle() {
-  const { setTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  // Avoid SSR mismatch
+  if (!mounted) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-9 w-9"
+        type="button"
+        disabled
+        aria-label="Toggle theme"
+      />
+    );
+  }
+
+  const isDark = resolvedTheme === "dark";
+
+  const handleToggle = () => {
+    setTheme(isDark ? "light" : "dark");
+  };
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-9 w-9">
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          Light
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Dark
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          System
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      onClick={handleToggle}
+      variant="ghost"
+      size="icon"
+      className="h-9 w-9 relative"
+      aria-label={`Toggle color scheme (current: ${resolvedTheme ?? "light"})`}
+    >
+      {/* Accessible label */}
+      <span className="sr-only">Toggle theme</span>
+
+      {/* Sun / Moon layered with simple transitions */}
+      <Sun
+        className={`h-[1.2rem] w-[1.2rem] transition-all duration-150 ${
+          isDark ? "opacity-0 scale-90" : "opacity-100 scale-100"
+        }`}
+      />
+      <Moon
+        className={`absolute h-[1.2rem] w-[1.2rem] transition-all duration-150 ${
+          isDark ? "opacity-100 scale-100" : "opacity-0 scale-90"
+        }`}
+      />
+    </Button>
   );
 }
