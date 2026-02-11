@@ -27,7 +27,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <Providers>
-            <div className="flex min-h-screen flex-col items-center justify-center w-screen">
+            <div className="flex min-h-screen flex-col items-center justify-center w-full">
               <Navbar />
               <main className="flex-1">{children}</main>
               <Footer />
