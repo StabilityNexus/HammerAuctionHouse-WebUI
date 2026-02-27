@@ -27,7 +27,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { decode } from "@/lib/storage";
-import { formatEther } from "ethers";
+import { formatEther } from "viem";
 
 interface VickreyCommitFormProps {
   auction: Auction;
