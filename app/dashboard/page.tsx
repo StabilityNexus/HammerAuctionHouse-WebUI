@@ -96,7 +96,7 @@ export default function Dashboard() {
   }, [address, isConnected]);
 
   return (
-    <div className="container py-8 px-4 w-screen">
+    <div className="container py-8 px-4 w-full">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">

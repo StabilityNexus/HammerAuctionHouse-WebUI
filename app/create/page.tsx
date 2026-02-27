@@ -388,7 +388,7 @@ export default function CreateAuction() {
   }
 
   return (
-    <div className="container py-8 px-4 mb-12 w-screen">
+    <div className="container py-8 px-4 mb-12 w-full">
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Create New Auction</h1>

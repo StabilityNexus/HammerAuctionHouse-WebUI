@@ -127,7 +127,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col">
-      <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden w-screen">
+      <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden w-full">
         <HeroBackground />
         <motion.div
           initial="hidden"
@@ -319,7 +319,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="flex items-center justify-center overflow-hidden w-screen">
+      <section className="flex items-center justify-center overflow-hidden w-full">
         <HowItWorksSection />
       </section>
 

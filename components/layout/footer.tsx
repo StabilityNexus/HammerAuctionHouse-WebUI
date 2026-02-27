@@ -70,7 +70,7 @@ export function Footer({
 
   return (
     <footer 
-      className="relative w-screen px-5 border-t bg-gradient-to-b from-background to-muted/35 overflow-hidden"
+      className="relative w-full px-5 border-t bg-gradient-to-b from-background to-muted/35 overflow-hidden"
       role="contentinfo"
       aria-label="Site footer"
     >

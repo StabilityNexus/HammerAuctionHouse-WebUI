@@ -27,10 +27,9 @@ export function Navbar() {
 						<Image
 							src="/logo.svg"
 							alt="Hammer Auction House Logo"
-							className="dark:invert"
+							className="dark:invert object-contain"
 							width={"60"}
 							height={"60"}
-							objectFit="contain"
 						/>
 						{/* <span className="text-lg font-bold text-foreground">Hammer Auction House</span> */}
 					<span className="text-3xl font-bold text-primary">HAH!</span>

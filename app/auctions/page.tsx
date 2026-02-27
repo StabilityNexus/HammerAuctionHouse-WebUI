@@ -166,7 +166,7 @@ function AuctionsContent() {
 
   if (!publicClient) {
     return (
-      <div className="container w-screen py-8 px-4 sm:px-6 lg:px-8">
+      <div className="container w-full py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto z-10">
           <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 text-center">
             <h2 className="text-3xl font-bold">Connect Your Wallet</h2>
@@ -181,7 +181,7 @@ function AuctionsContent() {
   }
 
   return (
-    <div className="container w-screen py-8 px-4 sm:px-6 lg:px-8">
+    <div className="container w-full py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto z-10">
         {/* <h1 className="text-3xl font-bold mb-6">Browse Auctions</h1> */}
         <AuctionFilter
