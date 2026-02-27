@@ -12,7 +12,7 @@ import { AuctionInfo } from "../auction-info";
 import { BidHistory } from "../bid-history";
 import { decode } from "@/lib/storage";
 import { useAccount, useChainId, UsePublicClientReturnType } from "wagmi";
-import { RANGE_LIMIT } from "@/lib/contract-data";
+import { RANGE_LIMIT } from "@/lib/chain-constants";
 interface EnglishDetailProps {
   currentAuction: Auction;
   publicClient: UsePublicClientReturnType;
@@ -61,9 +61,9 @@ export function EnglishDetail({
     } finally {
       setIsLoadingBids(false);
     }
-  }, [publicClient, currentAuction]);
+  }, [publicClient, currentAuction, chainId, auctionId]);
 
-  const fetchCurrentBid = async () => {
+  const fetchCurrentBid = useCallback(async () => {
     if (!publicClient || !userAddress) return;
     try {
       const auctionService = await getAuctionService("English", chainId);
@@ -78,13 +78,13 @@ export function EnglishDetail({
     } catch (error) {
       console.error("Error fetching current bid from contract: ", error);
     }
-  };
+  }, [publicClient, userAddress, chainId, auctionId]);
   useEffect(() => {
     if (currentAuction && publicClient) {
       fetchBidsFromContract();
       fetchCurrentBid();
     }
-  }, [fetchBidsFromContract]);
+  }, [fetchBidsFromContract, fetchCurrentBid, currentAuction, publicClient]);
 
   return (
     <motion.div

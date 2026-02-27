@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import { ArrowLeft, Info, Wallet, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -15,16 +16,61 @@ import {
   useChainId,
 } from "wagmi";
 import { toast } from "sonner";
-import { AllPayDetail } from "@/components/auction/auction-detail-ui/AllPayDetail";
-import { EnglishDetail } from "@/components/auction/auction-detail-ui/EnglishDetail";
-import { LinearDetail } from "@/components/auction/auction-detail-ui/LinearDetail";
-import { ExponentialDetail } from "@/components/auction/auction-detail-ui/ExponentialDetail";
-import { LogarithmicDetail } from "@/components/auction/auction-detail-ui/LogarithmicDetail";
-import { VickreyDetail } from "@/components/auction/auction-detail-ui/VickreyDetail";
+const AllPayDetail = dynamic(
+  () =>
+    import("@/components/auction/auction-detail-ui/AllPayDetail").then(
+      (m) => m.AllPayDetail
+    ),
+  { ssr: false, loading: () => <DetailLoading /> }
+);
+const EnglishDetail = dynamic(
+  () =>
+    import("@/components/auction/auction-detail-ui/EnglishDetail").then(
+      (m) => m.EnglishDetail
+    ),
+  { ssr: false, loading: () => <DetailLoading /> }
+);
+const LinearDetail = dynamic(
+  () =>
+    import("@/components/auction/auction-detail-ui/LinearDetail").then(
+      (m) => m.LinearDetail
+    ),
+  { ssr: false, loading: () => <DetailLoading /> }
+);
+const ExponentialDetail = dynamic(
+  () =>
+    import("@/components/auction/auction-detail-ui/ExponentialDetail").then(
+      (m) => m.ExponentialDetail
+    ),
+  { ssr: false, loading: () => <DetailLoading /> }
+);
+const LogarithmicDetail = dynamic(
+  () =>
+    import("@/components/auction/auction-detail-ui/LogarithmicDetail").then(
+      (m) => m.LogarithmicDetail
+    ),
+  { ssr: false, loading: () => <DetailLoading /> }
+);
+const VickreyDetail = dynamic(
+  () =>
+    import("@/components/auction/auction-detail-ui/VickreyDetail").then(
+      (m) => m.VickreyDetail
+    ),
+  { ssr: false, loading: () => <DetailLoading /> }
+);
 
 interface AuctionDetailProps {
   protocol: AuctionType;
   id: bigint;
+}
+
+function DetailLoading() {
+  return (
+    <div className="container py-12 px-4 text-center">
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900 mx-auto mb-3"></div>
+      <p className="text-muted-foreground">Loading auction details...</p>
+    </div>
+  );
 }
 
 export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
@@ -74,7 +120,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
 
   useEffect(() => {
     fetchAuctionFromContract();
-  }, [publicClient, id]);
+  }, [publicClient, id, protocol, chainId]);
 
   const handleWithdrawFunds = useCallback(async () => {
     if (!currentAuction || !userAddress || !isConnected) {

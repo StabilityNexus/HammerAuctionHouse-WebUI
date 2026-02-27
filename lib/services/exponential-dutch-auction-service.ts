@@ -4,7 +4,8 @@ import { wagmi_config } from "@/config";
 import { IAuctionService, DutchAuctionParams, getTokenName, mappedData } from "../auction-service";
 import { Auction } from "../types";
 import { generateCode } from "../storage";
-import { AUCTION_CONTRACTS, EXPONENTIAL_DUTCH_ABI } from "../contract-data";
+import { EXPONENTIAL_DUTCH_ABI } from "../contract-data";
+import { AUCTION_CONTRACTS } from "../chain-constants";
 import { UsePublicClientReturnType } from "wagmi";
 import { WriteContractMutate } from "wagmi/query";
 

@@ -31,7 +31,6 @@ export function AuctionCard({ auction }: AuctionCardProps) {
     );
   }, [address, auction]);
 
-  console.log("AuctionCard rendered for auction:", auction);
   let status = "";
   if (Number(auction.deadline) * 1000 - Date.now() > 0) {
     status = "active";

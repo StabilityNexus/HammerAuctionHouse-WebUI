@@ -3,10 +3,11 @@ import { Config, readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
 import { IAuctionService, EnglishAuctionParams, mappedData } from "../auction-service";
 import { Auction, Bid } from "../types";
-import { parseEther } from "ethers";
+import { parseEther } from "viem";
 import { generateCode } from "../storage";
 import { getTokenName } from "../auction-service";
-import { AUCTION_CONTRACTS, ENGLISH_ABI } from "../contract-data";
+import { ENGLISH_ABI } from "../contract-data";
+import { AUCTION_CONTRACTS } from "../chain-constants";
 import { UsePublicClientReturnType } from "wagmi";
 import { WriteContractMutate } from "wagmi/query";
 export class EnglishAuctionService implements IAuctionService {

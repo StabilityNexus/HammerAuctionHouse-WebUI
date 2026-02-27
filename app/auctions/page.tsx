@@ -138,9 +138,17 @@ function AuctionsContent() {
   };
 
   useEffect(() => {
+    if (!publicClient || auctionId) return;
     setFetchedAuctions([]);
     fetchAllAuctions().catch(console.error);
-  }, [publicClient]);
+  }, [publicClient, chainId, auctionId]);
+
+  if (auctionId) {
+    const decoded = decode(auctionId);
+    return (
+      <AuctionDetail protocol={decoded.protocol} id={BigInt(decoded.id)} />
+    );
+  }
 
   // Filter auctions based on search and filters
   const filteredAuctions = fetchedAuctions.filter((auction) => {
@@ -156,13 +164,6 @@ function AuctionsContent() {
       selectedStatus.length === 0 || selectedStatus.includes(status);
     return matchesSearch && matchesType && matchesStatus;
   });
-
-  if (auctionId) {
-    const decoded = decode(auctionId);
-    return (
-      <AuctionDetail protocol={decoded.protocol} id={BigInt(decoded.id)} />
-    );
-  }
 
   if (!publicClient) {
     return (

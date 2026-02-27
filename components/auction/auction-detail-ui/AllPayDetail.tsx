@@ -12,7 +12,7 @@ import { AuctionInfo } from "../auction-info";
 import { BidHistory } from "../bid-history";
 import { decode } from "@/lib/storage";
 import { useAccount, useChainId, UsePublicClientReturnType } from "wagmi";
-import { RANGE_LIMIT } from "@/lib/contract-data";
+import { RANGE_LIMIT } from "@/lib/chain-constants";
 
 interface AllPayDetailProps {
   currentAuction: Auction;
@@ -50,7 +50,6 @@ export function AllPayDetail({
       );
       if (bidHistory != undefined) {
         setBids(bidHistory.filter((bid): bid is Bid => bid !== undefined));
-        console.log("Fetched bids:", bids);
       }
     } catch (err) {
       console.error(
@@ -60,9 +59,9 @@ export function AllPayDetail({
     } finally {
       setIsLoadingBids(false);
     }
-  }, [publicClient, currentAuction]);
+  }, [publicClient, currentAuction, chainId, auctionId]);
 
-  const fetchCurrentBid = async () => {
+  const fetchCurrentBid = useCallback(async () => {
     if (!publicClient || !userAddress) return;
     try {
       const auctionService = await getAuctionService("AllPay",chainId);
@@ -77,14 +76,14 @@ export function AllPayDetail({
     } catch (error) {
       console.error("Error fetching current bid from contract: ", error);
     }
-  };
+  }, [publicClient, userAddress, chainId, auctionId]);
 
   useEffect(() => {
     if (currentAuction && publicClient) {
       fetchBidsFromContract();
       fetchCurrentBid();
     }
-  }, [fetchBidsFromContract]);
+  }, [fetchBidsFromContract, fetchCurrentBid, currentAuction, publicClient]);
 
   return (
     <motion.div

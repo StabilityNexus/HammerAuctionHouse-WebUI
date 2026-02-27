@@ -4,7 +4,8 @@ import { wagmi_config } from "@/config";
 import { getTokenName, IAuctionService, mappedData, VickreyAuctionParams } from "../auction-service";
 import { Auction, Bid } from "../types";
 import { generateCode } from "../storage";
-import { AUCTION_CONTRACTS, VICKREY_ABI } from "../contract-data";
+import { VICKREY_ABI } from "../contract-data";
+import { AUCTION_CONTRACTS } from "../chain-constants";
 import { WriteContractMutate } from "wagmi/query";
 import { UsePublicClientReturnType } from "wagmi";
 

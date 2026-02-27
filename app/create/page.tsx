@@ -23,8 +23,6 @@ import {
   VickreyAuctionParams,
   parseBidAmount,
 } from "@/lib/auction-service";
-import { ExponentialDutchAuctionParams } from "@/lib/services/exponential-dutch-auction-service";
-import { LogarithmicDutchAuctionParams } from "@/lib/services/logarithmic-dutch-auction-service";
 import { AuctionType } from "@/lib/types";
 import { Address, parseEther } from "viem";
 import { getDurationInSeconds } from "@/lib/utils";
@@ -122,7 +120,7 @@ function transformFormDataToParams(
 
       // Add decay factor for exponential/logarithmic (scaled by 10^5 for precision)
       if (auctionType === "Exponential") {
-        const exponentialParams: ExponentialDutchAuctionParams = {
+        const exponentialParams: DutchAuctionParams = {
           ...dutchParams,
           decayFactor: BigInt(
             Math.floor(parseFloat(formData.decayFactor || "1.0") * 1e5)
@@ -130,7 +128,7 @@ function transformFormDataToParams(
         };
         return exponentialParams;
       } else if (auctionType === "Logarithmic") {
-        const logarithmicParams: LogarithmicDutchAuctionParams = {
+        const logarithmicParams: DutchAuctionParams = {
           ...dutchParams,
           decayFactor: BigInt(
             Math.floor(parseFloat(formData.decayFactor || "1.0") * 1e5)
@@ -341,7 +339,6 @@ export default function CreateAuction() {
 
       // Prepare auction parameters based on type
       const params = transformFormDataToParams(formData, auctionType);
-      console.log("Auction Params:", params);
       await auctionService.createAuction(writeContract, params);
     } catch (error) {
       console.error("Error creating auction:", error);

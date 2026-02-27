@@ -12,7 +12,7 @@ import { BidVariationChart } from "../bid-variation-chart";
 import { BidHistory } from "../bid-history";
 import { decode } from "@/lib/storage";
 import { useChainId, UsePublicClientReturnType } from "wagmi";
-import { RANGE_LIMIT } from "@/lib/contract-data";
+import { RANGE_LIMIT } from "@/lib/chain-constants";
 
 interface VickreyDetailProps {
   currentAuction: Auction;
@@ -61,7 +61,7 @@ export function VickreyDetail({
     } finally {
       setIsLoadingBids(false);
     }
-  }, [publicClient, currentAuction]);
+  }, [publicClient, currentAuction, chainId, auctionId]);
 
   useEffect(() => {
     if (currentAuction && publicClient) {
