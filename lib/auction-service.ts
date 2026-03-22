@@ -1,5 +1,5 @@
 // Auction Service - Unified API for all auction protocols
-import { Address } from "viem";
+import { Address, formatEther, parseEther } from "viem";
 import { AuctionType, Auction, Bid } from "./types";
 import { Config, UsePublicClientReturnType } from "wagmi";
 import { WriteContractMutate } from "wagmi/query";
@@ -150,11 +150,15 @@ async function getVickreyAuctionService(chainId: number): Promise<IAuctionServic
 
 // Utility functions
 export function formatBidAmount(amount: bigint): string {
-  return (Number(amount) / 1e18).toFixed(4);
+  return formatEther(amount);
 }
 
 export function parseBidAmount(amount: string): bigint {
-  return BigInt(Math.floor(parseFloat(amount) * 1e18));
+  try {
+    return parseEther(amount);
+  } catch {
+    return BigInt(0);
+  }
 }
 
 export function isAuctionActive(auction: Auction): boolean {

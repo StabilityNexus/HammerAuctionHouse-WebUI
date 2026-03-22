@@ -241,7 +241,7 @@ export function AuctionDetail({ protocol, id }: AuctionDetailProps) {
             </div>
           </div>
           {/* Withdrawal Buttons */}
-          {isConnected && !(currentAuction.protocol in ["Exponential" , "Logarithmic" , "Linear"]) && (
+          {isConnected && !["Exponential", "Logarithmic", "Linear"].includes(currentAuction.protocol) && (
             <div className="mt-6 space-y-3">
               {/* Withdraw Funds Button - Only for auctioneer */}
               {userAddress?.toLowerCase() ===

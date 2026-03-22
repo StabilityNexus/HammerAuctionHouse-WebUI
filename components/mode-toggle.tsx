@@ -1,47 +1,63 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
+/**
+ * Simple 2-state theme toggle (light <-> dark).
+ */
 export function ModeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  // Avoid hydration mismatch by only rendering after mount
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => setMounted(true), []);
 
-  const toggleTheme = () => {
-    // If system theme, get the resolved theme first
-    const currentTheme = theme === "system" ? resolvedTheme : theme;
-    setTheme(currentTheme === "dark" ? "light" : "dark");
-  };
-
+  // Avoid SSR mismatch
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className="h-9 w-9">
-        <span className="sr-only">Toggle theme</span>
-      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-9 w-9"
+        type="button"
+        disabled
+        aria-label="Toggle theme"
+      />
     );
   }
 
-  const currentTheme = theme === "system" ? resolvedTheme : theme;
+  const isDark = resolvedTheme === "dark";
+
+  const handleToggle = () => {
+    setTheme(isDark ? "light" : "dark");
+  };
 
   return (
     <Button
+      onClick={handleToggle}
       variant="ghost"
       size="icon"
-      className="h-9 w-9"
-      onClick={toggleTheme}
-      aria-label={`Switch to ${currentTheme === "dark" ? "light" : "dark"} theme`}
+      className="h-9 w-9 relative"
+      aria-label={`Toggle color scheme (current: ${resolvedTheme ?? "light"})`}
     >
-      <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      {/* Accessible label */}
       <span className="sr-only">Toggle theme</span>
+
+      {/* Sun / Moon layered with simple transitions */}
+      <Sun
+        className={`h-[1.2rem] w-[1.2rem] transition-all duration-150 ${
+          isDark ? "opacity-0 scale-90" : "opacity-100 scale-100"
+        }`}
+      />
+      <Moon
+        className={`absolute h-[1.2rem] w-[1.2rem] transition-all duration-150 ${
+          isDark ? "opacity-100 scale-100" : "opacity-0 scale-90"
+        }`}
+      />
     </Button>
   );
 }

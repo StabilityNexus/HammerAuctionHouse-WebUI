@@ -25,7 +25,7 @@ import {
 } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { getAuctionService } from "@/lib/auction-service";
-import { Address, formatEther } from "viem";
+import { Address, formatEther, parseEther } from "viem";
 import { VickreyCommitForm } from "./vickrey-commit-form";
 import { VickreyRevealForm } from "./vickrey-reveal-form";
 import { append, decode } from "@/lib/storage";
@@ -39,7 +39,7 @@ export function BidForm({ auction }: BidFormProps) {
   const [bidAmount, setBidAmount] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const account  = useAccount();
+  const account = useAccount();
   const {
     writeContract,
     data: hash,
@@ -66,16 +66,38 @@ export function BidForm({ auction }: BidFormProps) {
   const isVickreyAuction = auction.protocol === "Vickrey";
 
   const reservePrice = auction.reservedPrice
-    ? Number(auction.reservedPrice) / 1e18
-    : 0;
-  const currentBid = auction.highestBid ? Number(auction.highestBid) / 1e18 : 0;
+    ? BigInt(auction.reservedPrice)
+    : BigInt(0);
+  const currentBid = auction.highestBid
+    ? BigInt(auction.highestBid)
+    : BigInt(0);
   const minDelta = auction.minBidDelta
-    ? Number(auction.minBidDelta) / 1e18
-    : 0.1;
-  const minRaise = Number(auction.highestBid)?Number(formatEther(auction.minBidDelta?auction.minBidDelta:BigInt(0))).toFixed(4):Number(formatEther(auction.startingBid?auction.startingBid:BigInt(0))).toFixed(4);
-  const isValidBid = isReverseDutchAuction
-    ? true
-    : !isNaN(parseFloat(bidAmount)) && parseFloat(bidAmount) >= parseFloat(minRaise);
+    ? BigInt(auction.minBidDelta)
+    : parseEther("0.1");
+
+  // Calculate minimum valid total bid amount
+  const minRequiredBid =
+    currentBid > BigInt(0)
+      ? currentBid + minDelta
+      : auction.startingBid
+        ? BigInt(auction.startingBid)
+        : BigInt(0);
+
+  // Determine input validation
+  let isValidBid = false;
+  try {
+    if (isReverseDutchAuction) {
+      isValidBid = true;
+    } else {
+      const bidValue = bidAmount ? parseEther(bidAmount) : BigInt(0);
+      isValidBid = bidValue >= minRequiredBid;
+    }
+  } catch {
+    isValidBid = false;
+  }
+
+  // Format for display/input attributes
+  const minRaiseDisplay = formatEther(minRequiredBid);
 
   // Determine Vickrey auction phase
   const getVickreyPhase = () => {
@@ -107,12 +129,15 @@ export function BidForm({ auction }: BidFormProps) {
         Date.now() < Number(auction.deadline) * 1000
       ) {
         try {
-          const auctionService = await getAuctionService(auction.protocol,chainId);
+          const auctionService = await getAuctionService(
+            auction.protocol,
+            chainId,
+          );
           if (auctionService.getCurrentPrice) {
             const price = await auctionService.getCurrentPrice(
-              BigInt(auctionId)
+              BigInt(auctionId),
             );
-            setBidAmount((Number(price) / 1e18).toFixed(4));
+            setBidAmount(formatEther(price));
           }
         } catch (error) {
           console.error("Error updating Dutch auction price:", error);
@@ -128,8 +153,7 @@ export function BidForm({ auction }: BidFormProps) {
       updatePrice();
       interval = setInterval(updatePrice, 5000); // Update every 5 seconds
     } else if (!isReverseDutchAuction) {
-      const minBid = currentBid + minDelta;
-      setBidAmount(minBid.toFixed(4));
+      setBidAmount(formatEther(minRequiredBid));
     }
 
     return () => {
@@ -172,26 +196,26 @@ export function BidForm({ auction }: BidFormProps) {
 
     setIsSubmitting(true);
     try {
-      const auctionService = await getAuctionService(auction.protocol,chainId);
+      const auctionService = await getAuctionService(auction.protocol, chainId);
       if (isReverseDutchAuction) {
         await auctionService.placeBid!(
           writeContract,
           BigInt(auctionId),
-          auction.biddingToken as Address
+          auction.biddingToken as Address,
         );
       } else {
         // For other auction types, place a bid
-        if(auctionService.placeBid === undefined){
+        if (auctionService.placeBid === undefined) {
           return;
         }
         await auctionService.placeBid(
           writeContract,
           BigInt(auctionId),
           auction.biddingToken as Address,
-          BigInt(Math.floor(parseFloat(bidAmount) * 1e18))
+          parseEther(bidAmount),
         );
       }
-      const storeLocation = String(chainId) + account.address + "Bids"; 
+      const storeLocation = String(chainId) + account.address + "Bids";
       append(storeLocation, auction.protocol, auctionId);
     } catch (error) {
       console.error("Error submitting bid:", error);
@@ -209,8 +233,8 @@ export function BidForm({ auction }: BidFormProps) {
             {isReverseDutchAuction
               ? "purchase this item"
               : isVickreyAuction
-              ? "participate in this auction"
-              : "place a bid"}
+                ? "participate in this auction"
+                : "place a bid"}
             .
           </p>
         </div>
@@ -285,19 +309,20 @@ export function BidForm({ auction }: BidFormProps) {
                   {auction.isClaimed
                     ? "Sold"
                     : Date.now() >= Number(auction.deadline) * 1000
-                    ? "Auction Ended"
-                    : `${bidAmount} ${auction.biddingTokenName || "ETH"}`}
+                      ? "Auction Ended"
+                      : `${bidAmount} ${auction.biddingTokenName || "ETH"}`}
                 </span>
               </div>
               <div className="text-xs text-muted-foreground flex justify-between">
                 <span>
-                  Reserve Price: {reservePrice}{" "}
+                  Reserve Price: {formatEther(reservePrice)}{" "}
                   {auction.biddingTokenName || "ETH"}
                 </span>
                 <span>
                   Starting Price:{" "}
-                  {Number(auction.startingBid || auction.startingPrice || 0) /
-                    1e18}{" "}
+                  {formatEther(
+                    auction.startingBid || auction.startingPrice || BigInt(0),
+                  )}{" "}
                   ${auction.biddingTokenName || "ETH"}
                 </span>
               </div>
@@ -348,8 +373,8 @@ export function BidForm({ auction }: BidFormProps) {
                   Raise Bid Amount
                 </label>
                 <span className="text-xs text-muted-foreground">
-                  {auction.highestBid?"Min. increment: ": "Min. Bid: "}
-                  {minRaise} {auction.biddingTokenName || "ETH"}
+                  {auction.highestBid ? "Min. increment: " : "Min. Bid: "}
+                  {minRaiseDisplay} {auction.biddingTokenName || "ETH"}
                 </span>
               </div>
 
@@ -359,7 +384,7 @@ export function BidForm({ auction }: BidFormProps) {
                   type="number"
                   value={bidAmount}
                   onChange={(e) => setBidAmount(e.target.value)}
-                  min={minRaise}
+                  min={minRaiseDisplay}
                   step="0.01"
                   className="pr-12"
                 />
@@ -371,7 +396,7 @@ export function BidForm({ auction }: BidFormProps) {
               {!isValidBid && bidAmount && (
                 <p className="mt-1 text-xs text-destructive flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
-                  Bid must be at least {minRaise}{" "}
+                  Bid must be at least {minRaiseDisplay}{" "}
                   {auction.biddingTokenName || "ETH"}
                 </p>
               )}
@@ -419,7 +444,9 @@ export function BidForm({ auction }: BidFormProps) {
               className="bg-background border text-foreground p-4 rounded-lg flex items-start"
             >
               <Info className="h-5 w-5 mr-3 mt-0.5 shrink-0" />
-              <p>Transaction submitted! Waiting for blockchain confirmation...</p>
+              <p>
+                Transaction submitted! Waiting for blockchain confirmation...
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -448,8 +475,8 @@ export function BidForm({ auction }: BidFormProps) {
                   ? auction.isClaimed
                     ? "Sold"
                     : Date.now() >= Number(auction.deadline) * 1000
-                    ? "Auction Ended"
-                    : "Buy Now"
+                      ? "Auction Ended"
+                      : "Buy Now"
                   : "Place Bid")}
             </Button>
           </AlertDialogTrigger>
@@ -500,5 +527,3 @@ export function BidForm({ auction }: BidFormProps) {
     </>
   );
 }
-
-

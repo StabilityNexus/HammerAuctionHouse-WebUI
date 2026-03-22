@@ -36,26 +36,31 @@ export function Navbar() {
 					<span className="text-3xl font-bold text-primary">HAH!</span>
 					</Link>
 					<nav className="hidden md:flex items-center space-x-4">
-						{navItems.map((item) => (
-							<Link
-								key={item.path}
-								href={item.path}
-								className={cn(
-									"text-sm font-medium transition-colors hover:text-primary relative py-1.5",
-									pathname === item.path
-										? "text-foreground"
-										: "text-muted-foreground"
-								)}
-							>
-								{item.name}
-								{pathname === item.path && (
-									<motion.div
-										className="absolute -bottom-px left-0 h-[2px] w-full bg-primary"
-										layoutId="navbar-underline"
-									/>
-								)}
-							</Link>
-						))}
+						{navItems.map((item) => {
+							const isActive = item.path === "/" 
+								? pathname === "/" 
+								: pathname === item.path || pathname.startsWith(`${item.path}/`);
+							return (
+								<Link
+									key={item.path}
+									href={item.path}
+									className={cn(
+										"text-sm font-medium transition-colors hover:text-primary relative py-1.5",
+										isActive
+											? "text-foreground"
+											: "text-muted-foreground"
+									)}
+								>
+									{item.name}
+									{isActive && (
+										<motion.div
+											className="absolute -bottom-px left-0 h-[2px] w-full bg-primary"
+											layoutId="navbar-underline"
+										/>
+									)}
+								</Link>
+							);
+						})}
 					</nav>
 				</div>
 

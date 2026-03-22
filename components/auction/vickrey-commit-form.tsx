@@ -63,15 +63,12 @@ export function VickreyCommitForm({ auction }: VickreyCommitFormProps) {
   const isValidBid = !isNaN(parseFloat(bidAmount)) && parseFloat(bidAmount) > 0;
   const isValidSalt = salt.length >= 8; // Minimum salt length
 
-  // Generate random salt
+  // Generate cryptographically secure random salt
   const generateRandomSalt = () => {
-    const chars =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
-    for (let i = 0; i < 16; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    setSalt(result);
+    const array = new Uint8Array(32); // 32 bytes = 256 bits for strong security
+    crypto.getRandomValues(array);
+    const salt = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+    setSalt(salt);
   };
 
   // Generate commitment hash
