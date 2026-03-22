@@ -38,9 +38,12 @@ export default function Home() {
       if (!publicClient) return;
       setIsLoading(true);
       try {
-        const logarithmicService = await getAuctionService("Exponential",chainId);
-        const vickreyService = await getAuctionService("Vickrey",chainId);
-        const englishService = await getAuctionService("English",chainId);
+        const logarithmicService = await getAuctionService(
+          "Exponential",
+          chainId,
+        );
+        const vickreyService = await getAuctionService("Vickrey", chainId);
+        const englishService = await getAuctionService("English", chainId);
 
         const [logarithmicAuction, vickreyAuction, englishAuction] =
           await Promise.all([
@@ -127,7 +130,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col">
-      <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden w-screen">
+      <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden w-full">
         <HeroBackground />
         <motion.div
           initial="hidden"
@@ -262,8 +265,8 @@ export default function Home() {
                               {BigInt(auction.auctionType) === BigInt(1)
                                 ? `${Number(
                                     formatEther(
-                                      auction.auctionedTokenIdOrAmount
-                                    )
+                                      auction.auctionedTokenIdOrAmount,
+                                    ),
                                   ).toFixed(4)} ${
                                     auction.auctionedTokenName || "Items"
                                   }`
@@ -277,11 +280,11 @@ export default function Home() {
                                 {status === "active"
                                   ? `Ends ${formatDistanceToNow(
                                       Number(auction.deadline) * 1000,
-                                      { addSuffix: true }
+                                      { addSuffix: true },
                                     )}`
                                   : `Ended ${formatDistanceToNow(
                                       Number(auction.deadline) * 1000,
-                                      { addSuffix: true }
+                                      { addSuffix: true },
                                     )}`}
                               </span>
                             </div>
@@ -290,7 +293,7 @@ export default function Home() {
                             By{" "}
                             {`${auction.auctioneer.substring(
                               0,
-                              6
+                              6,
                             )}...${auction.auctioneer.substring(38)}`}
                           </div>
                         </div>
@@ -319,7 +322,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="flex items-center justify-center overflow-hidden w-screen">
+      <section className="flex items-center justify-center overflow-hidden w-full">
         <HowItWorksSection />
       </section>
 

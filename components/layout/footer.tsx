@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { SiGithub,SiX,SiDiscord,SiTelegram } from "@icons-pack/react-simple-icons";
+import { SiGithub, SiX, SiDiscord, SiTelegram } from "@icons-pack/react-simple-icons";
 
 interface SocialLink {
   platform: string;
@@ -15,10 +15,10 @@ interface FooterProps {
   currentYear?: number;
 }
 
-export function Footer({ 
-  logoSvg, 
-  socialLinks, 
-  currentYear = new Date().getFullYear() 
+export function Footer({
+  logoSvg,
+  socialLinks,
+  currentYear = new Date().getFullYear()
 }: FooterProps) {
   // Default social links if none provided
   const defaultSocialLinks: SocialLink[] = [
@@ -69,8 +69,8 @@ export function Footer({
   const activeLogo = logoSvg || defaultLogo;
 
   return (
-    <footer 
-      className="relative w-screen px-5 border-t bg-gradient-to-b from-background to-muted/35 overflow-hidden"
+    <footer
+      className="relative w-full px-5 border-t bg-gradient-to-b from-background to-muted/35 overflow-hidden"
       role="contentinfo"
       aria-label="Site footer"
     >
@@ -78,7 +78,7 @@ export function Footer({
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_50%)]"></div>
       </div>
-      
+
       <div className="w-full relative py-2 md:py-2 px-4 md:px-8">
         {/* Main footer content */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
@@ -88,7 +88,7 @@ export function Footer({
             <div className="flex-shrink-0">
               {activeLogo}
             </div>
-            
+
             {/* Branding text */}
             <div className="text-center md:text-left">
               <p className="text-lg font-bold text-foreground">
@@ -119,10 +119,10 @@ export function Footer({
                   <div className="text-muted-foreground group-hover:text-primary transition-colors duration-300">
                     {social.icon}
                   </div>
-                  
+
                   {/* Hover glow effect */}
                   <div className="absolute inset-0 rounded-lg bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm -z-10"></div>
-                  
+
                   {/* Tooltip */}
                   <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-background border rounded text-xs text-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap">
                     {social.platform}
@@ -132,12 +132,12 @@ export function Footer({
             </div>
           </div>
         </div>
-        
+
         {/* Bottom section - Copyright */}
         <div className="pt-3 flex justify-center border-t border-border">
           <p className="text-xs text-muted-foreground text-center md:text-left">
-              © {currentYear} Stability Nexus. All rights reserved.
-            </p>
+            © {currentYear} Stability Nexus. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
