@@ -183,7 +183,7 @@ export class EnglishAuctionService implements IAuctionService {
         bidAmount,
         false // 0 = NFT, 1 = ERC20
       )
-      writeContract({
+      await writeContract({
         address: this.contractAddress,
         abi: ENGLISH_ABI,
         functionName: "bid",

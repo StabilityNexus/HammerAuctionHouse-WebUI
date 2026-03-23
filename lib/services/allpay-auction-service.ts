@@ -130,7 +130,7 @@ export class AllPayAuctionService implements IAuctionService {
         bidAmount,
         false // 0 = NFT, 1 = ERC20
       );
-      writeContract({
+      await writeContract({
         address: this.contractAddress,
         abi: ALLPAY_ABI,
         functionName: "bid",
