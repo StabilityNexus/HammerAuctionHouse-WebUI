@@ -15,10 +15,8 @@ export function Providers({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
-
   return (
-    <WagmiProvider config={wagmi_config}>
+    <WagmiProvider config={wagmi_config} reconnectOnMount={mounted}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={darkTheme()}>
           {children}
