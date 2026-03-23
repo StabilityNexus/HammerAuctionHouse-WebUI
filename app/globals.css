@@ -165,4 +165,8 @@
   body {
     @apply bg-background text-foreground;
   }
+  img {
+    user-select: none;
+    -webkit-user-drag: none;
+  }
 }
