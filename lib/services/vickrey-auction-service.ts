@@ -1,5 +1,5 @@
 import { Address, erc20Abi, erc721Abi, keccak256, encodePacked, parseEther, parseAbiItem } from "viem";
-import { Config, readContracts } from '@wagmi/core';
+import { Config, readContract, readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
 import { getTokenName, IAuctionService, mappedData, VickreyAuctionParams } from "../auction-service";
 import { Auction, Bid } from "../types";
@@ -74,23 +74,40 @@ export class VickreyAuctionService implements IAuctionService {
     tokenAddress: Address,
     spender: Address,
     amountOrId: bigint,
-    isNFT: boolean
+    isNFT: boolean,
+    userAddress: Address
   ): Promise<void> {
     try {
       if (isNFT) {
-        await writeContract({
+        const approved = await readContract(wagmi_config, {
           address: tokenAddress,
           abi: erc721Abi,
-          functionName: "approve",
-          args: [spender, amountOrId],
+          functionName: "getApproved",
+          args: [amountOrId],
         });
+        if (approved !== spender) {
+          await writeContract({
+            address: tokenAddress,
+            abi: erc721Abi,
+            functionName: "approve",
+            args: [spender, amountOrId],
+          });
+        }
       } else {
-        await writeContract({
+        const allowance = await readContract(wagmi_config, {
           address: tokenAddress,
           abi: erc20Abi,
-          functionName: "approve",
-          args: [spender, amountOrId],
+          functionName: "allowance",
+          args: [userAddress, spender],
         });
+        if (allowance < amountOrId) {
+          await writeContract({
+            address: tokenAddress,
+            abi: erc20Abi,
+            functionName: "approve",
+            args: [spender, amountOrId],
+          });
+        }
       }
     } catch (error) {
       console.error("Error approving token:", error);
@@ -140,14 +157,15 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async createAuction(writeContract: WriteContractMutate<Config, unknown>, params: VickreyAuctionParams): Promise<void> {
+  async createAuction(writeContract: WriteContractMutate<Config, unknown>, params: VickreyAuctionParams, userAddress: Address): Promise<void> {
     try {
       await this.approveToken(
         writeContract,
         params.auctionedToken,
         this.contractAddress,
         (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
-        params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
+        params.auctionType === BigInt(0), // 0 = NFT, 1 = ERC20
+        userAddress
       );
 
       await writeContract({
@@ -189,7 +207,7 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async revealBid(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, bidAmount: bigint, salt: string): Promise<void> {
+  async revealBid(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, bidAmount: bigint, salt: string, userAddress: Address): Promise<void> {
     try {
       const biddingToken = (await this.getAuction(auctionId)).biddingToken
       const saltBytes = keccak256(encodePacked(['string'], [salt]));
@@ -198,7 +216,8 @@ export class VickreyAuctionService implements IAuctionService {
         biddingToken as `0x${string}`,
         this.contractAddress,
         bidAmount,
-        false
+        false,
+        userAddress
       )
       await writeContract({
         address: this.contractAddress,
