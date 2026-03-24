@@ -105,7 +105,8 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
         writeContract,
         auctionId,
         bidAmountWei,
-        salt
+        salt,
+        address
       );
     } catch (error) {
       console.error("Reveal error:", error);
