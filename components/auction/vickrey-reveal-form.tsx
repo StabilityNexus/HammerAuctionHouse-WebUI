@@ -90,7 +90,7 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
   }, [writeError, confirmError]);
 
   const handleReveal = async () => {
-    if (!address || !writeContractAsync) {
+    if (!address || !writeContractAsync || !publicClient) {
       setError("Please connect your wallet");
       return;
     }

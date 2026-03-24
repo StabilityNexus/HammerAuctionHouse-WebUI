@@ -68,7 +68,7 @@ export function DutchAuctionPrice({
   }, [auctionId, protocol, isEnded, isReverseDutchAuction]);
 
   const handleBuyout = async () => {
-    if (!writeContractAsync || isEnded) return;
+    if (!writeContractAsync || !client || isEnded) return;
 
     setIsLoading(true);
     try {

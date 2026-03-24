@@ -145,7 +145,8 @@ export class EnglishAuctionService implements IAuctionService {
         (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
-      await publicClient!.waitForTransactionReceipt({ hash: approvalHash });
+      if (!publicClient) throw new Error("publicClient not available");
+      await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress,
         abi: ENGLISH_ABI,
@@ -185,7 +186,8 @@ export class EnglishAuctionService implements IAuctionService {
         bidAmount,
         false // 0 = NFT, 1 = ERC20
       );
-      await publicClient!.waitForTransactionReceipt({ hash: approvalHash });
+      if (!publicClient) throw new Error("publicClient not available");
+      await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress,
         abi: ENGLISH_ABI,

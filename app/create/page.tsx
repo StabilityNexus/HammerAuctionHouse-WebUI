@@ -307,7 +307,7 @@ export default function CreateAuction() {
   };
 
   const handleSubmit = async () => {
-    if (!address || !writeContractAsync) return;
+    if (!address || !writeContractAsync || !publicClient) return;
 
     setIsSubmitting(true);
     try {

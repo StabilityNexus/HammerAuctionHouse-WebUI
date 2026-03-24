@@ -131,7 +131,8 @@ export class ExponentialDutchAuctionService implements IAuctionService {
         (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
-      await publicClient!.waitForTransactionReceipt({ hash: approvalHash });
+      if (!publicClient) throw new Error("publicClient not available");
+      await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress,
         abi: EXPONENTIAL_DUTCH_ABI,
@@ -166,7 +167,8 @@ export class ExponentialDutchAuctionService implements IAuctionService {
         currentPrice,
         false
       );
-      await publicClient!.waitForTransactionReceipt({ hash: approvalHash });
+      if (!publicClient) throw new Error("publicClient not available");
+      await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress as `0x${string}`,
         abi: EXPONENTIAL_DUTCH_ABI,
