@@ -81,7 +81,7 @@ export function Footer({
 
       <div className="w-full relative py-2 md:py-2 px-4 md:px-8">
         {/* Main footer content */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4">
           {/* Logo and branding section */}
           <div className="flex flex-col md:flex-row items-center gap-3">
             {/* Logo */}
@@ -89,14 +89,14 @@ export function Footer({
               {activeLogo}
             </div>
 
-            {/* Branding text */}
+            {/* Branding text and copyright */}
             <div className="text-center md:text-left">
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-lg font-bold text-foreground leading-none mb-1">
                 The Stable Order
               </p>
-              {/* <p className="text-sm text-muted-foreground">
-                Decentralized auction platform
-              </p> */}
+              <p className="text-xs text-muted-foreground">
+                © {currentYear} Stability Nexus. All rights reserved.
+              </p>
             </div>
           </div>
 
@@ -131,13 +131,6 @@ export function Footer({
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Bottom section - Copyright */}
-        <div className="pt-3 flex justify-center border-t border-border">
-          <p className="text-xs text-muted-foreground text-center md:text-left">
-            © {currentYear} Stability Nexus. All rights reserved.
-          </p>
         </div>
       </div>
     </footer>
