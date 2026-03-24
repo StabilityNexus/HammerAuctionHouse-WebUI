@@ -85,6 +85,7 @@ export class AllPayAuctionService implements IAuctionService {
 
   async createAuction(writeContract: WriteContractMutateAsync<Config, unknown>, publicClient: UsePublicClientReturnType, params: AllPayAuctionParams): Promise<void> {
     try {
+      if (!publicClient) throw new Error("publicClient not available");
       const approvalHash = await this.approveToken(
         writeContract,
         params.auctionedToken,
@@ -92,7 +93,7 @@ export class AllPayAuctionService implements IAuctionService {
         (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
         params.auctionType === BigInt(0)
       );
-      await publicClient!.waitForTransactionReceipt({ hash: approvalHash });
+      await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress,
         abi: ALLPAY_ABI,
@@ -125,6 +126,7 @@ export class AllPayAuctionService implements IAuctionService {
     bidAmount: bigint,
   ): Promise<void> {
     try {
+      if (!publicClient) throw new Error("publicClient not available");
       const approvalHash = await this.approveToken(
         writeContract,
         biddingTokenAddress,
@@ -132,7 +134,7 @@ export class AllPayAuctionService implements IAuctionService {
         bidAmount,
         false // 0 = NFT, 1 = ERC20
       );
-      await publicClient!.waitForTransactionReceipt({ hash: approvalHash });
+      await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress,
         abi: ALLPAY_ABI,

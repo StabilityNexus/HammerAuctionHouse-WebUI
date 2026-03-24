@@ -124,6 +124,7 @@ export class ExponentialDutchAuctionService implements IAuctionService {
 
   async createAuction(writeContract: WriteContractMutateAsync<Config, unknown>, publicClient: UsePublicClientReturnType, params: ExponentialDutchAuctionParams): Promise<void> {
     try {
+      if (!publicClient) throw new Error("publicClient not available");
       const approvalHash = await this.approveToken(
         writeContract,
         params.auctionedToken,
@@ -131,7 +132,6 @@ export class ExponentialDutchAuctionService implements IAuctionService {
         (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
-      if (!publicClient) throw new Error("publicClient not available");
       await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress,
@@ -160,6 +160,7 @@ export class ExponentialDutchAuctionService implements IAuctionService {
   async placeBid(writeContract: WriteContractMutateAsync<Config, unknown>, publicClient: UsePublicClientReturnType, auctionId: bigint, biddingToken: string): Promise<void> {
     try {
       const currentPrice = await this.getCurrentPrice(auctionId);
+      if (!publicClient) throw new Error("publicClient not available");
       const approvalHash = await this.approveToken(
         writeContract,
         biddingToken as `0x${string}`,
@@ -167,7 +168,6 @@ export class ExponentialDutchAuctionService implements IAuctionService {
         currentPrice,
         false
       );
-      if (!publicClient) throw new Error("publicClient not available");
       await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress as `0x${string}`,
@@ -176,7 +176,7 @@ export class ExponentialDutchAuctionService implements IAuctionService {
         args: [auctionId],
       });
     } catch (error) {
-      console.error("Error withdrawing item:", error);
+      console.error("Error placing bid:", error);
       throw error;
     }
   }
@@ -191,6 +191,7 @@ export class ExponentialDutchAuctionService implements IAuctionService {
       });
     } catch (error) {
       console.error("Error claiming the assest: ",error);
+      throw error;
     }
   }
 

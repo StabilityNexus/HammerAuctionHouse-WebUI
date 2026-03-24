@@ -186,7 +186,7 @@ export function BidForm({ auction }: BidFormProps) {
   }, [writeError, confirmError]);
 
   const handleSubmit = async () => {
-    if (!isValidBid || !isConnected || !address || isSubmitting) return;
+    if (!isValidBid || !isConnected || !address || isSubmitting || !publicClient) return;
 
     // Prevent submission if auction is claimed or ended
     if (

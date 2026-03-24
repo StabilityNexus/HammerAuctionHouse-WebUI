@@ -138,6 +138,7 @@ export class EnglishAuctionService implements IAuctionService {
 
   async createAuction(writeContract: WriteContractMutateAsync<Config, unknown>, publicClient: UsePublicClientReturnType, params: EnglishAuctionParams): Promise<void> {
     try {
+      if (!publicClient) throw new Error("publicClient not available");
       const approvalHash = await this.approveToken(
         writeContract,
         params.auctionedToken,
@@ -145,7 +146,6 @@ export class EnglishAuctionService implements IAuctionService {
         (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
-      if (!publicClient) throw new Error("publicClient not available");
       await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress,
@@ -179,6 +179,7 @@ export class EnglishAuctionService implements IAuctionService {
     bidAmount: bigint,
   ): Promise<void> {
     try {
+      if (!publicClient) throw new Error("publicClient not available");
       const approvalHash = await this.approveToken(
         writeContract,
         biddingTokenAddress,
@@ -186,7 +187,6 @@ export class EnglishAuctionService implements IAuctionService {
         bidAmount,
         false // 0 = NFT, 1 = ERC20
       );
-      if (!publicClient) throw new Error("publicClient not available");
       await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress,
