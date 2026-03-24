@@ -20,7 +20,7 @@ export function DutchAuctionPrice({
 }: DutchAuctionPriceProps) {
   const [currentPrice, setCurrentPrice] = useState<bigint>(BigInt(0));
   const [isLoading, setIsLoading] = useState(false);
-  const { writeContract } = useWriteContract();
+  const { writeContractAsync } = useWriteContract();
   const chainId = useChainId();
   const client = usePublicClient();
   // Check if this is a reverse Dutch auction
@@ -68,14 +68,14 @@ export function DutchAuctionPrice({
   }, [auctionId, protocol, isEnded, isReverseDutchAuction]);
 
   const handleBuyout = async () => {
-    if (!writeContract || isEnded) return;
+    if (!writeContractAsync || isEnded) return;
 
     setIsLoading(true);
     try {
       const dutchService = await getAuctionService(protocol,chainId);
       const auction = await dutchService.getAuction(auctionId,client);
       const biddingToken = auction.biddingToken as Address;
-      await dutchService.placeBid!(writeContract,auctionId,biddingToken);
+      await dutchService.placeBid!(writeContractAsync, client, auctionId, biddingToken);
       onBuyout();
     } catch (error) {
       console.error("Error buying out auction:", error);

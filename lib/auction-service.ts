@@ -2,7 +2,7 @@
 import { Address, formatEther, parseEther } from "viem";
 import { AuctionType, Auction, Bid } from "./types";
 import { Config, UsePublicClientReturnType } from "wagmi";
-import { WriteContractMutate } from "wagmi/query";
+import { WriteContractMutateAsync } from "wagmi/query";
 
 export interface AuctionData {
   name: string;
@@ -84,16 +84,16 @@ export type AuctionParams =
 // Abstract auction service interface
 export interface IAuctionService {
   contractAddress: Address;
-  createAuction(writeContract: WriteContractMutate<Config, unknown>, params: Partial<AuctionParams>): Promise<void>;
-  placeBid?(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, tokenAddress: Address,bidAmount?: bigint): Promise<void>;
-  withdraw?(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void>;
-  claim(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, biddingToken?: string): Promise<void>;
+  createAuction(writeContract: WriteContractMutateAsync<Config, unknown>, publicClient: UsePublicClientReturnType, params: Partial<AuctionParams>): Promise<void>;
+  placeBid?(writeContract: WriteContractMutateAsync<Config, unknown>, publicClient: UsePublicClientReturnType, auctionId: bigint, tokenAddress: Address, bidAmount?: bigint): Promise<void>;
+  withdraw?(writeContract: WriteContractMutateAsync<Config, unknown>, auctionId: bigint): Promise<void>;
+  claim(writeContract: WriteContractMutateAsync<Config, unknown>, auctionId: bigint, biddingToken?: string): Promise<void>;
   getAuction(auctionId: bigint, client: UsePublicClientReturnType): Promise<Auction>;
   getBidHistory?(client: UsePublicClientReturnType, auctionId: bigint, startBlock: bigint, endBlock: bigint): Promise<(undefined | Bid)[]>;
   getAuctionCounter(): Promise<bigint>;
   getLastNAuctions(client: UsePublicClientReturnType, n?: number): Promise<(Auction | null)[]>;
   getCurrentPrice?(auctionId: bigint): Promise<bigint>;
-  revealBid?(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, bidAmount: bigint, salt: string): Promise<void>;
+  revealBid?(writeContract: WriteContractMutateAsync<Config, unknown>, publicClient: UsePublicClientReturnType, auctionId: bigint, bidAmount: bigint, salt: string): Promise<void>;
   getCurrentBid?(client: UsePublicClientReturnType, auctionId: bigint, userAddress: Address): Promise<bigint>;
 }
 
