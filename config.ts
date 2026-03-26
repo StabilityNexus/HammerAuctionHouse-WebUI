@@ -51,7 +51,7 @@ export const wagmi_config =
     ? makeServerConfig()
     : getDefaultConfig({
         appName: 'HAH',
-        projectId: '00aea9e5bb1721b907ad8ea20f354c6a',
+        projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
         chains,
         ssr: true,
       });
