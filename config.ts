@@ -4,6 +4,7 @@ import {
   polygon,
   base,
 } from 'wagmi/chains';
+import { createConfig, http } from 'wagmi';
 import { type Chain } from 'viem';
 
 const mordor = {
@@ -30,8 +31,27 @@ const citrea_testnet = {
   }
 } as const satisfies Chain;
 
-export const wagmi_config = getDefaultConfig({
-  appName: 'HAH',
-  projectId: '00aea9e5bb1721b907ad8ea20f354c6a',
-  chains: [mordor, citrea_testnet, mainnet, polygon, base],
-});
+const chains = [mordor, citrea_testnet, mainnet, polygon, base] as const;
+
+const makeServerConfig = () =>
+  createConfig({
+    chains,
+    transports: {
+      [mordor.id]: http(mordor.rpcUrls.default.http[0]),
+      [citrea_testnet.id]: http(citrea_testnet.rpcUrls.default.http[0]),
+      [mainnet.id]: http(),
+      [polygon.id]: http(),
+      [base.id]: http(),
+    },
+    ssr: true,
+  });
+
+export const wagmi_config =
+  typeof window === 'undefined'
+    ? makeServerConfig()
+    : getDefaultConfig({
+        appName: 'HAH',
+        projectId: '00aea9e5bb1721b907ad8ea20f354c6a',
+        chains,
+        ssr: true,
+      });
