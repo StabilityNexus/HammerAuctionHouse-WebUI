@@ -84,8 +84,8 @@ export type AuctionParams =
 // Abstract auction service interface
 export interface IAuctionService {
   contractAddress: Address;
-  createAuction(writeContract: WriteContractMutate<Config, unknown>, params: Partial<AuctionParams>): Promise<void>;
-  placeBid?(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, tokenAddress: Address,bidAmount?: bigint): Promise<void>;
+  createAuction(writeContract: WriteContractMutate<Config, unknown>, params: Partial<AuctionParams>, userAddress: Address): Promise<void>;
+  placeBid?(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, tokenAddress: string, userAddress: Address, bidAmount?: bigint): Promise<void>;
   withdraw?(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void>;
   claim(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, biddingToken?: string): Promise<void>;
   getAuction(auctionId: bigint, client: UsePublicClientReturnType): Promise<Auction>;
@@ -93,7 +93,7 @@ export interface IAuctionService {
   getAuctionCounter(): Promise<bigint>;
   getLastNAuctions(client: UsePublicClientReturnType, n?: number): Promise<(Auction | null)[]>;
   getCurrentPrice?(auctionId: bigint): Promise<bigint>;
-  revealBid?(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, bidAmount: bigint, salt: string): Promise<void>;
+  revealBid?(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, bidAmount: bigint, salt: string, userAddress: Address): Promise<void>;
   getCurrentBid?(client: UsePublicClientReturnType, auctionId: bigint, userAddress: Address): Promise<bigint>;
 }
 

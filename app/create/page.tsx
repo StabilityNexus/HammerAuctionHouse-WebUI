@@ -342,7 +342,7 @@ export default function CreateAuction() {
       // Prepare auction parameters based on type
       const params = transformFormDataToParams(formData, auctionType);
       console.log("Auction Params:", params);
-      await auctionService.createAuction(writeContract, params);
+      await auctionService.createAuction(writeContract, params, address as Address);
     } catch (error) {
       console.error("Error creating auction:", error);
       setIsSubmitting(false);

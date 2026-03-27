@@ -202,6 +202,7 @@ export function BidForm({ auction }: BidFormProps) {
           writeContract,
           BigInt(auctionId),
           auction.biddingToken as Address,
+          address as Address
         );
       } else {
         // For other auction types, place a bid
@@ -212,6 +213,7 @@ export function BidForm({ auction }: BidFormProps) {
           writeContract,
           BigInt(auctionId),
           auction.biddingToken as Address,
+          address as Address,
           parseEther(bidAmount),
         );
       }
