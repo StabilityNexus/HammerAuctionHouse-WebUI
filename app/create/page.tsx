@@ -228,7 +228,7 @@ export default function CreateAuction() {
 
   const router = useRouter();
   const { status, address } = useAccount();
-  const { data: hash, isPending, writeContract } = useWriteContract();
+  const { data: hash, isPending, writeContractAsync } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
     useWaitForTransactionReceipt({
       hash,
@@ -307,7 +307,7 @@ export default function CreateAuction() {
   };
 
   const handleSubmit = async () => {
-    if (!address || !writeContract) return;
+    if (!address || !writeContractAsync || !publicClient) return;
 
     setIsSubmitting(true);
     try {
@@ -342,7 +342,7 @@ export default function CreateAuction() {
       // Prepare auction parameters based on type
       const params = transformFormDataToParams(formData, auctionType);
       console.log("Auction Params:", params);
-      await auctionService.createAuction(writeContract, params);
+      await auctionService.createAuction(writeContractAsync, publicClient, params);
     } catch (error) {
       console.error("Error creating auction:", error);
       setIsSubmitting(false);

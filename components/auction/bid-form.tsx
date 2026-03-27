@@ -22,6 +22,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   useChainId,
+  usePublicClient,
 } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { getAuctionService } from "@/lib/auction-service";
@@ -41,12 +42,13 @@ export function BidForm({ auction }: BidFormProps) {
   const [showSuccess, setShowSuccess] = useState(false);
   const account = useAccount();
   const {
-    writeContract,
+    writeContractAsync,
     data: hash,
     isPending,
     error: writeError,
   } = useWriteContract();
   const chainId = useChainId();
+  const publicClient = usePublicClient();
   const {
     isLoading: isConfirming,
     isSuccess: isConfirmed,
@@ -184,7 +186,7 @@ export function BidForm({ auction }: BidFormProps) {
   }, [writeError, confirmError]);
 
   const handleSubmit = async () => {
-    if (!isValidBid || !isConnected || !address || isSubmitting) return;
+    if (!isValidBid || !isConnected || !address || isSubmitting || !publicClient) return;
 
     // Prevent submission if auction is claimed or ended
     if (
@@ -199,7 +201,8 @@ export function BidForm({ auction }: BidFormProps) {
       const auctionService = await getAuctionService(auction.protocol, chainId);
       if (isReverseDutchAuction) {
         await auctionService.placeBid!(
-          writeContract,
+          writeContractAsync,
+          publicClient,
           BigInt(auctionId),
           auction.biddingToken as Address,
         );
@@ -209,7 +212,8 @@ export function BidForm({ auction }: BidFormProps) {
           return;
         }
         await auctionService.placeBid(
-          writeContract,
+          writeContractAsync,
+          publicClient,
           BigInt(auctionId),
           auction.biddingToken as Address,
           parseEther(bidAmount),

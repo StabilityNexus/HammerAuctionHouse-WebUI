@@ -1,11 +1,11 @@
-import { Address, erc20Abi, erc721Abi, keccak256, encodePacked, parseEther, parseAbiItem } from "viem";
+import { Address, erc20Abi, erc721Abi, Hash, keccak256, encodePacked, parseEther, parseAbiItem } from "viem";
 import { Config, readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
 import { getTokenName, IAuctionService, mappedData, VickreyAuctionParams } from "../auction-service";
 import { Auction, Bid } from "../types";
 import { generateCode } from "../storage";
 import { AUCTION_CONTRACTS, VICKREY_ABI } from "../contract-data";
-import { WriteContractMutate } from "wagmi/query";
+import { WriteContractMutateAsync } from "wagmi/query";
 import { UsePublicClientReturnType } from "wagmi";
 
 export class VickreyAuctionService implements IAuctionService {
@@ -70,22 +70,22 @@ export class VickreyAuctionService implements IAuctionService {
   }
 
   private async approveToken(
-    writeContract: WriteContractMutate<Config, unknown>,
+    writeContract: WriteContractMutateAsync<Config, unknown>,
     tokenAddress: Address,
     spender: Address,
     amountOrId: bigint,
     isNFT: boolean
-  ): Promise<void> {
+  ): Promise<Hash> {
     try {
       if (isNFT) {
-        await writeContract({
+        return await writeContract({
           address: tokenAddress,
           abi: erc721Abi,
           functionName: "approve",
           args: [spender, amountOrId],
         });
       } else {
-        await writeContract({
+        return await writeContract({
           address: tokenAddress,
           abi: erc20Abi,
           functionName: "approve",
@@ -140,16 +140,17 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async createAuction(writeContract: WriteContractMutate<Config, unknown>, params: VickreyAuctionParams): Promise<void> {
+  async createAuction(writeContract: WriteContractMutateAsync<Config, unknown>, publicClient: UsePublicClientReturnType, params: VickreyAuctionParams): Promise<void> {
     try {
-      await this.approveToken(
+      if (!publicClient) throw new Error("publicClient not available");
+      const approvalHash = await this.approveToken(
         writeContract,
         params.auctionedToken,
         this.contractAddress,
         (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
-
+      await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress,
         abi: VICKREY_ABI,
@@ -174,7 +175,7 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async commitBid(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, commitment: `0x${string}`): Promise<void> {
+  async commitBid(writeContract: WriteContractMutateAsync<Config, unknown>, auctionId: bigint, commitment: `0x${string}`): Promise<void> {
     try {
       await writeContract({
         address: this.contractAddress,
@@ -189,17 +190,19 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async revealBid(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, bidAmount: bigint, salt: string): Promise<void> {
+  async revealBid(writeContract: WriteContractMutateAsync<Config, unknown>, publicClient: UsePublicClientReturnType, auctionId: bigint, bidAmount: bigint, salt: string): Promise<void> {
     try {
       const biddingToken = (await this.getAuction(auctionId)).biddingToken
       const saltBytes = keccak256(encodePacked(['string'], [salt]));
-      await this.approveToken(
+      if (!publicClient) throw new Error("publicClient not available");
+      const approvalHash = await this.approveToken(
         writeContract,
         biddingToken as `0x${string}`,
         this.contractAddress,
         bidAmount,
         false
-      )
+      );
+      await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress,
         abi: VICKREY_ABI,
@@ -212,7 +215,7 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async withdraw(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
+  async withdraw(writeContract: WriteContractMutateAsync<Config, unknown>, auctionId: bigint): Promise<void> {
     try {
       await writeContract({
         address: this.contractAddress,
@@ -226,7 +229,7 @@ export class VickreyAuctionService implements IAuctionService {
     }
   }
 
-  async claim(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
+  async claim(writeContract: WriteContractMutateAsync<Config, unknown>, auctionId: bigint): Promise<void> {
     try {
       await writeContract({
         address: this.contractAddress,

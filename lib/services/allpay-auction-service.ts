@@ -1,4 +1,4 @@
-import { Address, erc20Abi, erc721Abi, formatEther, parseAbiItem } from "viem";
+import { Address, erc20Abi, erc721Abi, formatEther, Hash, parseAbiItem } from "viem";
 import { Config, readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
 import { IAuctionService, AllPayAuctionParams, getTokenName, mappedData } from "../auction-service";
@@ -8,7 +8,7 @@ import { generateCode } from "../storage";
 import { ALLPAY_ABI } from "../contract-data";
 import { AUCTION_CONTRACTS } from "../contract-data";
 import { UsePublicClientReturnType } from "wagmi";
-import { WriteContractMutate } from "wagmi/query";
+import { WriteContractMutateAsync } from "wagmi/query";
 
 export class AllPayAuctionService implements IAuctionService {
   contractAddress: Address;
@@ -55,22 +55,22 @@ export class AllPayAuctionService implements IAuctionService {
   }
 
   private async approveToken(
-    writeContract: WriteContractMutate<Config, unknown>,
+    writeContract: WriteContractMutateAsync<Config, unknown>,
     tokenAddress: Address,
     spender: Address,
     amountOrId: bigint,
     isNFT: boolean
-  ): Promise<void> {
+  ): Promise<Hash> {
     try {
       if (isNFT) {
-        await writeContract({
+        return await writeContract({
           address: tokenAddress,
           abi: erc721Abi,
           functionName: "approve",
           args: [spender, amountOrId],
         });
       } else {
-        await writeContract({
+        return await writeContract({
           address: tokenAddress,
           abi: erc20Abi,
           functionName: "approve",
@@ -83,15 +83,17 @@ export class AllPayAuctionService implements IAuctionService {
     }
   }
 
-  async createAuction(writeContract: WriteContractMutate<Config, unknown>, params: AllPayAuctionParams): Promise<void> {
+  async createAuction(writeContract: WriteContractMutateAsync<Config, unknown>, publicClient: UsePublicClientReturnType, params: AllPayAuctionParams): Promise<void> {
     try {
-      await this.approveToken(
+      if (!publicClient) throw new Error("publicClient not available");
+      const approvalHash = await this.approveToken(
         writeContract,
         params.auctionedToken,
         this.contractAddress,
         (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
         params.auctionType === BigInt(0)
       );
+      await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress,
         abi: ALLPAY_ABI,
@@ -117,19 +119,22 @@ export class AllPayAuctionService implements IAuctionService {
   }
 
   async placeBid(
-    writeContract: WriteContractMutate<Config, unknown>,
+    writeContract: WriteContractMutateAsync<Config, unknown>,
+    publicClient: UsePublicClientReturnType,
     auctionId: bigint,
     biddingTokenAddress: Address,
     bidAmount: bigint,
   ): Promise<void> {
     try {
-      await this.approveToken(
+      if (!publicClient) throw new Error("publicClient not available");
+      const approvalHash = await this.approveToken(
         writeContract,
         biddingTokenAddress,
         this.contractAddress,
         bidAmount,
         false // 0 = NFT, 1 = ERC20
       );
+      await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress,
         abi: ALLPAY_ABI,
@@ -142,7 +147,7 @@ export class AllPayAuctionService implements IAuctionService {
     }
   }
 
-  async withdraw(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
+  async withdraw(writeContract: WriteContractMutateAsync<Config, unknown>, auctionId: bigint): Promise<void> {
     try {
       await writeContract({
         address: this.contractAddress,
@@ -156,7 +161,7 @@ export class AllPayAuctionService implements IAuctionService {
     }
   }
 
-  async claim(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void> {
+  async claim(writeContract: WriteContractMutateAsync<Config, unknown>, auctionId: bigint): Promise<void> {
     try {
       await writeContract({
         address: this.contractAddress,
