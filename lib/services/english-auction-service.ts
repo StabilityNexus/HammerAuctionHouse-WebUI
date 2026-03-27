@@ -1,9 +1,8 @@
-import { Address, erc20Abi, erc721Abi, parseAbiItem } from "viem";
+import { Address, erc20Abi, erc721Abi, parseAbiItem, parseEther } from "viem";
 import { Config, readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
 import { IAuctionService, EnglishAuctionParams, mappedData } from "../auction-service";
 import { Auction, Bid } from "../types";
-import { parseEther } from "ethers";
 import { generateCode } from "../storage";
 import { getTokenName } from "../auction-service";
 import { AUCTION_CONTRACTS, ENGLISH_ABI } from "../contract-data";
