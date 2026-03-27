@@ -127,11 +127,20 @@ export function AllPayDetail({
               }
             />
             {Date.now() >= Number(currentAuction.deadline) * 1000 && (
-              <p className="text-sm font-medium text-muted-foreground">
-                {currentAuction.isClaimed
-                  ? "Asset has been claimed"
-                  : "Asset has not been claimed yet"}
-              </p>
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  {currentAuction.isClaimed
+                    ? "Asset has been claimed"
+                    : "Asset has not been claimed yet"}
+                </p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  {Number(currentAuction.highestBid) === 0
+                    ? "No bids were placed, nothing to withdraw"
+                    : Number(currentAuction.availableFunds) === 0
+                      ? "Funds have been withdrawn"
+                      : "Withdrawal pending"}
+                </p>
+              </div>
             )}
           </div>
         </div>
