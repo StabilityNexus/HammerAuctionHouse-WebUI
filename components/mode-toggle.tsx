@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 export function ModeToggle() {
   const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
+  const timeoutRef = useRef<number | null>(null);
 
   useEffect(() => setMounted(true), []);
 
@@ -32,7 +34,28 @@ export function ModeToggle() {
   const isDark = resolvedTheme === "dark";
 
   const handleToggle = () => {
+    // Restart animation if it's already running
+    if (isSwitching) {
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      setIsSwitching(false);
+      // small tick to allow CSS animation to restart
+      window.setTimeout(() => {
+        setIsSwitching(true);
+      }, 20);
+    } else {
+      setIsSwitching(true);
+    }
+
     setTheme(isDark ? "light" : "dark");
+
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+    timeoutRef.current = window.setTimeout(() => {
+      setIsSwitching(false);
+      timeoutRef.current = null;
+    }, 1800);
   };
 
   return (
@@ -46,17 +69,22 @@ export function ModeToggle() {
       {/* Accessible label */}
       <span className="sr-only">Toggle theme</span>
 
-      {/* Sun / Moon layered with simple transitions */}
-      <Sun
-        className={`h-[1.2rem] w-[1.2rem] transition-all duration-150 ${
-          isDark ? "opacity-0 scale-90" : "opacity-100 scale-100"
+      <div
+        className={`relative inline-flex items-center justify-center h-[1.2rem] w-[1.2rem] ${
+          isSwitching ? "rotate-anim" : ""
         }`}
-      />
-      <Moon
-        className={`absolute h-[1.2rem] w-[1.2rem] transition-all duration-150 ${
-          isDark ? "opacity-100 scale-100" : "opacity-0 scale-90"
-        }`}
-      />
+      >
+        <Sun
+          className={`absolute inset-0 m-auto h-[1.2rem] w-[1.2rem] mode-toggle-icon ${
+            isDark ? "opacity-0 scale-90" : "opacity-100 scale-100"
+          }`}
+        />
+        <Moon
+          className={`absolute inset-0 m-auto h-[1.2rem] w-[1.2rem] mode-toggle-icon ${
+            isDark ? "opacity-100 scale-100" : "opacity-0 scale-90"
+          }`}
+        />
+      </div>
     </Button>
   );
 }
