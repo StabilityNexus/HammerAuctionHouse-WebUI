@@ -1,5 +1,5 @@
 import { Address, erc20Abi, erc721Abi, parseEther } from "viem";
-import { Config, readContracts } from '@wagmi/core';
+import { Config, readContract, readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
 import { IAuctionService, DutchAuctionParams, getTokenName, mappedData } from "../auction-service";
 import { Auction } from "../types";
@@ -122,14 +122,15 @@ export class ExponentialDutchAuctionService implements IAuctionService {
     }
   }
 
-  async createAuction(writeContract: WriteContractMutate<Config, unknown>, params: ExponentialDutchAuctionParams): Promise<void> {
+  async createAuction(writeContract: WriteContractMutate<Config, unknown>, params: ExponentialDutchAuctionParams, userAddress: Address): Promise<void> {
     try {
       await this.approveToken(
         writeContract,
         params.auctionedToken,
         this.contractAddress,
         (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
-        params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
+        params.auctionType === BigInt(0), // 0 = NFT, 1 = ERC20
+        userAddress
       );
       await writeContract({
         address: this.contractAddress,
@@ -155,7 +156,7 @@ export class ExponentialDutchAuctionService implements IAuctionService {
     }
   }
 
-  async placeBid(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, biddingToken: string): Promise<void> {
+  async placeBid(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, biddingToken: string, userAddress: Address): Promise<void> {
     try {
       const currentPrice = await this.getCurrentPrice(auctionId);
       await this.approveToken(
@@ -163,7 +164,8 @@ export class ExponentialDutchAuctionService implements IAuctionService {
         biddingToken as `0x${string}`,
         this.contractAddress,
         currentPrice,
-        false
+        false,
+        userAddress
       );
       await writeContract({
         address: this.contractAddress as `0x${string}`,
@@ -190,14 +192,39 @@ export class ExponentialDutchAuctionService implements IAuctionService {
     }
   }
 
-  private async approveToken(writeContract: WriteContractMutate<Config, unknown>, tokenAddress: Address, spender: Address, amount: bigint, isNFT: boolean): Promise<void> {
+  private async approveToken(writeContract: WriteContractMutate<Config, unknown>, tokenAddress: Address, spender: Address, amount: bigint, isNFT: boolean, userAddress: Address): Promise<void> {
     try {
-      await writeContract({
-        address: tokenAddress as `0x${string}`,
-        abi: isNFT ? erc721Abi : erc20Abi,
-        functionName: "approve",
-        args: [spender, amount]
-      });
+      if (isNFT) {
+        const approved = await readContract(wagmi_config, {
+          address: tokenAddress as `0x${string}`,
+          abi: erc721Abi,
+          functionName: "getApproved",
+          args: [amount],
+        });
+        if (approved !== spender) {
+          await writeContract({
+            address: tokenAddress as `0x${string}`,
+            abi: erc721Abi,
+            functionName: "approve",
+            args: [spender, amount]
+          });
+        }
+      } else {
+        const allowance = await readContract(wagmi_config, {
+          address: tokenAddress as `0x${string}`,
+          abi: erc20Abi,
+          functionName: "allowance",
+          args: [userAddress, spender],
+        });
+        if (allowance < amount) {
+          await writeContract({
+            address: tokenAddress as `0x${string}`,
+            abi: erc20Abi,
+            functionName: "approve",
+            args: [spender, amount]
+          });
+        }
+      }
     } catch (error) {
       console.error("Error approving token:", error);
       throw error;
