@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, AlertCircle, CheckCircle } from "lucide-react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId } from "wagmi";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from "wagmi";
 import { getAuctionService } from "@/lib/auction-service";
 
 interface VickreyRevealFormProps {
@@ -32,7 +32,8 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
   const [autoFilled, setAutoFilled] = useState(false);
   const chainId = useChainId();
   const { address } = useAccount();
-  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
+  const { writeContractAsync, data: hash, isPending, error: writeError } = useWriteContract();
+  const publicClient = usePublicClient();
   
   const {
     isLoading: isConfirming,
@@ -89,7 +90,7 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
   }, [writeError, confirmError]);
 
   const handleReveal = async () => {
-    if (!address || !writeContract) {
+    if (!address || !writeContractAsync || !publicClient) {
       setError("Please connect your wallet");
       return;
     }
@@ -102,7 +103,8 @@ export function VickreyRevealForm({ auctionId, onRevealSuccess }: VickreyRevealF
       const bidAmountWei = BigInt(Math.floor(parseFloat(bidAmount) * 1e18));
       
       await vickreyService.revealBid!(
-        writeContract,
+        writeContractAsync,
+        publicClient,
         auctionId,
         bidAmountWei,
         salt

@@ -1,4 +1,4 @@
-import { Address, erc20Abi, erc721Abi, parseEther } from "viem";
+import { Address, erc20Abi, erc721Abi, Hash, parseEther } from "viem";
 import { Config, readContracts } from '@wagmi/core';
 import { wagmi_config } from "@/config";
 import { IAuctionService, DutchAuctionParams, getTokenName, mappedData } from "../auction-service";
@@ -6,7 +6,7 @@ import { Auction } from "../types";
 import { generateCode } from "../storage";
 import { AUCTION_CONTRACTS, EXPONENTIAL_DUTCH_ABI } from "../contract-data";
 import { UsePublicClientReturnType } from "wagmi";
-import { WriteContractMutate } from "wagmi/query";
+import { WriteContractMutateAsync } from "wagmi/query";
 
 export interface ExponentialDutchAuctionParams extends DutchAuctionParams {
   decayFactor: bigint; // Exponential decay factor (scaled by 10^5)
@@ -122,15 +122,17 @@ export class ExponentialDutchAuctionService implements IAuctionService {
     }
   }
 
-  async createAuction(writeContract: WriteContractMutate<Config, unknown>, params: ExponentialDutchAuctionParams): Promise<void> {
+  async createAuction(writeContract: WriteContractMutateAsync<Config, unknown>, publicClient: UsePublicClientReturnType, params: ExponentialDutchAuctionParams): Promise<void> {
     try {
-      await this.approveToken(
+      if (!publicClient) throw new Error("publicClient not available");
+      const approvalHash = await this.approveToken(
         writeContract,
         params.auctionedToken,
         this.contractAddress,
         (params.auctionType === BigInt(0) ? params.auctionedTokenIdOrAmount : parseEther(String(params.auctionedTokenIdOrAmount))),
         params.auctionType === BigInt(0) // 0 = NFT, 1 = ERC20
       );
+      await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress,
         abi: EXPONENTIAL_DUTCH_ABI,
@@ -155,16 +157,18 @@ export class ExponentialDutchAuctionService implements IAuctionService {
     }
   }
 
-  async placeBid(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint, biddingToken: string): Promise<void> {
+  async placeBid(writeContract: WriteContractMutateAsync<Config, unknown>, publicClient: UsePublicClientReturnType, auctionId: bigint, biddingToken: string): Promise<void> {
     try {
       const currentPrice = await this.getCurrentPrice(auctionId);
-      await this.approveToken(
+      if (!publicClient) throw new Error("publicClient not available");
+      const approvalHash = await this.approveToken(
         writeContract,
         biddingToken as `0x${string}`,
         this.contractAddress,
         currentPrice,
         false
       );
+      await publicClient.waitForTransactionReceipt({ hash: approvalHash });
       await writeContract({
         address: this.contractAddress as `0x${string}`,
         abi: EXPONENTIAL_DUTCH_ABI,
@@ -172,12 +176,12 @@ export class ExponentialDutchAuctionService implements IAuctionService {
         args: [auctionId],
       });
     } catch (error) {
-      console.error("Error withdrawing item:", error);
+      console.error("Error placing bid:", error);
       throw error;
     }
   }
 
-  async claim(writeContract: WriteContractMutate<Config, unknown>, auctionId: bigint): Promise<void>{
+  async claim(writeContract: WriteContractMutateAsync<Config, unknown>, auctionId: bigint): Promise<void>{
     try {
       await writeContract({
         address: this.contractAddress as `0x${string}`,
@@ -187,12 +191,13 @@ export class ExponentialDutchAuctionService implements IAuctionService {
       });
     } catch (error) {
       console.error("Error claiming the assest: ",error);
+      throw error;
     }
   }
 
-  private async approveToken(writeContract: WriteContractMutate<Config, unknown>, tokenAddress: Address, spender: Address, amount: bigint, isNFT: boolean): Promise<void> {
+  private async approveToken(writeContract: WriteContractMutateAsync<Config, unknown>, tokenAddress: Address, spender: Address, amount: bigint, isNFT: boolean): Promise<Hash> {
     try {
-      await writeContract({
+      return await writeContract({
         address: tokenAddress as `0x${string}`,
         abi: isNFT ? erc721Abi : erc20Abi,
         functionName: "approve",
