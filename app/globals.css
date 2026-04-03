@@ -170,3 +170,27 @@
     -webkit-user-drag: none;
   }
 }
+
+/* Theme toggle slow-motion rotation and icon transitions */
+@keyframes rotate360 {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.rotate-anim {
+  animation: rotate360 1.8s cubic-bezier(.22,.9,.31,.99) both;
+  display: inline-block;
+}
+
+.mode-toggle-icon {
+  transition: transform 1.8s cubic-bezier(.22,.9,.31,.99), opacity 1.8s cubic-bezier(.22,.9,.31,.99);
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rotate-anim,
+  .mode-toggle-icon {
+    animation: none !important;
+    transition: none !important;
+  }
+}
