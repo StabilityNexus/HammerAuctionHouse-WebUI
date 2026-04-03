@@ -39,7 +39,7 @@ export default function Dashboard() {
           return auction;
         })
       );    
-      setCreatedAuctions(fetchedAuctions.filter(auction => auction != null));
+      setCreatedAuctions(fetchedAuctions.filter((auction): auction is Auction => auction != null));
     } catch (error) {
       console.error("Error fetching created auctions:", error);
     } finally {
@@ -59,7 +59,7 @@ export default function Dashboard() {
           return auction;
         })
       );      
-      setBiddedAuctions(fetchedAuctions.filter(auction => auction != null));
+      setBiddedAuctions(fetchedAuctions.filter((auction): auction is Auction => auction != null));
     } catch (error) {
       console.error("Error fetching bidded auctions:", error);
     } finally {
@@ -79,7 +79,7 @@ export default function Dashboard() {
           return auction;
         })
       );      
-      setWatchedAuctions(fetchedAuctions.filter(auction => auction != null));
+      setWatchedAuctions(fetchedAuctions.filter((auction): auction is Auction => auction != null));
     } catch (error) {
       console.error("Error fetching watched auctions:", error);
     } finally {
