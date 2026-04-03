@@ -38,7 +38,7 @@ export function Navbar() {
 						</Button>
 						<Button
 							size="sm"
-							variant="outline"
+							variant="default"
 							asChild
 							className="hidden md:flex"
 						>
