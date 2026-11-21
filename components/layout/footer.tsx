@@ -79,9 +79,9 @@ export function Footer({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_50%)]"></div>
       </div>
 
-      <div className="w-full relative py-2 md:py-2 px-4 md:px-8">
-        {/* Main footer content */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
+      <div className="w-full relative py-3 md:py-4 px-4 md:px-8">
+        {/* Single unified row: branding, copyright and social links */}
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
           {/* Logo and branding section */}
           <div className="flex flex-col md:flex-row items-center gap-3">
             {/* Logo */}
@@ -100,8 +100,13 @@ export function Footer({
             </div>
           </div>
 
+          {/* Copyright notice */}
+          <p className="text-xs text-muted-foreground text-center md:flex-1 md:text-center">
+            © {currentYear} Stability Nexus. All rights reserved.
+          </p>
+
           {/* Social media links */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center gap-4">
             <span className="text-sm text-muted-foreground hidden sm:block">
               Follow us:
             </span>
@@ -131,13 +136,6 @@ export function Footer({
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Bottom section - Copyright */}
-        <div className="pt-3 flex justify-center border-t border-border">
-          <p className="text-xs text-muted-foreground text-center md:text-left">
-            © {currentYear} Stability Nexus. All rights reserved.
-          </p>
         </div>
       </div>
     </footer>
